@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 简介在C语言中，通常直接使用malloc进行内存的分配，而频繁的分配、释放内存无疑会产生内存碎片，降低系统性能。PHP自己实现了一套内存池（ZendMM：Zend Memery Manager）用于替换glibc的malloc、free，以解决内存频繁分配、释放的问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP7内核-内存管理-内存池">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 简介在C语言中，通常直接使用malloc进行内存的分配，而频繁的分配、释放内存无疑会产生内存碎片，降低系统性能。PHP自己实现了一套内存池（ZendMM：Zend Memery Manager）用于替换glibc的malloc、free，以解决内存频繁分配、释放的问题。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/48872B5FBB994E018B73A4AF38B466CE?method=download&shareKey=b96499c0e19a3b8b9803bcfe2f50d9eb">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/A8793900579C4D84A8CCE6E131F70B04?method=download&shareKey=7c1b42213c6357aae7855f4bcc43c78c">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/1598F914D6D043A2928403E3B65280FE?method=download&shareKey=fa722c4892712fb681baea9ac6c93cf8">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/1C273A1B04A44C379427B94CBE2A42FB?method=download&shareKey=d5059f5c0dafd673a661edf8efe31120">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/9940B8821F1E4B19B2783B68381DFD5C?method=download&shareKey=8e13fe6980c3aa04d6cf3c97f1522b9d">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/C879457EC2154FAEA678D562C217773B?method=download&shareKey=29d90ba60d479fdeccd33ac88325813a">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/335A8945237E483EAD280F5A26DED219?method=download&shareKey=29b8b43bfeb58653a22ace5a4562f538">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/4345829756E149EEAB1C4DE3928C76AC?method=download&shareKey=c358be1e7b73c1ff04ccac1eb772c992">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/9141601D64BF4D76AF0A211F55A479A2?method=download&shareKey=7df69cd6f617df511be8d5f87c7a58f4">
+<meta property="article:published_time" content="2020-08-25T06:29:45.000Z">
+<meta property="article:modified_time" content="2020-08-28T16:25:49.920Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="PHP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://note.youdao.com/yws/api/personal/file/48872B5FBB994E018B73A4AF38B466CE?method=download&shareKey=b96499c0e19a3b8b9803bcfe2f50d9eb">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>PHP7内核-内存管理-内存池 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%86%85%E5%AD%98%E6%B1%A0%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">2.</span> <span class="nav-text">2 内存池的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%86%85%E5%AD%98%E7%9A%84%E5%88%86%E9%85%8D"><span class="nav-number">3.</span> <span class="nav-text">3 内存的分配</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-Huge%E5%88%86%E9%85%8D"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 Huge分配</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-Large%E5%88%86%E9%85%8D"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Large分配</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-Small%E5%88%86%E9%85%8D"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 Small分配</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E7%B3%BB%E7%BB%9F%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D"><span class="nav-number">4.</span> <span class="nav-text">4 系统内存分配</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE"><span class="nav-number">5.</span> <span class="nav-text">5 内存释放</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#5-1-Huge%E5%86%85%E5%AD%98%E7%9A%84%E9%87%8A%E6%94%BE"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Huge内存的释放</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-2-Large%E5%86%85%E5%AD%98%E7%9A%84%E9%87%8A%E6%94%BE"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 Large内存的释放</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-3-Small%E5%86%85%E5%AD%98%E7%9A%84%E9%87%8A%E6%94%BE"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 Small内存的释放</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP7内核-内存管理-内存池
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-25 14:29:45" itemprop="dateCreated datePublished" datetime="2020-08-25T14:29:45+08:00">2020-08-25</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>在C语言中，通常直接使用malloc进行内存的分配，而频繁的分配、释放内存无疑会产生内存碎片，降低系统性能。PHP自己实现了一套内存池（<code>ZendMM</code>：<code>Zend Memery Manager</code>）用于替换<code>glibc</code>的<code>malloc</code>、<code>free</code>，以解决内存频繁分配、释放的问题。</p>
+<a id="more"></a>
+
+<p>内存池技术主要作用：</p>
+<ul>
+<li>①、减少内存分配及释放的次数</li>
+<li>②、有效控制内存碎片的产生</li>
+</ul>
+<p>PHP的内存池的实现参考了<code>tcmalloc</code>的设计，<code>tcmalloc</code>是<code>Google</code>开源的一个非常优秀的内存分配器。</p>
+<p>内存池是PHP内核中最底层的内存操作，他是非常独立的一个模块，可以移植到其他C语言应用中去。  </p>
+<p><strong>内存池定义了三种粒度的内存块</strong>：</p>
+<ul>
+<li><strong>chunk</strong>：每个chunk的大小为2M</li>
+<li><strong>page</strong>：page的大小为4KB，每个chunk被切割为512个page（2048/4）</li>
+<li><strong>slot</strong>：一个或若干个page被切割为多个slot</li>
+</ul>
+<p>申请内存时按照不同的申请大小决定具体的分配策略：</p>
+<ul>
+<li><strong>Huge(chunk)</strong>:申请内存大于2MB，<u>直接调用系统分配</u>，分配若干个chunk.(&gt;2MB)</li>
+<li>**Large(page)**：申请内<del>存大于3092B</del>（即page大小的3/4, 4 * 1024 * 3/4 = 3072B）,小于2044KB（即511个page的大小），分配若干个page。(3072B~2044KB)</li>
+<li><strong>Small(slot)</strong>:申请内存小于等于3092B(即page大小的3/4)，<u>内存池提前定义好了30种同等大小的内存（8、16、24、32…3072）,它们分配在不同的page上（不同大小的内存可能会分配在多个连续的page），申请内存时直接在对应的page上查找可用的slot</u>。(&lt;3092B)</li>
+</ul>
+<p>内存池通过<strong>zend_mm_heap</strong>结构存储内存池的主要信息，比如<code>大内存链表</code>、<code>chunk链表</code>、<code>slot各大小内存链表</code>等。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_alloc.c</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> AG(v) (alloc_globals.v)</span></span><br><span class="line"><span class="keyword">static</span> zend_alloc_globals alloc_globals;</span><br><span class="line"></span><br><span class="line"><span class="comment">// file:zend_alloc.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">zend_mm_heap</span> <span class="title">zend_mm_heap</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">zend_mm_heap</span> &#123;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_MM_CUSTOM</span></span><br><span class="line">	<span class="keyword">int</span>                use_custom_heap;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_MM_STORAGE</span></span><br><span class="line">	zend_mm_storage   *storage;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_MM_STAT</span></span><br><span class="line">    <span class="comment">// 当前已使用的内存数</span></span><br><span class="line">	<span class="keyword">size_t</span>             size;                    <span class="comment">/* current memory usage */</span></span><br><span class="line">	<span class="comment">// 内存单次申请的峰值</span></span><br><span class="line">	<span class="keyword">size_t</span>             peak;                    <span class="comment">/* peak memory usage */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="comment">// 小内存分配的可用位置链表，ZEND_MM_BINS等于30，即此数组表示的是各种大小内存对应的链表头部</span></span><br><span class="line">	zend_mm_free_slot *free_slot[ZEND_MM_BINS]; <span class="comment">/* free lists for small sizes */</span></span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 大内存链表</span></span><br><span class="line">	zend_mm_huge_list *huge_list;               <span class="comment">/* list of huge allocated blocks */</span></span><br><span class="line">    <span class="comment">// 指向chunk链表头部</span></span><br><span class="line">	zend_mm_chunk     *main_chunk;</span><br><span class="line">	<span class="comment">// 缓存的chunk链表</span></span><br><span class="line">	zend_mm_chunk     *cached_chunks;			<span class="comment">/* list of unused chunks */</span></span><br><span class="line">	<span class="comment">// 已分配的chunk数</span></span><br><span class="line">	<span class="keyword">int</span>                chunks_count;			<span class="comment">/* number of alocated chunks */</span></span><br><span class="line">	<span class="comment">// 当前request使用chunk峰值</span></span><br><span class="line">	<span class="keyword">int</span>                peak_chunks_count;		<span class="comment">/* peak number of allocated chunks for current request */</span></span><br><span class="line">	<span class="comment">// 缓存的chunk数</span></span><br><span class="line">	<span class="keyword">int</span>                cached_chunks_count;		<span class="comment">/* number of cached chunks */</span></span><br><span class="line">	<span class="comment">// chunk使用均值，每次请求结束后会根据peak_chunk_count重新计算：(avg_chunks_count + peak_chunks_count)/2.0</span></span><br><span class="line">	<span class="keyword">double</span>             avg_chunks_count;		<span class="comment">/* average number of chunks allocated per request */</span></span><br><span class="line">	<span class="keyword">int</span>                last_chunks_delete_boundary; <span class="comment">/* numer of chunks after last deletion */</span></span><br><span class="line">	<span class="keyword">int</span>                last_chunks_delete_count;    <span class="comment">/* number of deletion over the last boundary */</span></span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>大内存分配的是若干个chunk，然后通过一个<code>zend_mm_huge_list结构</code>进行管理，<strong>大内存之间构成一个单向链表</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_alloc.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>  _<span class="title">zend_mm_huge_list</span> <span class="title">zend_mm_huge_list</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">zend_mm_huge_list</span> &#123;</span></span><br><span class="line">	<span class="keyword">void</span>              *ptr;</span><br><span class="line">	<span class="keyword">size_t</span>             size;</span><br><span class="line">	zend_mm_huge_list *next;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_DEBUG</span></span><br><span class="line">	zend_mm_debug_info dbg;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><img src="https://note.youdao.com/yws/api/personal/file/48872B5FBB994E018B73A4AF38B466CE?method=download&shareKey=b96499c0e19a3b8b9803bcfe2f50d9eb" alt="huge_list链表"></p>
+<p><u>chunk是内存池向系统申请、释放内存的最小粒度。</u><code>chunk</code>之间构成双向链表，第一个chunk的地址保存于<code>zend_mm_heap-&gt;main_chunk</code>。</p>
+<p>每个chunk的大小为2MB，被切割为512个page，所以每个page的大小为4KB，其中第一个page的内存用于chunk自己的结构体成员，主要记录chunk的一些信息，比如前后chunk的指针，当前chunk上各个page的使用情况等。</p>
+<p>chunk的定义结构如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_alloc.c</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">zend_mm_chunk</span> &#123;</span></span><br><span class="line">	zend_mm_heap      *heap;</span><br><span class="line">	<span class="comment">// 指向下一个chunk</span></span><br><span class="line">	zend_mm_chunk     *next;</span><br><span class="line">	<span class="comment">// 指向上一个chunk</span></span><br><span class="line">	zend_mm_chunk     *prev;</span><br><span class="line">	<span class="comment">// 当前chunk的剩余可用page数</span></span><br><span class="line">	<span class="keyword">int</span>                free_pages;				<span class="comment">/* number of free pages */</span></span><br><span class="line">	<span class="keyword">int</span>                free_tail;               <span class="comment">/* number of free pages at the end of chunk */</span></span><br><span class="line">	<span class="keyword">int</span>                num;</span><br><span class="line">	<span class="keyword">char</span>               reserve[<span class="number">64</span> - (<span class="keyword">sizeof</span>(<span class="keyword">void</span>*) * <span class="number">3</span> + <span class="keyword">sizeof</span>(<span class="keyword">int</span>) * <span class="number">3</span>)];</span><br><span class="line">	<span class="comment">// heap结构，只有主chunk会用到（即第一个chunk）</span></span><br><span class="line">	zend_mm_heap       heap_slot;               <span class="comment">/* used only in main chunk */</span></span><br><span class="line">	<span class="comment">// 标识各page是否已使用的bitmap，总大小为512bit，对应page总数，每个page占一个bit位。</span></span><br><span class="line">	zend_mm_page_map   free_map;                <span class="comment">/* 512 bits or 64 bytes */</span></span><br><span class="line">	<span class="comment">// 各page的信息：当前page使用类型（用于large分配还是small）、占用的page数等</span></span><br><span class="line">	zend_mm_page_info  <span class="built_in">map</span>[ZEND_MM_PAGES];      <span class="comment">/* 2 KB = 512 * 4 */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>slot内存是把若干个page按照固定大小分割好的内存块。</p>
+<p><strong>内存池定义了30中大小的slot内存</strong>：8、16、24、32…1792、2048、3072.这些slot的大小是有规律的。</p>
+<ul>
+<li>①、最小的slot大小为8byte</li>
+<li>②、前8个slot一次递增8byte（0~7递增 8byte）</li>
+<li>③、后面每隔4个递增值乘以2（8<del>11递增16byte、12</del>15递增32byte、16<del>19递增64byte、20</del>23递增128byte、24<del>27递增256byte、28</del>30递增512byte）</li>
+</ul>
+<p>每种大小的slot占用的page数不相同的：</p>
+<ul>
+<li><p>①、slot0~15各占1个page</p>
+</li>
+<li><p>②、slot16~29分别占5、3、1、1、5、3、2、2、5、3、7、4、5、3个page；<br>  注：这个值实际也是有规律可循的，其算法为，目的是为了减少内存的碎片。</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">page的个数 &#x3D; 最小公倍数(slot对应的内存大小, page的大小即4096) &#x2F; 4096</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<pre><code>分配各个规格的slot时会按照各这个配置申请对应的数量的page，然后进行分割组成链表。&lt;u&gt;相同大小的slot之间构成单链表&lt;/u&gt;。</code></pre>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">struct _zend_mm_free_slot &#123;</span><br><span class="line">	zend_mm_free_slot *next_free_slot;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>heap、huge、chunk、page、slot之间的关系如下图所示：<br><img src="https://note.youdao.com/yws/api/personal/file/A8793900579C4D84A8CCE6E131F70B04?method=download&shareKey=7c1b42213c6357aae7855f4bcc43c78c" alt="heap、huge、chunk、page、slot结构关系"></p>
+<h4 id="2-内存池的初始化"><a href="#2-内存池的初始化" class="headerlink" title="2 内存池的初始化"></a>2 内存池的初始化</h4><p>初始化过程主要是<code>分配heap结构</code>，<u>如果是多线程环境，则会为每一个线程分配一个内存池，线程之间互不影响</u>。</p>
+<p>注：<u><code>zend_mm_heap</code>这个结构不是单独分配的，它嵌在<code>chunk</code>结构体中（即<code>heap_slot</code>成员）</u>。也就是说内存池初始化时是分配了一个chunk结构，<code>zend_mm_chunk-&gt;heap_slot</code>作为内存池的heap结构，这个chunk也是第一个chunk，即main_chunk,如下图所示：<br><img src="https://note.youdao.com/yws/api/personal/file/1598F914D6D043A2928403E3B65280FE?method=download&shareKey=fa722c4892712fb681baea9ac6c93cf8" alt="zend_mm_heap结构的分配"></p>
+<p><strong>问题：为什么内存时的heap结构要嵌在chunk中而不是单独分配呢？</strong><br>因为每个chunk的第一个page始终是给chunk结构体自己使用的，剩下的511个page才会做内存分配，但是chunk结构体并不需要一个page那么大的内存。也就是说被占用的page会有剩余的空间，因此，为了尽可能利用空间，就将heap结构嵌在了chunk中。</p>
+<p>具体的分配过成在zend_mm_init()中实现：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_alloc.c</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> zend_mm_heap *<span class="title">zend_mm_init</span><span class="params">(<span class="keyword">void</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 向系统申请2MB大小的chunk</span></span><br><span class="line">	zend_mm_chunk *chunk = (zend_mm_chunk*)zend_mm_chunk_alloc_int(ZEND_MM_CHUNK_SIZE, ZEND_MM_CHUNK_SIZE);</span><br><span class="line">	zend_mm_heap *heap;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (UNEXPECTED(chunk == <span class="literal">NULL</span>)) &#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_MM_ERROR</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _WIN32</span></span><br><span class="line">		stderr_last_error(<span class="string">&quot;Can&#x27;t initialize heap&quot;</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;\nCan&#x27;t initialize heap: [%d] %s\n&quot;</span>, errno, strerror(errno));</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// heap结构实际数主chunk嵌入的一个结构，后面再分配的chunk的heap_slot不再使用</span></span><br><span class="line">	heap = &amp;chunk-&gt;heap_slot;</span><br><span class="line">	chunk-&gt;heap = heap;</span><br><span class="line">	chunk-&gt;next = chunk;</span><br><span class="line">	chunk-&gt;prev = chunk;</span><br><span class="line">	<span class="comment">// 剩余可用page数</span></span><br><span class="line">	chunk-&gt;free_pages = ZEND_MM_PAGES - ZEND_MM_FIRST_PAGE;</span><br><span class="line">	chunk-&gt;free_tail = ZEND_MM_FIRST_PAGE;</span><br><span class="line">	chunk-&gt;num = <span class="number">0</span></span><br><span class="line">	<span class="comment">// 将第一个page的bit分配标识位设置为1，表示已经被分配、占用</span></span><br><span class="line">	chunk-&gt;free_map[<span class="number">0</span>] = (Z_L(<span class="number">1</span>) &lt;&lt; ZEND_MM_FIRST_PAGE) - <span class="number">1</span>;</span><br><span class="line">	<span class="comment">// 第一个page的类型为ZEND_MM_IS_LRUN,即large内存</span></span><br><span class="line">	chunk-&gt;<span class="built_in">map</span>[<span class="number">0</span>] = ZEND_MM_LRUN(ZEND_MM_FIRST_PAGE);</span><br><span class="line">	<span class="comment">// 指向主chunk</span></span><br><span class="line">	heap-&gt;main_chunk = chunk;</span><br><span class="line">	<span class="comment">// 初始化剩下的一些成员</span></span><br><span class="line">	...</span><br><span class="line">	<span class="comment">// huge内存链表</span></span><br><span class="line">	heap-&gt;huge_list = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="keyword">return</span> heap;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="3-内存的分配"><a href="#3-内存的分配" class="headerlink" title="3 内存的分配"></a>3 内存的分配</h4><p>Huge大内存的分配过程比较简单、而Large与Small内存分配涉及到page的查找操作，过程稍显复杂。</p>
+<p>使用<code>emalloc</code>申请时，内存池会按照申请内存的大小自动选择那种格内存进行分配，如下图所示：<br><img src="https://note.youdao.com/yws/api/personal/file/1C273A1B04A44C379427B94CBE2A42FB?method=download&shareKey=d5059f5c0dafd673a661edf8efe31120" alt="内存的分配流程"></p>
+<h5 id="3-1-Huge分配"><a href="#3-1-Huge分配" class="headerlink" title="3.1 Huge分配"></a>3.1 Huge分配</h5><p>Huge是指超多2MB大小内存的分配，<u>实际分配时将对齐到n个chunk</u>，分配完还会分配一个zend_mm_huge_list结构，用于管理所有的Huge内存。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> *<span class="title">zend_mm_alloc_huge</span><span class="params">(zend_mm_heap *heap, <span class="keyword">size_t</span> size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> ZEND_WIN32</span></span><br><span class="line">	<span class="comment">/* On Windows we don&#x27;t have ability to extend huge blocks in-place.</span></span><br><span class="line"><span class="comment">	 * We allocate them with 2MB size granularity, to avoid many</span></span><br><span class="line"><span class="comment">	 * reallocations when they are extended by small pieces</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	 <span class="comment">// 按页大小重置实际要分配的内存</span></span><br><span class="line">	<span class="keyword">size_t</span> new_size = ZEND_MM_ALIGNED_SIZE_EX(size, MAX(REAL_PAGE_SIZE, ZEND_MM_CHUNK_SIZE));</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">	<span class="keyword">size_t</span> new_size = ZEND_MM_ALIGNED_SIZE_EX(size, REAL_PAGE_SIZE);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	<span class="keyword">void</span> *ptr;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_MM_LIMIT</span></span><br><span class="line">    <span class="comment">// 如果有内存使用限制，则检查是否已达上限，达到的话进行zend_mm_gc清理后再检查</span></span><br><span class="line">	<span class="keyword">if</span> (UNEXPECTED(heap-&gt;real_size + new_size &gt; heap-&gt;limit)) &#123;</span><br><span class="line">		<span class="keyword">if</span> (zend_mm_gc(heap) &amp;&amp; heap-&gt;real_size + new_size &lt;= heap-&gt;limit) &#123;</span><br><span class="line">			<span class="comment">/* pass */</span></span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (heap-&gt;overflow == <span class="number">0</span>) &#123;</span><br><span class="line">#<span class="keyword">if</span> ZEND_DEBUG</span><br><span class="line">			zend_mm_safe_error(heap, <span class="string">&quot;Allowed memory size of %zu bytes exhausted at %s:%d (tried to allocate %zu bytes)&quot;</span>, heap-&gt;limit, __zend_filename, __zend_lineno, size);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">			zend_mm_safe_error(heap, <span class="string">&quot;Allowed memory size of %zu bytes exhausted (tried to allocate %zu bytes)&quot;</span>, heap-&gt;limit, size);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="comment">// 分配chunk()，系统返回的地址是随机的，并不一定是ZEND_MM_CHUNK_ZIZE的整数倍，内存池需要自己移动到对齐的位置，比如：返回地址ptr是2000，而最近的一个对齐地址是2048，内存池会把ptr移动到2048，从这个位置使用。</span></span><br><span class="line">	ptr = zend_mm_chunk_alloc(heap, new_size, ZEND_MM_CHUNK_SIZE);</span><br><span class="line">   </span><br><span class="line">    ... </span><br><span class="line">    </span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_DEBUG</span></span><br><span class="line">    <span class="comment">// 将申请的内存通过zend_mm_huge_list插入到链表中</span></span><br><span class="line">	zend_mm_add_huge_block(heap, ptr, new_size, size ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">	zend_mm_add_huge_block(heap, ptr, new_size ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    ...</span><br><span class="line">	<span class="keyword">return</span> ptr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>除了Huge分配以外，分配chunk内存也是Large、Small内存分配的基础，<u>它是ZendMM向系统申请内存的唯一粒度</u>。</p>
+<p>注：<em>分配chunk时，会将内存地址对齐到chunk的大小2MB（<code>ZEND_MM_THUNK_SIZE</code>）。也就是说，分配的chunk地址都是<code>ZEND_MM_THUNK_SIZE</code>的整数倍。（<strong>实际上这个对齐并不是由系统简单的完成，而是需要内存池在申请内存后自己进行调整！</strong>）</em></p>
+<p><code>ZendMM</code>具体处理对齐的方法是：</p>
+<ul>
+<li>①、按实际要申请的内存大小申请一次<ul>
+<li>若系统分配的地址恰好是ZEND_MM_CHUNK_SIZE的整数倍，则不需要调整，直接返回。</li>
+<li>若系统分配的地址不是ZEND_MM_CHUNK_SIZE的整数倍，则需要使用第②步进行调整。</li>
+</ul>
+</li>
+<li>②、调整方式：<ul>
+<li>首先ZendMM会将这块内存释放掉；</li>
+<li>按照“<code>实际要申请的内存大小 + ZEND_MM_CHUNK_SIZE</code>”的大小重新申请一块内存，多申请的ZEND_MM_CHUNK大小的内存是用来调整的<code>，ZendMM</code>会从系统分配的地址向后偏移到最近一个<code>ZEND_MM_CHUNK_SIZE的整数倍</code>位置，调整完之后再把剩余的内存释放掉。</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> *<span class="title">zend_mm_chunk_alloc_int</span><span class="params">(<span class="keyword">size_t</span> size, <span class="keyword">size_t</span> alignment)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 向系统申请size大小的内存</span></span><br><span class="line">	<span class="keyword">void</span> *ptr = zend_mm_mmap(size);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (ptr == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (ZEND_MM_ALIGNED_OFFSET(ptr, alignment) == <span class="number">0</span>) &#123; <span class="comment">// 判断申请的内存是都为alignment的整数倍，是的话直接返回</span></span><br><span class="line">#ifdef MADV_HUGEPAGE</span><br><span class="line">	    madvise(ptr, size, MADV_HUGEPAGE);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">		<span class="keyword">return</span> ptr;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	    <span class="comment">// 申请的内存不是按照alignment对齐的</span></span><br><span class="line">		<span class="keyword">size_t</span> offset;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 将申请的内存释放掉重新申请</span></span><br><span class="line">		zend_mm_munmap(ptr, size);</span><br><span class="line">		<span class="comment">// 重新申请一块内存，这里会多申请一块内存，用于截取到alignment的整数倍，可以忽略REAL_PAGE_SIZE</span></span><br><span class="line">		ptr = zend_mm_mmap(size + alignment - REAL_PAGE_SIZE);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _WIN32</span></span><br><span class="line">		offset = ZEND_MM_ALIGNED_OFFSET(ptr, alignment);</span><br><span class="line">		zend_mm_munmap(ptr, size + alignment - REAL_PAGE_SIZE);</span><br><span class="line">		ptr = zend_mm_mmap_fixed((<span class="keyword">void</span>*)((<span class="keyword">char</span>*)ptr + (alignment - offset)), size);</span><br><span class="line">		offset = ZEND_MM_ALIGNED_OFFSET(ptr, alignment);</span><br><span class="line">		<span class="keyword">if</span> (offset != <span class="number">0</span>) &#123;</span><br><span class="line">			zend_mm_munmap(ptr, size);</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> ptr;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="comment">// offset为ptr距离上一个alignment对齐内存位置的大小，注意不能往前移，因为前面的内存都是分配了的。</span></span><br><span class="line">		offset = ZEND_MM_ALIGNED_OFFSET(ptr, alignment);</span><br><span class="line">		<span class="keyword">if</span> (offset != <span class="number">0</span>) &#123;</span><br><span class="line">			offset = alignment - offset;</span><br><span class="line">			zend_mm_munmap(ptr, offset);</span><br><span class="line">			<span class="comment">// 偏移ptr，对齐到alignment</span></span><br><span class="line">			ptr = (<span class="keyword">char</span>*)ptr + offset;</span><br><span class="line">			alignment -= offset;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (alignment &gt; REAL_PAGE_SIZE) &#123;</span><br><span class="line">			zend_mm_munmap((<span class="keyword">char</span>*)ptr + size, alignment - REAL_PAGE_SIZE);</span><br><span class="line">		&#125;</span><br><span class="line"><span class="meta"># <span class="meta-keyword">ifdef</span> MADV_HUGEPAGE</span></span><br><span class="line">	    madvise(ptr, size, MADV_HUGEPAGE);</span><br><span class="line"><span class="meta"># <span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">		<span class="keyword">return</span> ptr;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中用到了<code>ZEND_MM_ALIGNED_OFFSET宏</code>，这个宏的作用是计算按alignment对齐的内存地址距离上一个alignment整数倍内存地址的大小，也就是offset偏移量。</p>
+<p><strong>alignment必须是2的n次方</strong>，比如一段<code>n*alignment</code>大小的内存，ptr为其中一个位置，那么就可以通过位运算计算得到ptr在所属alignment内存块中的offset，如下图所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#define ZEND_MM_ALIGNED_OFFSET(size, alignment) \</span><br><span class="line">	(((size_t)(size)) &amp; ((alignment) - 1))</span><br></pre></td></tr></table></figure>
+<p><img src="https://note.youdao.com/yws/api/personal/file/9940B8821F1E4B19B2783B68381DFD5C?method=download&shareKey=8e13fe6980c3aa04d6cf3c97f1522b9d" alt="相对对齐值的内存offset"></p>
+<p>这个位运算是因为<code>alignment</code>为<code>2^n</code>（用二进制表示即为第n个位上为1，其余位为0，当alignment-1相当于将除了第n位为0，其余低位全部为1），所以通过alignment取到最低的位置，也就是相对上一个整数倍的alignment的offset，非位运算算式如下，但效率没有位运算高。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">offset &#x3D; ptr - (ptr&#x2F;alignment取整 * alignment)</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-Large分配"><a href="#3-2-Large分配" class="headerlink" title="3.2 Large分配"></a>3.2 Large分配</h5><p>当申请的内存大于3072B、小于2044KB时，内存池会选择在chunk上查找对应数量的page返回。<u>Large内存申请的粒度是page，也就是分配n页连续的page</u>，所以Large分配的过程就转化为在chunk上查找n页连续可用的page的过程。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> zend_always_inline <span class="keyword">void</span> *<span class="title">zend_mm_alloc_large</span><span class="params">(zend_mm_heap *heap, <span class="keyword">size_t</span> size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 根据size大小计算需要分配多少个page</span></span><br><span class="line">	<span class="keyword">int</span> pages_count = (<span class="keyword">int</span>)ZEND_MM_SIZE_TO_NUM(size, ZEND_MM_PAGE_SIZE);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_DEBUG</span></span><br><span class="line">    <span class="comment">// 分配page_count个page</span></span><br><span class="line">	<span class="keyword">void</span> *ptr = zend_mm_alloc_pages(heap, pages_count, size ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">	<span class="keyword">void</span> *ptr = zend_mm_alloc_pages(heap, pages_count ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_MM_STAT</span></span><br><span class="line">	<span class="keyword">do</span> &#123;</span><br><span class="line">		<span class="keyword">size_t</span> size = heap-&gt;size + pages_count * ZEND_MM_PAGE_SIZE;</span><br><span class="line">		<span class="keyword">size_t</span> peak = MAX(heap-&gt;peak, size);</span><br><span class="line">		heap-&gt;size = size;</span><br><span class="line">		heap-&gt;peak = peak;</span><br><span class="line">	&#125; <span class="keyword">while</span> (<span class="number">0</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	<span class="keyword">return</span> ptr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>chunk结构中有两个成员用于记录page分配信息：</p>
+<ul>
+<li><p><strong>free_map</strong>：类型为<code>zend_mm_page_map</code>，实际就是<code>zend_ulong_free_map[16/8]</code>，这是一个bitmap，总大小为64byte，也就是512bit，用于记录用当前chunk上512个page是否分配，512个page对应512bit，1表示已分配，0表示未分配。<br><img src="https://note.youdao.com/yws/api/personal/file/C879457EC2154FAEA678D562C217773B?method=download&shareKey=29d90ba60d479fdeccd33ac88325813a" alt="free_map"></p>
+</li>
+<li><p><strong>map</strong>：这个是一个可容纳512个类型为uint32_t元素的数组，<u>该数组用于记录各page的分配类型及分配的page页数</u>，每个page对应一个数组成员。Large内存、Small内存都会占用page，正是通过这个数组标识改page属于哪个类型（最高两位用于标识page的分配类型）：</p>
+<ul>
+<li>Large：01（0x40000000）</li>
+</ul>
+</li>
+<li><p>Small：10（0x80000000）</p>
+</li>
+</ul>
+<pre><code>  示例：申请12KB的内存，即3个page，内存池分配了page1，2，3，则map[1] = 0x400000000|3,如下图所示：
+  ![page的分配类型及页数](https://note.youdao.com/yws/api/personal/file/474A05B6CB2D401785FA0FAB75FB3E97?method=download&amp;shareKey=a1ce9cdd22022755fffe79243bd1db0e)</code></pre>
+<p>page分配时从第一个chunk开始遍历，依次查找各chunk是否有满足要求的page，如果当前chunk没有合适的，则进入下一chunk，如果直到最后都没有找到，则新分配一个chunk。<br><u>分配准则为：申请的page页数要尽可能地填满chunk的空隙</u>，也就是说尽可能的与分配了的page连在一起，避免中间出现page空隙。减少后续分配时的茶之后按次数，提高内存利用率。</p>
+<p>最优page的检索过程如下：</p>
+<ul>
+<li><p>step1：<br>首先从第一个page分组（page0~63）开始检查，如果当前分组无空闲page（即free_map[x]=-1）则进入下一分组，知道当前分组有空闲page，然后进入step2.</p>
+</li>
+<li><p>step2：<br>当前分组有可用page，首先检查当前page分组的bit位，找到第一个空闲page的位置，记做page_num，接着继续向下查找空闲page，知道遇到第一个已经分配的page位置，将最后一个空闲page位置记做<code>end_page_num</code>。（<em>注：查找end_page_num时并不局限在当前page分组内，会向下查找，直到最后一页。其查找做成主要依据free_map</em>），page_num至end_page_num为找到的可用page，接着判断找到的page页数是否够用：</p>
+<ul>
+<li>不够的情况：将page_num至end_page_num这些page的bit位标为1，也就是已分配，然后回到step1继续检索其他page分组。</li>
+<li>刚好是要申请的页数：直接使用，中断检索。</li>
+<li>page页数比申请的页数大，则表示可用，但不一定是最优的，将page_num暂存起来，接着回到step1继续向后找别的空闲page，最后比较选择best_len最小的，即能够最大程度填满page间隔<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* find first 0 bit */</span></span><br><span class="line"> <span class="comment">// tmp为当前page分组的bit位，i为当前分组第1个page的页码。</span></span><br><span class="line">page_num = i + zend_mm_bitset_nts(tmp);</span><br><span class="line"><span class="comment">/* reset bits from 0 to &quot;bit&quot; */</span></span><br><span class="line">tmp &amp;= tmp + <span class="number">1</span>;</span><br><span class="line"><span class="comment">/* skip free blocks */</span></span><br><span class="line"><span class="comment">// 快速跳过剩余page全部可用的分组</span></span><br><span class="line"><span class="keyword">while</span> (tmp == <span class="number">0</span>) &#123;</span><br><span class="line">	i += ZEND_MM_BITSET_LEN;</span><br><span class="line">	<span class="keyword">if</span> (i &gt;= free_tail || i == ZEND_MM_PAGES) &#123;</span><br><span class="line">		len = ZEND_MM_PAGES - page_num;</span><br><span class="line">		<span class="keyword">if</span> (len &gt;= pages_count &amp;&amp; len &lt; best_len) &#123;</span><br><span class="line">			chunk-&gt;free_tail = page_num + pages_count;</span><br><span class="line">			<span class="keyword">goto</span> found;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">/* set accurate value */</span></span><br><span class="line">			chunk-&gt;free_tail = page_num;</span><br><span class="line">			<span class="keyword">if</span> (best &gt; <span class="number">0</span>) &#123;</span><br><span class="line">				page_num = best;</span><br><span class="line">				<span class="keyword">goto</span> found;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">goto</span> not_found;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 当前分组剩下的page都是可用的，直接跳到下一分组</span></span><br><span class="line">	tmp = *(<span class="built_in">bitset</span>++);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* find first 1 bit */</span></span><br><span class="line"><span class="comment">// 找到第一个已分配page</span></span><br><span class="line">len = i + zend_mm_bitset_ntz(tmp) - page_num;</span><br><span class="line"><span class="keyword">if</span> (len &gt;= pages_count) &#123;</span><br><span class="line">	<span class="keyword">if</span> (len == pages_count) &#123;</span><br><span class="line">		<span class="keyword">goto</span> found;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (len &lt; best_len) &#123;</span><br><span class="line">		best_len = len;</span><br><span class="line">		best = page_num;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* set bits from 0 to &quot;bit&quot; */</span></span><br><span class="line"><span class="comment">// 把找到的这些page标为已分配，注：此时tmp已经经过tmp &amp;= tmp + 1处理</span></span><br><span class="line">	tmp |= tmp - <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+示例：当前某个chunk的page分配情况如下图中的A所示，page：0，1，2，6，9，10已经分配占用，接下来要申请2页的page。<br><img src="https://note.youdao.com/yws/api/personal/file/335A8945237E483EAD280F5A26DED219?method=download&shareKey=29b8b43bfeb58653a22ace5a4562f538" alt="page的查找过程"></li>
+</ul>
+</li>
+<li><p>step3：<br> 最后没找到合适的page页后设置对应page的分配信息，即free_map、map,然后返回找到第一页page的地址</p>
+  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">   found:</span><br><span class="line"><span class="keyword">if</span> (steps &gt; <span class="number">2</span> &amp;&amp; pages_count &lt; <span class="number">8</span>) &#123;</span><br><span class="line">	<span class="comment">/* move chunk into the head of the linked-list */</span></span><br><span class="line">	chunk-&gt;prev-&gt;next = chunk-&gt;next;</span><br><span class="line">	chunk-&gt;next-&gt;prev = chunk-&gt;prev;</span><br><span class="line">	chunk-&gt;next = heap-&gt;main_chunk-&gt;next;</span><br><span class="line">	chunk-&gt;prev = heap-&gt;main_chunk;</span><br><span class="line">	chunk-&gt;prev-&gt;next = chunk;</span><br><span class="line">	chunk-&gt;next-&gt;prev = chunk;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* mark run as allocated */</span></span><br><span class="line">chunk-&gt;free_pages -= pages_count;</span><br><span class="line">zend_mm_bitset_set_range(chunk-&gt;free_map, page_num, pages_count);</span><br><span class="line">chunk-&gt;<span class="built_in">map</span>[page_num] = ZEND_MM_LRUN(pages_count);</span><br><span class="line"><span class="keyword">if</span> (page_num == chunk-&gt;free_tail) &#123;</span><br><span class="line">	chunk-&gt;free_tail = page_num + pages_count;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> ZEND_MM_PAGE_ADDR(chunk, page_num);</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h5 id="3-3-Small分配"><a href="#3-3-Small分配" class="headerlink" title="3.3 Small分配"></a>3.3 Small分配</h5><p>Small内存在分配时，首先检查申请规格的内存是否已经分配，如果没有分配或者分配的已经用完了，则申请相应页数的page，page的分配过成与Larg分配完全一致，申请到page以后按固定大小将page切割为slot，slot之间构成单链表，链表头部保存至<code>AG(mm_heap)-&gt;free_slot</code>；如果对应的slot已经分配，则直接返回<code>AG(mm_heap)-&gt;free_slot</code>。  </p>
+<p>示例：16byte、3072byte大小的slot，将分别申请1个、3个page、然后切割为256个16byte的slot，以及4个3072byte的slot，如下图所示：<br><img src="https://note.youdao.com/yws/api/personal/file/4345829756E149EEAB1C4DE3928C76AC?method=download&shareKey=c358be1e7b73c1ff04ccac1eb772c992" alt="slot[1]与slot[29]链表"></p>
+<h4 id="4-系统内存分配"><a href="#4-系统内存分配" class="headerlink" title="4 系统内存分配"></a>4 系统内存分配</h4><p><u>内存池向系统申请内存的最小粒度是chunk</u>，通过mmap()来申请。</p>
+<h4 id="5-内存释放"><a href="#5-内存释放" class="headerlink" title="5 内存释放"></a>5 内存释放</h4><p>内存释放主要通过<code>efree()</code>来完成，内存池会根据释放的内存地址自动判断属于哪种粒度的内存，从而执行不同的释放逻辑。</p>
+<p><strong>问：内存池是如何只根据一个地址就判断出改地址属于哪种内存类型的呢？</strong><br>因为chunk分配时是按照ZEND_MM_CHUNK_SIZE（即2MB）对齐的，也就是chunk的起始内存地址一定是ZEND_MM_CHUNK_SIZE的整数倍，所以可以根据chunk上的任意位置知道chunk的起始位置与所在page。</p>
+<h5 id="5-1-Huge内存的释放"><a href="#5-1-Huge内存的释放" class="headerlink" title="5.1 Huge内存的释放"></a>5.1 Huge内存的释放</h5><p>首先，根据释放地址ptr计算该机制相对chunk起始位置的内存偏移量，这个值通过宏ZEND_MM_ALIGNED_OFFSET()的到，通过位运算计算的到。  </p>
+<p>示例：ptr = 0x7ffff7c01000，计算的到offset = 4096</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">offet &#x3D; ptr &amp; (alignment - 1) &#x3D; 0x7ffff7c01000 &amp; 0x1fffff &#x3D; 0x1000 &#x3D; 4096</span><br></pre></td></tr></table></figure>
+
+<p><u>Huge内存能够完全使用chunk，也就是Huge内存地址相对chunk的offset一定等于0，而Large、Small内存因为chunk的第1个page被占用了，所以这两种内存的offset不可能为0.</u></p>
+<p>内存池根据offset值判断出释放的内存是否为<code>Huge类型</code>，如果是则将占用的chunk释放，同时从AG(mm_heap)-&gt;huge_list链表中删除。</p>
+<h5 id="5-2-Large内存的释放"><a href="#5-2-Large内存的释放" class="headerlink" title="5.2 Large内存的释放"></a>5.2 Large内存的释放</h5><p>若计算得到的offset不等于0，则表示该地址是Large内存或者Small内存，然后根据offset值进一步计算出属于第几个page<br><u>计算方法：根据offset除page的大小取整，的到<code>page_num</code>，的到<code>page</code>页码后就可以从<code>chunk-&gt;map</code>中获取该<code>page</code>的分配类型，知道是何种粒度的内存了。</u></p>
+<p>Large内存，<u>并不会直接释放物理内存</u>，只是将对应的page的分配信息重新设置为未分配。若释放page后，<u>当前chunk下所有的page都是未分配的，则会释放chunk</u>，释放时优先选择把chunk移到<code>AG(mm_heap)-&gt;cached_chunks</code>缓存队列中，缓存数达到一定值后就不在继续缓存新加入的chunk，将内存归还系统，便面占用过多的资源。<br>（分配chunk时，如果发现cached_chunks中有缓存的chunk,就直接取出使用，不再向系统申请。）</p>
+<h5 id="5-3-Small内存的释放"><a href="#5-3-Small内存的释放" class="headerlink" title="5.3 Small内存的释放"></a>5.3 Small内存的释放</h5><p>若待释放的地址为Small内存，则会将释放的slot插入到该规格slot可用链表的头部，如下图所示：<br><img src="https://note.youdao.com/yws/api/personal/file/9141601D64BF4D76AF0A211F55A479A2?method=download&shareKey=7df69cd6f617df511be8d5f87c7a58f4" alt="释放slot"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/" rel="prev" title="PHP7内核-内存管理-GC机制">
+                  <i class="fa fa-chevron-left"></i> PHP7内核-内存管理-GC机制
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/08/25/Protobuf%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%AE%89%E8%A3%85/" rel="next" title="Protobuf简介及安装">
+                  Protobuf简介及安装 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '497aeb910346f87dd7e32ef72d17e0e4',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

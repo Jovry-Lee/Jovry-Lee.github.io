@@ -22,31 +22,53 @@
     var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="Keeping learning and improving!">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Jovry&#39;s blog">
-<meta property="og:url" content="https://jovry-lee.github.io/index.html">
+  <meta name="description" content="1 简单动态字符串(SDS)Redis中有两种字符串表示：  ①、C字符串：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。 ②、简单动态字符串：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。  1.1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis设计与实现-数据结构">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/index.html">
 <meta property="og:site_name" content="Jovry&#39;s blog">
-<meta property="og:description" content="Keeping learning and improving!">
+<meta property="og:description" content="1 简单动态字符串(SDS)Redis中有两种字符串表示：  ①、C字符串：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。 ②、简单动态字符串：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。  1.1">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30538/CCA767E2308149E99B61AE1CE9D60C77">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30541/99686CB958E14CC1AEE73CB33DEEFC1E">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30544/153E6188D3774ACE94022F451078B408">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30539/04400047914F47EEBB024F8A04316BF2">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30533/14DEA7AEB4554B30BF08A583BED349F7">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30535/209A2E374EF7485083F03A6C075EA9AA">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30537/7B4E0B8D5552495685293CE8EFF2EE30">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30540/446E778F3F2744F9A05947C20A82CBEB">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30536/33E981A5F5EB4AC49CBC5B79E56744CE">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30546/C772BB32037C4A20B8A5E390F3B224DD">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30534/04703DAE0565469EBEF85C9B739AF933">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30545/807BE133B4E441D4845F6B803E28AF49">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30547/C1E1542BEC0540A9895437689C62C9B0">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30532/D5A93D0707444C14B1AA7936AE9035E8">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30531/A87BA437FB16471288701D46525CF16A">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30542/20722E94E874415AB683A4FB2EB1E2F0">
+<meta property="og:image" content="http://note.youdao.com/yws/res/30543/7F9DE355C2024C2182F44EF1190F3D2D">
+<meta property="article:published_time" content="2020-08-25T08:30:57.000Z">
+<meta property="article:modified_time" content="2020-08-28T16:25:49.942Z">
 <meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="Redis设计与实现">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://note.youdao.com/yws/res/30538/CCA767E2308149E99B61AE1CE9D60C77">
 
 
-<link rel="canonical" href="https://jovry-lee.github.io/">
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">
 
 
 <script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>Jovry's blog</title>
+  <title>Redis设计与实现-数据结构 | Jovry's blog</title>
   
 
 
@@ -166,7 +188,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -178,6 +200,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E5%8D%95%E5%8A%A8%E6%80%81%E5%AD%97%E7%AC%A6%E4%B8%B2-SDS"><span class="nav-number">1.</span> <span class="nav-text">1 简单动态字符串(SDS)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-SDS%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 SDS的定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2%E3%80%81SDS%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9B%B8%E5%AF%B9%E4%BA%8EC%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E4%BC%98%E7%82%B9"><span class="nav-number">1.2.</span> <span class="nav-text">1.2、SDS字符串相对于C字符串的优点</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-1-%E5%B8%B8%E6%95%B0%E5%A4%8D%E6%9D%82%E5%BA%A6%E8%8E%B7%E5%8F%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%95%BF%E5%BA%A6"><span class="nav-number">1.2.0.1.</span> <span class="nav-text">1.2.1 常数复杂度获取字符串长度</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-2-%E6%9D%9C%E7%BB%9D%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA"><span class="nav-number">1.2.1.</span> <span class="nav-text">1.2.2 杜绝缓冲区溢出</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-3-%E5%87%8F%E5%B0%91%E4%BF%AE%E6%94%B9%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%97%B6%E5%B8%A6%E6%9D%A5%E7%9A%84%E5%86%85%E5%AD%98%E9%87%8D%E6%96%B0%E5%88%86%E9%85%8D%E6%AC%A1%E6%95%B0"><span class="nav-number">1.2.2.</span> <span class="nav-text">1.2.3 减少修改字符串时带来的内存重新分配次数</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-3-1-%E7%A9%BA%E9%97%B4%E9%A2%84%E5%88%86%E9%85%8D"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">1.2.3.1 空间预分配</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-3-2-%E6%83%B0%E6%80%A7%E7%A9%BA%E9%97%B4%E9%87%8A%E6%94%BE"><span class="nav-number">1.2.2.2.</span> <span class="nav-text">1.2.3.2 惰性空间释放</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-4-%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E5%85%A8"><span class="nav-number">1.2.3.</span> <span class="nav-text">1.2.4 二进制安全</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-5-%E5%85%BC%E5%AE%B9%E9%83%A8%E5%88%86C%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%87%BD%E6%95%B0"><span class="nav-number">1.2.4.</span> <span class="nav-text">1.2.5 兼容部分C字符串函数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%93%BE%E8%A1%A8"><span class="nav-number">2.</span> <span class="nav-text">2 链表</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E9%93%BE%E8%A1%A8%E5%92%8C%E9%93%BE%E8%A1%A8%E8%8A%82%E7%82%B9%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 链表和链表节点的实现</span></a></li></ol></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -233,11 +256,12 @@
 </noscript>
 
 
-    <div class="main-inner index posts-expand">
+    <div class="main-inner post posts-expand">
       
 
       
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
@@ -256,10 +280,9 @@
     
     
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" class="post-title-link" itemprop="url">Redis设计与实现-数据结构</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          Redis设计与实现-数据结构
+        </h1>
 
         <div class="post-meta-container">
           <div class="post-meta">
@@ -293,6 +316,13 @@
     </span>
 
   
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
 </div>
 
         </div>
@@ -302,7 +332,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h3 id="1-简单动态字符串-SDS"><a href="#1-简单动态字符串-SDS" class="headerlink" title="1 简单动态字符串(SDS)"></a>1 简单动态字符串(SDS)</h3><p>Redis中有两种字符串表示：</p>
+        <h3 id="1-简单动态字符串-SDS"><a href="#1-简单动态字符串-SDS" class="headerlink" title="1 简单动态字符串(SDS)"></a>1 简单动态字符串(SDS)</h3><p>Redis中有两种字符串表示：</p>
 <ul>
 <li><strong>①、C字符串</strong>：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。</li>
 <li><strong>②、简单动态字符串</strong>：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。</li>
@@ -581,7 +611,6 @@
 <p>参考资料：</p>
 <p>1.redis设计与实现（第二版） 黄健宏</p>
 
-      
     </div>
 
     
@@ -589,792 +618,22 @@
     
 
     <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/" rel="tag"># Redis设计与实现</a>
+          </div>
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/Protobuf%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%AE%89%E8%A3%85/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/25/Protobuf%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%AE%89%E8%A3%85/" class="post-title-link" itemprop="url">Protobuf简介及安装</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-25 16:14:48" itemprop="dateCreated datePublished" datetime="2020-08-25T16:14:48+08:00">2020-08-25</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Protobuf/" itemprop="url" rel="index"><span itemprop="name">Protobuf</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>​       protobuf是谷歌的开源序列化协议框架，结构类似于XML，JSON这种，显著的特点是二进制的，效率高，主要用于通信协议和数据存储等方面，算是一种结构化数据的表示方法。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/25/Protobuf%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%AE%89%E8%A3%85/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/" class="post-title-link" itemprop="url">PHP7内核-内存管理-内存池</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-25 14:29:45" itemprop="dateCreated datePublished" datetime="2020-08-25T14:29:45+08:00">2020-08-25</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>在C语言中，通常直接使用malloc进行内存的分配，而频繁的分配、释放内存无疑会产生内存碎片，降低系统性能。PHP自己实现了一套内存池（<code>ZendMM</code>：<code>Zend Memery Manager</code>）用于替换<code>glibc</code>的<code>malloc</code>、<code>free</code>，以解决内存频繁分配、释放的问题。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/#more" rel="contents">
-                Read more &raquo;
-              </a>
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/25/Protobuf%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%AE%89%E8%A3%85/" rel="prev" title="Protobuf简介及安装">
+                  <i class="fa fa-chevron-left"></i> Protobuf简介及安装
+                </a>
             </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">PHP7内核-内存管理-GC机制</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-25 11:20:09" itemprop="dateCreated datePublished" datetime="2020-08-25T11:20:09+08:00">2020-08-25</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h5 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h5><p>C/C++语言中，如果想在<code>堆</code>上分配变量，需要手动进行内存的分配与释放，变量的内存管理是见非常繁琐的事，稍有不慎就可能导致不可域值的错误。 PHP实现了自动GC机制，由语言自行管理。PHP中的变量是不需要手动释放的，内核帮我们实现了变量的内存管理，包括内存的分配与回收。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/#more" rel="contents">
-                Read more &raquo;
-              </a>
+            <div class="post-nav-item">
             </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/FastCGI%E5%92%8CPHP-FPM%E7%9A%84%E5%85%B3%E7%B3%BB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/25/FastCGI%E5%92%8CPHP-FPM%E7%9A%84%E5%85%B3%E7%B3%BB/" class="post-title-link" itemprop="url">FastCGI和PHP-FPM的关系</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-25 10:11:05" itemprop="dateCreated datePublished" datetime="2020-08-25T10:11:05+08:00">2020-08-25</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="1-相关概念"><a href="#1-相关概念" class="headerlink" title="1 相关概念"></a>1 相关概念</h4><h5 id="1-1-CGI"><a href="#1-1-CGI" class="headerlink" title="1.1 CGI"></a>1.1 CGI</h5><p><code>CGI</code>（Common Gateway Interface, 通用网关接口）是<code>WEB服务器</code>与<code>WEB Application</code>进行通信的工具，用于保证WEB Server传递的数据是标准格式的，是一种协议，其程序运行在服务器上，CGI可以用任何一种语言编写，只要该语言具有标准输入、输出和环境变量，如PHP、Perl等。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/25/FastCGI%E5%92%8CPHP-FPM%E7%9A%84%E5%85%B3%E7%B3%BB/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-FPM/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-FPM/" class="post-title-link" itemprop="url">PHP7内核-FPM</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-21 18:15:16" itemprop="dateCreated datePublished" datetime="2020-08-21T18:15:16+08:00">2020-08-21</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h3><p>FPM（FastCGI Process Manager）是PHP FastCGI运行模式的一个进程管理器， 其<u>核心功能是进程管理</u>。<br>FastCGI是Web服务器（如Nginx，Apache）和处理程序之间的一种通信协议， 类似于Http，是一种应用层通信协议。<u>注：FastCGI只是一种协议</u>。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-FPM/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/" class="post-title-link" itemprop="url">PHP7内核-Cli</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-21 18:06:04" itemprop="dateCreated datePublished" datetime="2020-08-21T18:06:04+08:00">2020-08-21</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>Cli（Command line Interface），命令行接口，用于在命令行下执行PHP脚本，类似于Shell那样，是执行PHP脚本最简便的一种方式。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/" class="post-title-link" itemprop="url">PHP7内核-变量</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-21 16:28:40" itemprop="dateCreated datePublished" datetime="2020-08-21T16:28:40+08:00">2020-08-21</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 19:03:23" itemprop="dateModified" datetime="2020-08-29T19:03:23+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="变量的内部实现"><a href="#变量的内部实现" class="headerlink" title="变量的内部实现"></a>变量的内部实现</h4><p>​        变量是一个语言实现的基础，变量有两个组成部分：变量名、变量值，PHP中可以将其对应为：<code>zval</code>、<code>zend_value</code>，这两个概念一定要区分开，PHP中变量的内存是通过<code>引用计数</code>进行管理的，而且<strong>PHP7中引用计数是在<code>zend_value</code>而不是zval上，变量之间的传递、赋值通常也是针对zend_value</strong>。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/" class="post-title-link" itemprop="url">Ubuntu16.04-Nodejs安装</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-21 15:28:42" itemprop="dateCreated datePublished" datetime="2020-08-21T15:28:42+08:00">2020-08-21</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ubuntu/" itemprop="url" rel="index"><span itemprop="name">Ubuntu</span></a>
-        </span>
-          , 
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ubuntu/Config/" itemprop="url" rel="index"><span itemprop="name">Config</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h4><ul>
-<li><p>①、下载安装包</p>
-<p>在ubuntu环境下，前往<a target="_blank" rel="noopener" href="https://nodejs.org/en/">nodejs官网</a>，nodejs官网能自动检测自己的系统版本，推荐出合适的nodejs版本。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/20/Ubuntu16-04-%E6%90%AD%E5%BB%BAHexo-Blog/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/20/Ubuntu16-04-%E6%90%AD%E5%BB%BAHexo-Blog/" class="post-title-link" itemprop="url">Ubuntu16.04-搭建Hexo-Blog</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-08-20 17:19:56" itemprop="dateCreated datePublished" datetime="2020-08-20T17:19:56+08:00">2020-08-20</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ubuntu/" itemprop="url" rel="index"><span itemprop="name">Ubuntu</span></a>
-        </span>
-          , 
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ubuntu/Config/" itemprop="url" rel="index"><span itemprop="name">Config</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h4 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h4><p>​    GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/20/Ubuntu16-04-%E6%90%AD%E5%BB%BAHexo-Blog/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
+          </div>
     </footer>
   </article>
   
@@ -1382,14 +641,9 @@
   
 
 
-  
-  <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
-  </nav>
-
-
 
       
+    <div class="comments" id="gitalk-container"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -1489,6 +743,25 @@
 
   
 
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '956e545c78215ce0d7d96eb85b6e1c27',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
 
 </body>
 </html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 简介Cli（Command line Interface），命令行接口，用于在命令行下执行PHP脚本，类似于Shell那样，是执行PHP脚本最简便的一种方式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP7内核-Cli">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 简介Cli（Command line Interface），命令行接口，用于在命令行下执行PHP脚本，类似于Shell那样，是执行PHP脚本最简便的一种方式。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-08-21T10:06:04.000Z">
+<meta property="article:modified_time" content="2020-08-28T16:25:49.899Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="PHP">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>PHP7内核-Cli | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">2 执行流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-Cli%E6%A8%A1%E5%BC%8F%E4%B8%8B%E8%8E%B7%E5%8F%96%E8%A6%81%E8%BF%90%E8%A1%8C%E7%9A%84PHP%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">3 Cli模式下获取要运行的PHP代码</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-%E8%AE%A9PHP%E8%BF%90%E8%A1%8C%E6%8C%87%E5%AE%9A%E6%96%87%E4%BB%B6"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 让PHP运行指定文件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-%E8%BD%BD%E6%98%8E%E4%B8%A4%E8%A1%8C%E7%9B%B4%E6%8E%A5%E8%BF%90%E8%A1%8CPHP%E4%BB%A3%E7%A0%81"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 载明两行直接运行PHP代码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-%E9%80%9A%E8%BF%87%E6%A0%87%E5%87%86%E8%BE%93%E5%85%A5%EF%BC%88stdin%EF%BC%89%E6%8F%90%E4%BE%9B%E9%9C%80%E8%A6%81%E8%BF%90%E8%A1%8C%E7%9A%84php%E4%BB%A3%E7%A0%81"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 通过标准输入（stdin）提供需要运行的php代码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-5-%E5%B0%86php%E8%84%9A%E6%9C%AC%E4%BD%9C%E4%B8%BAshell%E8%84%9A%E6%9C%AC%E4%BD%BF%E7%94%A8"><span class="nav-number">3.4.</span> <span class="nav-text">3.5 将php脚本作为shell脚本使用</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E5%86%85%E7%BD%AEweb%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">4.</span> <span class="nav-text">4 内置web服务器</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP7内核-Cli
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-21 18:06:04" itemprop="dateCreated datePublished" datetime="2020-08-21T18:06:04+08:00">2020-08-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-08-29 00:25:49" itemprop="dateModified" datetime="2020-08-29T00:25:49+08:00">2020-08-29</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>Cli（Command line Interface），命令行接口，用于在命令行下执行PHP脚本，类似于Shell那样，是执行PHP脚本最简便的一种方式。</p>
+<a id="more"></a>
+
+<p>Cli模式通过执行变异的PHP二进制程序即可启动，它定义了很多命令行参数，不同的参数对应不同的处理，例如：</p>
+<ul>
+<li><p>获取cli的参数的帮助文档：<code>-h参数</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -h</span><br></pre></td></tr></table></figure></li>
+<li><p>执行PHP脚本文件：<code>php  脚本名.php</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php script.php</span><br></pre></td></tr></table></figure></li>
+<li><p>直接执行PHP代码： <code>-r参数</code>(代码需用引号括起来)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -r &quot;phpinfo();&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>输出PHP版本：<code>-v参数</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -v</span><br></pre></td></tr></table></figure></li>
+<li><p>输出已安装的扩展：<code>-m参数</code></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -m</span><br></pre></td></tr></table></figure></li>
+<li><p>交互模式运行PHP：<code>-a参数</code></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ php -a</span><br><span class="line">Interactive mode enabled</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">php &gt; $a = <span class="number">1</span>;</span><br><span class="line">php &gt; $b = <span class="number">2</span>;</span><br><span class="line">php &gt; <span class="keyword">echo</span> $a + $b;</span><br><span class="line"><span class="number">3</span></span><br></pre></td></tr></table></figure>
+<h4 id="2-执行流程"><a href="#2-执行流程" class="headerlink" title="2 执行流程"></a>2 执行流程</h4><p><u>Cli是单进程模式，处理完请求后就直接关闭了</u>，<strong>生命周期</strong>为：</p>
+</li>
+<li><p>①、<code>module startup</code></p>
+</li>
+<li><p>②、<code>request startup</code></p>
+</li>
+<li><p>③、<code>execute script</code></p>
+</li>
+<li><p>④、<code>request shutdown</code></p>
+</li>
+<li><p>⑤、<code>module shurdown</code></p>
+</li>
+</ul>
+<p>处理的关键过程为：<br>main()-&gt;php_cli_startup()-&gt;do_cli()-&gt;php_module_shutdown()</p>
+<p><em>注：若是查询系统信息之类的请求，如：-v、-m、-i之类的，则不需要经历PHP请求的生命周期。</em></p>
+<h4 id="3-Cli模式下获取要运行的PHP代码"><a href="#3-Cli模式下获取要运行的PHP代码" class="headerlink" title="3 Cli模式下获取要运行的PHP代码"></a>3 Cli模式下获取要运行的PHP代码</h4><h5 id="3-1-让PHP运行指定文件"><a href="#3-1-让PHP运行指定文件" class="headerlink" title="3.1 让PHP运行指定文件"></a>3.1 让PHP运行指定文件</h5><p>以下两种方法（使用或不使用 -f 参数）都能够运行给定的 my_script.php 文件。可以选择任何文件来运行，<strong>指定的PHP脚本并非必须要以 .php 为扩展名</strong>，它们可以有任意的文件名和扩展名。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">php my_script.php</span><br><span class="line"></span><br><span class="line">php -f my_script.php</span><br></pre></td></tr></table></figure>
+<h5 id="3-2-载明两行直接运行PHP代码"><a href="#3-2-载明两行直接运行PHP代码" class="headerlink" title="3.2 载明两行直接运行PHP代码"></a>3.2 载明两行直接运行PHP代码</h5><p>使用-r参数引用要执行的代码, 其中代码需要<code>使用引号括起来</code>。<br><em>注：此种方式下php代码不能添加开始和结束标记符。</em></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -r &#39;print_r(get_defined_constants());&#39;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-3-通过标准输入（stdin）提供需要运行的php代码"><a href="#3-3-通过标准输入（stdin）提供需要运行的php代码" class="headerlink" title="3.3 通过标准输入（stdin）提供需要运行的php代码"></a>3.3 通过标准输入（stdin）提供需要运行的php代码</h5><p>使用该方式，可以动态地生成PHP代码并通过命令行运行这些代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ some_application | some_filter | php | sort -u &gt;final_output.txt</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-5-将php脚本作为shell脚本使用"><a href="#3-5-将php脚本作为shell脚本使用" class="headerlink" title="3.5 将php脚本作为shell脚本使用"></a>3.5 将php脚本作为shell脚本使用</h5><p>写一个php脚本，并在第一行以<code>#！/usr/bin/php</code>开头，在其后加上以 PHP 开始和结尾标记符包含的正常的 PHP 代码，然后为该文件设置正确的运行属性（例如：<code>chmod +x test</code>）。该方法可以使得该文件能够像Shell脚本或 Perl 脚本一样被直接执行。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;php</span><br><span class="line">&lt;?php</span><br><span class="line">    var_dump($argv);</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+
+<p>假设文件名为test，并放置在当前目录下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ chomod +x test</span><br><span class="line">$ .&#x2F;test --foo</span><br><span class="line">array(2) &#123;</span><br><span class="line">  [0] &#x3D;&gt;</span><br><span class="line">  string(6) &quot;.&#x2F;test&quot;</span><br><span class="line">  [1] &#x3D;&gt;</span><br><span class="line">  string(5) &quot;--foo&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="4-内置web服务器"><a href="#4-内置web服务器" class="headerlink" title="4 内置web服务器"></a>4 内置web服务器</h4><p>从PHP5.4.0开始，Cli SAPI提供了一个内置web服务器，这个内置的Web服务器主要用于本地开发使用，不可用于线上产品环境。<br>详见：<a target="_blank" rel="noopener" href="https://www.php.net/manual/zh/features.commandline.webserver.php">内置Web Server</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/" rel="prev" title="PHP7内核-变量">
+                  <i class="fa fa-chevron-left"></i> PHP7内核-变量
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-FPM/" rel="next" title="PHP7内核-FPM">
+                  PHP7内核-FPM <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '96c5293eb072668aa4f050cf6887ab3f',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
