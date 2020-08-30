@@ -314,6 +314,19 @@ type: tags
 ---
 ```
 
+###### 去掉目录栏序号
+
+配置NexT主题配置文件,修改`toc`项,将`number`项设置为`false`, 修改如下:
+
+```
+# Table of Contents in the Sidebar
+# Front-matter variable (unsupport wrap expand_all).
+toc:
+  enable: true
+  # Automatically add list number to toc.
+  number: false
+```
+
 ###### 设置侧边栏社交链接
 
 ​	社交连接也是在NexT配置文件中进行修改, 关键字`social`,进行修改,去掉`#`,添加个人链接即可.
