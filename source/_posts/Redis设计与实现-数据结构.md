@@ -2,8 +2,7 @@
 title: Redis设计与实现-数据结构
 date: 2020-08-25 16:30:57
 tags: ["Redis","Note"]
-categories: ["Redis", "Note", 
-"Redis设计与实现"]
+categories: ["Redis", "Note", "Redis设计与实现"]
 ---
 
 ### 1 简单动态字符串(SDS)
