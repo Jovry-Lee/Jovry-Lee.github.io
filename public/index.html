@@ -200,7 +200,7 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
@@ -276,7 +276,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-30 20:05:23" itemprop="dateModified" datetime="2020-08-30T20:05:23+08:00">2020-08-30</time>
+        <time title="Modified: 2020-08-31 16:12:20" itemprop="dateModified" datetime="2020-08-31T16:12:20+08:00">2020-08-31</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -288,7 +288,11 @@
         </span>
           , 
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Redis/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">Redis设计与实现</span></a>
+          <a href="/categories/Redis/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/Note/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">Redis设计与实现</span></a>
         </span>
     </span>
 
@@ -304,8 +308,10 @@
     <div class="post-body" itemprop="articleBody">
           <h3 id="1-简单动态字符串-SDS"><a href="#1-简单动态字符串-SDS" class="headerlink" title="1 简单动态字符串(SDS)"></a>1 简单动态字符串(SDS)</h3><p>Redis中有两种字符串表示：</p>
 <ul>
-<li><strong>①、C字符串</strong>：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。</li>
-<li><strong>②、简单动态字符串</strong>：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。</li>
+<li><p><strong>①、C字符串</strong>：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。</p>
+</li>
+<li><p><strong>②、简单动态字符串</strong>：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。</p>
+</li>
 </ul>
           <!--noindex-->
             <div class="post-button">
