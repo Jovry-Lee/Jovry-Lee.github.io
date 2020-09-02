@@ -7,17 +7,36 @@ categories: ["Redis", "Note", "Redis设计与实现"]
 
 
 
-Redis基于其数据结构（例如，SDS、双端链表、字典、压缩列表、整数集合等）创建了一个对象系统，该系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种对象，每种对象都用到了至少一种数据结构。
+Redis基于其数据结构（例如，SDS、双端链表、字典、压缩列表、整数集合等）创建了一个对象系统，该系统包含`字符串对象`、`列表对象`、`哈希对象`、`集合对象`和`有序集合`对象这五种对象，每种对象都用到了至少一种数据结构。
 
-**一、对象的类型与编码**
+<!--more-->
 
-Redis使用对象来表示数据库中的健和值，每次当我们在Redis的数据库中新创建一个键值对时，我们至少会创建两个对象，一个对象用嘴键值对的健（键对象），另一个对象用作键值对的值（值对象）。
+# 1 对象的类型与编码
 
-Redis中每个对都由redisObject结构表示，如下所示：
+Redis使用`对象`来表示数据库中的健和值，每次当我们在Redis的数据库中新创建一个键值对时，我们至少会创建两个对象，一个对象用作键值对的健（键对象），另一个对象用作键值对的值（值对象）。
 
-typedef struct redisObject {    // 类型.    unsigned type:4;    // 编码.    unsigned encoding:4;    // 记录了对象最后一次被命令程序访问的时间。    unsigned lru:REDIS_LRU_BITS; /* lru time (relative to server.lruclock) */    // 引用次数    int refcount;    // 指向底层实现数据结构的指针。    void *ptr; } robj;
 
-**1.1 类型**
+
+Redis中每个对都由`redisObject`结构表示，如下所示：
+
+```c
+typedef struct redisObject {
+    // 类型.
+    unsigned type:4;
+    // 编码.
+    unsigned encoding:4;
+    // 记录了对象最后一次被命令程序访问的时间。
+    unsigned lru:REDIS_LRU_BITS; /* lru time (relative to server.lruclock) */
+    // 引用次数
+    int refcount;
+    // 指向底层实现数据结构的指针。
+    void *ptr;
+} robj;
+```
+
+
+
+## 1.1 类型
 
 对象的type属性记录了对象的类型，这个类型包括以下5中类型：
 
@@ -27,15 +46,17 @@ typedef struct redisObject {    // 类型.    unsigned type:4;    // 编码.    
 - **REDIS_SET**：集合对象(type命令输出：“set”)
 - **REDIS_ZSET**：有序集合对象(type命令输出：“zset”)
 
-使用type命令可以返回数据库键对应的值对象类型，如下示例所示：
+*使用`type命令`可以返回数据库键对应的值对象类型*
 
 
 
-对于Redis数据库保存的键值对来说，键总是一个字符串对象，而值则可以是字符串对象、列表对象、哈希对象、集合对象或者有序集合对象中的一种，因此我们称“XX键”表示这个数据库键所对应的值为XX对象。
+*对于Redis数据库保存的`键值`对来说，<u>键总是一个字符串对象</u>，而值则可以是字符串对象、列表对象、哈希对象、集合对象或者有序集合对象中的一种，因此我们称“XX键”表示这个数据库键所对应的值为XX对象。*
 
-**1.2 编码和底层实现**
 
-对象的ptr指向对象的底层实现数据结构，而这些数据结构由对象的encoding属性决定。
+
+## 1.2 编码和底层实现
+
+对象的`ptr`指向对象的底层实现数据结构，而这些数据结构由对象的`encoding`属性决定。
 
 encoding对象属性记录了对象所使用的编码，也就是说这个对象使用了什么数据结构作为对象的底层实现，其对象的编码如下：
 
@@ -48,27 +69,48 @@ encoding对象属性记录了对象所使用的编码，也就是说这个对象
 - **REDIS_ENCODING_INTSET**：整数集合(object encoding命令输出：intset)
 - **REDIS_ENCODING_SKIPLIST**：跳跃表和字典(object encoding命令输出：skiplist)
 
+
+
 每种类型的对象都至少使用了两种不同的编码，如下所示：
 
-![img](http://note.youdao.com/yws/res/30570/EBE75B665348403BAAB028CF4A0A539F)
+![每种类型的对象都至少使用了两种不同的编码](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis设计与实现-Redis对象/每种类型的对象都至少使用了两种不同的编码.png)
 
-使用object encoding命令可以查看一个数据库键的值对象的编码，如下所示：
+*使用`object encoding命令`可以查看一个数据库键的值对象的编码*
 
-为什么Redis要使用encoding属性来设定对象所使用的编码，而不是为特定类型的对象关联一种固定的编码？
 
-因为使用encoding属性设定编码方式可以根据不同的适用场景设置不同的编码，从而优化对象在某一场景下的效率。例如，在列表对象包含的元素比较少时，Redis使用压缩列表作为列表对象的底层实现，压缩列表比双向链表更节约内存，且在元素数量较少是，在内存中以连续块方式保存的压缩列表比起双向链表可以更快被载入到缓存中。随着列表对象包含的元素越来越多，是用压缩列表来保存元素的优势逐渐消失，对象就会将底层实现从压缩列表转向功能更强、也更合适保存大量元素的双端链表上。
 
-**二、字符串对象**
+**为什么Redis要使用encoding属性来设定对象所使用的编码，而不是为特定类型的对象关联一种固定的编码？**
 
-字符串对象的编码可以是int、raw、embstr。
+因为使用encoding属性设定编码方式可以<u>根据不同的适用场景设置不同的编码，从而优化对象在某一场景下的效率。</u>例如，在列表对象包含的元素比较少时，Redis使用压缩列表作为列表对象的底层实现，压缩列表比双向链表更节约内存，且在元素数量较少是，在内存中以连续块方式保存的压缩列表比起双向链表可以更快被载入到缓存中。随着列表对象包含的元素越来越多，是用压缩列表来保存元素的优势逐渐消失，对象就会将底层实现从压缩列表转向功能更强、也更合适保存大量元素的双端链表上。
 
-- **int**：字符串对象保存的是整数值，并且这个整数值可以用long类型类表示，那么字符串对象会将整数值保存在字符串对象结构的ptr属性里面（将void *装换成long），并将字符串对象的编码设置为int。
-- **raw**：字符串对象保存的是一个字符串值，并且这个字符串值的长度大于32字节，那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串值，并将对象的编码设置为raw。
-- **embstr**：字符串对象保存的是一个字符串值，并且这个字符串值的长度小于等于32字节，那么字符串对象将使用embstr编码的方式来保存这个字符串值。
+# 2 字符串对象
+
+字符串对象的编码可以是`int`、`raw`、`embstr`。
+
+- **int**：字符串对象保存的是<u>整数值</u><u>，并且这个整数值可以用long类型类表示</u>，那么字符串对象会将整数值保存在字符串对象结构的ptr属性里面（将void *装换成long），并将字符串对象的编码设置为int。
+- **raw**：字符串对象保存的是一个<u>字符串值，并且这个字符串值的长度大于32字节</u>，那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串值，并将对象的编码设置为raw。
+- **embstr**：字符串对象保存的是一个<u>字符串值，并且这个字符串值的长度小于等于32字节</u>，那么字符串对象将使用embstr编码的方式来保存这个字符串值。
 
 示例：
 
-127.0.0.1:6379> set number 10086 OK 127.0.0.1:6379> object encoding number "int" 127.0.0.1:6379> set story "Long, long ago there lived a king and a queen, they have a beautiful daughter..." OK 127.0.0.1:6379> strlen story (integer) 80 127.0.0.1:6379> object encoding story "raw" 127.0.0.1:6379> set msg "hello" OK 127.0.0.1:6379> object encoding msg "embstr"
+```bash
+127.0.0.1:6379> set number 10086
+OK
+127.0.0.1:6379> object encoding number
+"int"
+
+127.0.0.1:6379> set story "Long, long ago there lived a king and a queen, they have a beautiful daughter..."
+OK
+127.0.0.1:6379> strlen story
+(integer) 80
+127.0.0.1:6379> object encoding story
+"raw"
+
+127.0.0.1:6379> set msg "hello"
+OK
+127.0.0.1:6379> object encoding msg
+"embstr"
+```
 
 既然有raw编码方式，为什么还要有embstr编码呢？它们有什么异同点？
 
