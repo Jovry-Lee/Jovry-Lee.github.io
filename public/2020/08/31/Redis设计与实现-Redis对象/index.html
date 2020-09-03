@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="Redis基于其数据结构（例如，SDS、双端链表、字典、压缩列表、整数集合等）创建了一个对象系统，该系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种对象，每种对象都用到了至少一种数据结构。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis设计与实现-Redis对象">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/31/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="Redis基于其数据结构（例如，SDS、双端链表、字典、压缩列表、整数集合等）创建了一个对象系统，该系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种对象，每种对象都用到了至少一种数据结构。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E6%AF%8F%E7%A7%8D%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%AF%B9%E8%B1%A1%E9%83%BD%E8%87%B3%E5%B0%91%E4%BD%BF%E7%94%A8%E4%BA%86%E4%B8%A4%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84%E7%BC%96%E7%A0%81.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/embstr%E7%BC%96%E7%A0%81%E5%88%9B%E5%BB%BA%E7%9A%84%E5%86%85%E5%AD%98%E5%9D%97%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AF%B9%E8%B1%A1%E4%BF%9D%E5%AD%98%E5%90%84%E7%B1%BB%E5%9E%8B%E5%80%BC%E7%9A%84%E7%BC%96%E7%A0%81%E6%96%B9%E5%BC%8F.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/ziplist%E7%BC%96%E7%A0%81%E7%9A%84numbers%E5%88%97%E8%A1%A8%E5%AF%B9%E8%B1%A1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/linkedlist%E7%BC%96%E7%A0%81%E7%9A%84numbers%E5%88%97%E8%A1%A8%E5%AF%B9%E8%B1%A1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E5%AE%8C%E6%95%B4%E7%9A%84StringObject%E8%A1%A8%E7%A4%BA%E6%96%B9%E5%BC%8F.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/ziplist%E7%BC%96%E7%A0%81%E7%9A%84profile%E5%93%88%E5%B8%8C%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/hashtable%E7%BC%96%E7%A0%81%E7%9A%84profile%E5%93%88%E5%B8%8C%E5%AF%B9%E8%B1%A1%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/intset%E7%BC%96%E7%A0%81%E7%9A%84numbers%E9%9B%86%E5%90%88%E5%AF%B9%E8%B1%A1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/hashtable%E7%BC%96%E7%A0%81%E7%9A%84fruits%E9%9B%86%E5%90%88%E5%AF%B9%E8%B1%A1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/ziplist%E7%BC%96%E7%A0%81%E7%9A%84price%E5%AF%B9%E8%B1%A1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/skiplist%E7%BC%96%E7%A0%81%E7%9A%84price%E5%AF%B9%E8%B1%A1.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E6%8C%81%E6%9C%89%E5%90%8C%E4%B8%80%E5%80%BC%E5%AF%B9%E8%B1%A1%E7%9A%84%E4%B8%A4%E4%B8%AA%E7%A8%8B%E5%BA%8F.png">
+<meta property="article:published_time" content="2020-08-31T09:14:48.000Z">
+<meta property="article:modified_time" content="2020-09-03T03:45:14.788Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="Note">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E6%AF%8F%E7%A7%8D%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%AF%B9%E8%B1%A1%E9%83%BD%E8%87%B3%E5%B0%91%E4%BD%BF%E7%94%A8%E4%BA%86%E4%B8%A4%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84%E7%BC%96%E7%A0%81.png">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/31/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Redis设计与实现-Redis对象 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%AF%B9%E8%B1%A1%E7%9A%84%E7%B1%BB%E5%9E%8B%E4%B8%8E%E7%BC%96%E7%A0%81"><span class="nav-text">1 对象的类型与编码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.1 类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-%E7%BC%96%E7%A0%81%E5%92%8C%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0"><span class="nav-text">1.2 编码和底层实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AF%B9%E8%B1%A1"><span class="nav-text">2 字符串对象</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-%E7%BC%96%E7%A0%81%E8%BD%AC%E6%8D%A2"><span class="nav-text">2.1 编码转换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E5%88%97%E8%A1%A8%E5%AF%B9%E8%B1%A1"><span class="nav-text">3 列表对象</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%BC%96%E7%A0%81%E8%BD%AC%E6%8D%A2"><span class="nav-text">3.1 编码转换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E5%93%88%E5%B8%8C%E5%AF%B9%E8%B1%A1"><span class="nav-text">4 哈希对象</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E7%BC%96%E7%A0%81%E8%BD%AC%E6%8D%A2"><span class="nav-text">4.1 编码转换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%9B%86%E5%90%88%E5%AF%B9%E8%B1%A1"><span class="nav-text">5 集合对象</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E7%BC%96%E7%A0%81%E7%9A%84%E8%BD%AC%E6%8D%A2"><span class="nav-text">5.1 编码的转换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88%E5%AF%B9%E8%B1%A1"><span class="nav-text">6 有序集合对象</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6"><span class="nav-text">7 内存回收</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%AF%B9%E8%B1%A1%E7%9A%84%E7%A9%BA%E8%BD%AC%E6%97%B6%E9%95%BF"><span class="nav-text">8 对象的空转时长</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">13</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/31/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis设计与实现-Redis对象
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-31 17:14:48" itemprop="dateCreated datePublished" datetime="2020-08-31T17:14:48+08:00">2020-08-31</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-03 11:45:14" itemprop="dateModified" datetime="2020-09-03T11:45:14+08:00">2020-09-03</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/Note/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">Redis设计与实现</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Redis基于其数据结构（例如，SDS、双端链表、字典、压缩列表、整数集合等）创建了一个对象系统，该系统包含<code>字符串对象</code>、<code>列表对象</code>、<code>哈希对象</code>、<code>集合对象</code>和<code>有序集合</code>对象这五种对象，每种对象都用到了至少一种数据结构。</p>
+<a id="more"></a>
+
+<h1 id="1-对象的类型与编码"><a href="#1-对象的类型与编码" class="headerlink" title="1 对象的类型与编码"></a>1 对象的类型与编码</h1><p>Redis使用<code>对象</code>来表示数据库中的健和值，每次当我们在Redis的数据库中新创建一个键值对时，我们至少会创建两个对象，一个对象用作键值对的健（键对象），另一个对象用作键值对的值（值对象）。</p>
+<p>Redis中每个对都由<code>redisObject</code>结构表示，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="comment">// 类型.</span></span><br><span class="line">    <span class="keyword">unsigned</span> type:<span class="number">4</span>;</span><br><span class="line">    <span class="comment">// 编码.</span></span><br><span class="line">    <span class="keyword">unsigned</span> encoding:<span class="number">4</span>;</span><br><span class="line">    <span class="comment">// 记录了对象最后一次被命令程序访问的时间。</span></span><br><span class="line">    <span class="keyword">unsigned</span> lru:REDIS_LRU_BITS; <span class="comment">/* lru time (relative to server.lruclock) */</span></span><br><span class="line">    <span class="comment">// 引用次数</span></span><br><span class="line">    <span class="keyword">int</span> refcount;</span><br><span class="line">    <span class="comment">// 指向底层实现数据结构的指针。</span></span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="1-1-类型"><a href="#1-1-类型" class="headerlink" title="1.1 类型"></a>1.1 类型</h2><p>对象的type属性记录了对象的类型，这个类型包括以下5中类型：</p>
+<ul>
+<li><strong>REDIS_STRING</strong>：字符串对象(type命令输出：“string”)</li>
+<li><strong>REDIS_LIST</strong>：列表对象(type命令输出：“list”)</li>
+<li><strong>REDIS_HASH</strong>：哈希对象(type命令输出：“hash”)</li>
+<li><strong>REDIS_SET</strong>：集合对象(type命令输出：“set”)</li>
+<li><strong>REDIS_ZSET</strong>：有序集合对象(type命令输出：“zset”)</li>
+</ul>
+<p><em>使用<code>type命令</code>可以返回<strong>数据库键对应的值对象类型</strong></em></p>
+<p><em>对于Redis数据库保存的<code>键值</code>对来说，<u>键总是一个字符串对象</u>，而值则可以是字符串对象、列表对象、哈希对象、集合对象或者有序集合对象中的一种，因此我们称“XX键”表示这个数据库键所对应的值为XX对象。</em></p>
+<h2 id="1-2-编码和底层实现"><a href="#1-2-编码和底层实现" class="headerlink" title="1.2 编码和底层实现"></a>1.2 编码和底层实现</h2><p>对象的<code>ptr</code>指向对象的底层实现数据结构，而这些数据结构由对象的<code>encoding</code>属性决定。</p>
+<p>encoding对象属性记录了对象所使用的编码，也就是说这个对象使用了什么数据结构作为对象的底层实现，其对象的编码如下：</p>
+<ul>
+<li><strong>REDIS_ENCODING_INT</strong>：long类型的整数(object encoding命令输出：int)</li>
+<li><strong>REDIS_ENCODING_EMBSTR</strong>：embstr编码的简单动态字符串(object encoding命令输出：embstr)</li>
+<li><strong>REDIS_ENCODING_RAW</strong>：简单动态字符串(object encoding命令输出：raw)</li>
+<li><strong>REDIS_ENCODING_HT</strong>：字典(object encoding命令输出：hashtable)</li>
+<li><strong>REDIS_ENCODING_LINKEDLIST</strong>：双端链表(object encoding命令输出：linkedlist)</li>
+<li><strong>REDIS_ENCODING_ZIPLIST</strong>：压缩列表(object encoding命令输出：ziplist)</li>
+<li><strong>REDIS_ENCODING_INTSET</strong>：整数集合(object encoding命令输出：intset)</li>
+<li><strong>REDIS_ENCODING_SKIPLIST</strong>：跳跃表和字典(object encoding命令输出：skiplist)</li>
+</ul>
+<p>每种类型的对象都至少使用了两种不同的编码，如下所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E6%AF%8F%E7%A7%8D%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%AF%B9%E8%B1%A1%E9%83%BD%E8%87%B3%E5%B0%91%E4%BD%BF%E7%94%A8%E4%BA%86%E4%B8%A4%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84%E7%BC%96%E7%A0%81.png" alt="每种类型的对象都至少使用了两种不同的编码"></p>
+<p><em>使用<code>object encoding命令</code>可以<strong>查看一个数据库键的值对象的编码</strong></em></p>
+<p><strong>为什么Redis要使用encoding属性来设定对象所使用的编码，而不是为特定类型的对象关联一种固定的编码？</strong></p>
+<p>因为使用encoding属性设定编码方式可以<u>根据不同的适用场景设置不同的编码，从而优化对象在某一场景下的效率。</u>例如，在列表对象包含的元素比较少时，Redis使用压缩列表作为列表对象的底层实现，压缩列表比双向链表更节约内存，且在元素数量较少是，在内存中以连续块方式保存的压缩列表比起双向链表可以更快被载入到缓存中。随着列表对象包含的元素越来越多，是用压缩列表来保存元素的优势逐渐消失，对象就会将底层实现从压缩列表转向功能更强、也更合适保存大量元素的双端链表上。</p>
+<h1 id="2-字符串对象"><a href="#2-字符串对象" class="headerlink" title="2 字符串对象"></a>2 字符串对象</h1><p>字符串对象的编码可以是<code>int</code>、<code>raw</code>、<code>embstr</code>。</p>
+<ul>
+<li><strong>int</strong>：字符串对象保存的是<code>整数值，并且这个整数值可以用long类型类表示</code>，那么字符串对象会将整数值保存在字符串对象结构的ptr属性里面（将void *装换成long），并将字符串对象的编码设置为int。</li>
+<li><strong>raw</strong>：字符串对象保存的是一个<code>字符串值，并且这个字符串值的长度大于32字节</code>，那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串值，并将对象的编码设置为raw。</li>
+<li><strong>embstr</strong>：字符串对象保存的是一个<code>字符串值，并且这个字符串值的长度小于等于32字节</code>，那么字符串对象将使用embstr编码的方式来保存这个字符串值。</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> number 10086</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding number</span><br><span class="line"><span class="string">&quot;int&quot;</span></span><br><span class="line"></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> story <span class="string">&quot;Long, long ago there lived a king and a queen, they have a beautiful daughter...&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; strlen story</span><br><span class="line">(<span class="built_in">integer</span>) 80</span><br><span class="line">127.0.0.1:6379&gt; object encoding story</span><br><span class="line"><span class="string">&quot;raw&quot;</span></span><br><span class="line"></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> msg <span class="string">&quot;hello&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding msg</span><br><span class="line"><span class="string">&quot;embstr&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>问: 既然有raw编码方式，为什么还要有embstr编码呢？它们有什么异同点？</strong></p>
+<ul>
+<li><p>相同点:</p>
+<ul>
+<li>embstr编码是专门用于保存短字符串的一种优化编码方式，这种编码和raw一样，都是用redisObject结构和sdshdr结构来表示字符串对象。</li>
+</ul>
+</li>
+<li><p>不同点：</p>
+<ul>
+<li><p>raw编码会<u>调用两次内存分配函数</u>分别创建redisObject结构和sdshdr结构。</p>
+</li>
+<li><p>embstr则通过调用一次内存分配函数来分配<u>一块连续的空间</u>，空间中依次包含redisObject和sdshdr两个结构。</p>
+</li>
+</ul>
+</li>
+</ul>
+<pre><code>embstr编码创建的内存块结构如下：</code></pre>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/embstr%E7%BC%96%E7%A0%81%E5%88%9B%E5%BB%BA%E7%9A%84%E5%86%85%E5%AD%98%E5%9D%97%E7%BB%93%E6%9E%84.png" alt="embstr编码创建的内存块结构"></p>
+<p><strong>问: 使用embstr编码的字符串对象来保存短字符串值有什么好处？</strong></p>
+<ul>
+<li>①、embstr编码将创建的字符串对象所需的内存分配次数从raw编码的两次降低为一次。</li>
+<li>②、释放embstr编码的字符串对象只需要调用一次内存释放函数，而释放raw编码的字符串对象需要调用两次内存释放函数。</li>
+<li>③、embstr编码的字符串对象的所有数据都保存在一块连续的内存里面，所以这种编码的字符串对象比raw编码的字符串对象能更好的利用缓存带来的优势。</li>
+</ul>
+<p>注：<code>long double类型表示的浮点数在Redis中也是作为字符串值来保存的</code>, 如下示例所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> pi 3.14</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding pi</span><br><span class="line"><span class="string">&quot;embstr&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>下图为字符串对象保存各类型值的编码方式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%AF%B9%E8%B1%A1%E4%BF%9D%E5%AD%98%E5%90%84%E7%B1%BB%E5%9E%8B%E5%80%BC%E7%9A%84%E7%BC%96%E7%A0%81%E6%96%B9%E5%BC%8F.png" alt="字符串对象保存各类型值的编码方式"></p>
+<h2 id="2-1-编码转换"><a href="#2-1-编码转换" class="headerlink" title="2.1 编码转换"></a>2.1 编码转换</h2><p><code>int编码</code>的字符串对象和<code>embstr编码</code>的字符串对象在条件满足的情况下，会被转换为<code>raw编码</code>的字符串对象。</p>
+<ul>
+<li><strong>int编码-&gt;raw编码</strong>：执行一些命令，使得对象保存的值不再是整数值，而是一个字符串值时。例如APPEND命令。</li>
+<li><strong>embstr编码-&gt;raw编码</strong>：Redis并没有为embstr编码提供任何修改程序，因此<code>实际上embstr编码的字符串是只读的</code>，当对embstr编码的字符串进行修改时，程序会先将对象的编码从embstr转换为raw，再执行修改命令。</li>
+</ul>
+<p>示例1：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> number 10086</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding number</span><br><span class="line"><span class="string">&quot;int&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; append number <span class="string">&quot; is a good number!&quot;</span> <span class="comment"># 使用append命令将对象变为一个字符串.</span></span><br><span class="line">(<span class="built_in">integer</span>) 23</span><br><span class="line">127.0.0.1:6379&gt; get number</span><br><span class="line"><span class="string">&quot;10086 is a good number!&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; object encoding number</span><br><span class="line"><span class="string">&quot;raw&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>示例2：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> msg <span class="string">&quot;hello word&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding msg</span><br><span class="line"><span class="string">&quot;embstr&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; append msg <span class="string">&quot; again!&quot;</span> <span class="comment"># embstr字符串是只读的,当对其进行修改时,将强制转换为raw编码,再进行修改.</span></span><br><span class="line">(<span class="built_in">integer</span>) 17</span><br><span class="line">127.0.0.1:6379&gt; object encoding msg</span><br><span class="line"><span class="string">&quot;raw&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="3-列表对象"><a href="#3-列表对象" class="headerlink" title="3 列表对象"></a>3 列表对象</h1><p>列表对象的编码可以是<code>ziplist</code>或者<code>linkedlist</code>。</p>
+<ul>
+<li>ziplist编码的列表对象: 使用<code>压缩列表</code>作为底层实现，每个压缩列表结点(entry)保存了一个列表元素。</li>
+<li>linkedlist编码的列表对象: 使用<code>双端链表</code>作为底层实现，每个双端链表结点都保存了一个字符串对象，而每个字符串对象都保存了一个列表元素。</li>
+</ul>
+<p>示例1：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; rpush numbers 1 <span class="string">&quot;three&quot;</span> 5</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br></pre></td></tr></table></figure>
+
+<p><code>ziplist编码</code>的numbers列表对象如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/ziplist%E7%BC%96%E7%A0%81%E7%9A%84numbers%E5%88%97%E8%A1%A8%E5%AF%B9%E8%B1%A1.png" alt="ziplist编码的numbers列表对象"></p>
+<p>linkedlist编码的numbers列表对象如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/linkedlist%E7%BC%96%E7%A0%81%E7%9A%84numbers%E5%88%97%E8%A1%A8%E5%AF%B9%E8%B1%A1.png" alt="linkedlist编码的numbers列表对象"></p>
+<p>其中完整的StringObject表示方式如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E5%AE%8C%E6%95%B4%E7%9A%84StringObject%E8%A1%A8%E7%A4%BA%E6%96%B9%E5%BC%8F.png" alt="完整的StringObject表示方式"></p>
+<h2 id="3-1-编码转换"><a href="#3-1-编码转换" class="headerlink" title="3.1 编码转换"></a>3.1 编码转换</h2><p>当列表对象可以同时满足以下两个条件时，列表对象使用<code>ziplist</code>编码。其他情况下需要使用<code>linkedlist</code>编码。</p>
+<ul>
+<li>①、列表对象保存的所有字符串元素的长度都小于64字节（由配置<code>list-max-ziplist-value</code>决定）；</li>
+<li>②、列表对象保存的元素数量小于512个（由配置<code>hash-max-ziplist-entries</code>决定）。</li>
+</ul>
+<p>示例1：保存长度太大的元素而进行编码转换的情况。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; rpush blah <span class="string">&quot;hello&quot;</span> <span class="string">&quot;world&quot;</span> <span class="string">&quot;again&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line">127.0.0.1:6379&gt; object encoding blah</span><br><span class="line"><span class="string">&quot;ziplist&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; rpush blah <span class="string">&quot;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 5</span><br><span class="line">127.0.0.1:6379&gt; object encoding blah</span><br><span class="line"><span class="string">&quot;linkedlist&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>示例2：保存的元素数量过多而进行编码转换的情况。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 俩比偶对象包含512个元素。</span></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">eval</span> <span class="string">&quot;for i=1, 512 do redis.call(&#x27;rpush&#x27;, KEYS[1], i)end&quot;</span> 1 <span class="string">&quot;integers&quot;</span></span><br><span class="line">(nil)</span><br><span class="line"><span class="comment"># 获取列表长度.</span></span><br><span class="line">127.0.0.1:6379&gt; llen integers</span><br><span class="line">(<span class="built_in">integer</span>) 512</span><br><span class="line">127.0.0.1:6379&gt; object encoding integers</span><br><span class="line"><span class="string">&quot;ziplist&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 再向列表对象推入一个新元素，使得对象保存的元素数量达到513个。</span></span><br><span class="line">127.0.0.1:6379&gt; rpush integers 512</span><br><span class="line">(<span class="built_in">integer</span>) 513</span><br><span class="line">127.0.0.1:6379&gt; object encoding integers</span><br><span class="line"><span class="string">&quot;linkedlist&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="4-哈希对象"><a href="#4-哈希对象" class="headerlink" title="4 哈希对象"></a>4 哈希对象</h1><p>哈希对象的编码可以是<code>ziplist</code>或者<code>hashtable</code>。</p>
+<ul>
+<li><p><strong>ziplist编码</strong>：ziplist编码作为哈希对象使用<code>压缩列表</code>作为底层实现，每当有新的键值对要加入到哈希对象时，程序会先将保存了键的压缩列表节点推入到压缩列表表尾，然后再将保存了值的压缩列表节点推入到压缩列表表尾。因此，<code>保存了同一键值对的两个结点总是紧挨在一起的，键结点在前，值结点在后</code>。</p>
+</li>
+<li><p><strong>hashtable编码</strong>: 哈希对象使用<code>字典</code>作为底层实现，哈希对象中的每个键值对都是用一个字典键值对来保存：字典中每个键/值都是一个字符串对象，对象中保存了键值对的键/值。</p>
+</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hset profile name <span class="string">&quot;Tom&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line">127.0.0.1:6379&gt; hset profile age 25</span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line">127.0.0.1:6379&gt; hset profile career <span class="string">&quot;Programmer&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br></pre></td></tr></table></figure>
+
+
+
+<p>ziplist编码的profile哈希对象的底层实现如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/ziplist%E7%BC%96%E7%A0%81%E7%9A%84profile%E5%93%88%E5%B8%8C%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0.png" alt="ziplist编码的profile哈希对象的底层实现"></p>
+<p>hashtable编码的profile哈希对象底层实现如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/hashtable%E7%BC%96%E7%A0%81%E7%9A%84profile%E5%93%88%E5%B8%8C%E5%AF%B9%E8%B1%A1%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0.png" alt="hashtable编码的profile哈希对象底层实现"></p>
+<h2 id="4-1-编码转换"><a href="#4-1-编码转换" class="headerlink" title="4.1 编码转换"></a>4.1 编码转换</h2><p><strong>问: 什么情况下，哈希对象使用ziplist编码？</strong></p>
+<p>当哈希对象可以同时满足以下两个条件时，哈希对象使用ziplist编码：</p>
+<ul>
+<li>①、哈希对象保存的所有键值对的键和值的字符串长度都小于64字节（<code>hash-max-ziplist-value</code>）；</li>
+<li>②、哈希对象保存的键值对数量小于512个（<code>hash-max-ziplist-entries</code>）；</li>
+</ul>
+<p>当以上两个条件任何一个不满足时，都会进行编码装换为hashtable。</p>
+<p>示例1：键值对的键太大而引起的编码转换。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hset book name <span class="string">&quot;Mastering C++ in 21 days&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line">127.0.0.1:6379&gt; object encoding book</span><br><span class="line"><span class="string">&quot;ziplist&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; hset book long_long_long_long_long_long_long_long_long_long_long_long_long_long_description <span class="string">&quot;content&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line">127.0.0.1:6379&gt; object encoding book</span><br><span class="line"><span class="string">&quot;hashtable&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>示例2： 哈希对象因为包含的键值对数量过多而引起编码转换。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; EVAL <span class="string">&quot;for i=1, 512 do redis.call(&#x27;HSET&#x27;, KEYS[1], i, i)end&quot;</span> 1 <span class="string">&quot;numbers&quot;</span></span><br><span class="line">(nil)</span><br><span class="line">127.0.0.1:6379&gt; hlen numbers</span><br><span class="line">(<span class="built_in">integer</span>) 512</span><br><span class="line">127.0.0.1:6379&gt; object encoding numbers</span><br><span class="line"><span class="string">&quot;ziplist&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; hmset numbers <span class="string">&quot;key&quot;</span> <span class="string">&quot;value&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding numbers</span><br><span class="line"><span class="string">&quot;hashtable&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="5-集合对象"><a href="#5-集合对象" class="headerlink" title="5 集合对象"></a>5 集合对象</h1><p>集合对象的编码可以是<code>intset</code>或者<code>hashtable</code>。</p>
+<ul>
+<li>intset编码的集合对象: 使用<code>整数集合</code>作为底层实现，集合对象包含的所有元素都被存在整数集合里。</li>
+<li>hashtable编码的集合对象: 使用<code>字典</code>作为底层实现，<code>字典的每个键都是一个字符串对象，每个字符串对象包含了一个集合元素，而字典的值则全部被设置为null。</code></li>
+</ul>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># intset</span></span><br><span class="line">127.0.0.1:6379&gt; sadd numbers 1 3 5</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line">127.0.0.1:6379&gt; object encoding numbers</span><br><span class="line"><span class="string">&quot;intset&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#hashtable</span></span><br><span class="line">127.0.0.1:6379&gt; sadd fruits <span class="string">&quot;apple&quot;</span> <span class="string">&quot;banana&quot;</span> <span class="string">&quot;cherry&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line">127.0.0.1:6379&gt; object encoding fruits</span><br><span class="line"><span class="string">&quot;hashtable&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>intset编码的numbers集合对象</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/intset%E7%BC%96%E7%A0%81%E7%9A%84numbers%E9%9B%86%E5%90%88%E5%AF%B9%E8%B1%A1.png" alt="intset编码的numbers集合对象"></p>
+<p>hashtable编码的fruits集合对象</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/hashtable%E7%BC%96%E7%A0%81%E7%9A%84fruits%E9%9B%86%E5%90%88%E5%AF%B9%E8%B1%A1.png" alt="hashtable编码的fruits集合对象"></p>
+<h2 id="5-1-编码的转换"><a href="#5-1-编码的转换" class="headerlink" title="5.1 编码的转换"></a>5.1 编码的转换</h2><p><strong>问: 什么情况下，集合对象使用intset编码？</strong></p>
+<p>当集合对象同时满足以下两个条件时，对象使用intset编码：</p>
+<ul>
+<li>①、结合兑现个保存的所有元素都是整数值；</li>
+<li>②、集合对象保存的元素数量不超过512个（<code>set-max-intset-entries</code>）。</li>
+</ul>
+<p>当其中一个条件不满足时，intset编码方式将自动变为hashtable编码方式。</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd numbers 1 3 5</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line">127.0.0.1:6379&gt; object encoding numbers</span><br><span class="line"><span class="string">&quot;intset&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; sadd numbers <span class="string">&quot;seven&quot;</span> <span class="comment"># 添加非整数元素, 使得集合编码变为为hashtable.</span></span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line">127.0.0.1:6379&gt; object encoding numbers</span><br><span class="line"><span class="string">&quot;hashtable&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="6-有序集合对象"><a href="#6-有序集合对象" class="headerlink" title="6 有序集合对象"></a>6 有序集合对象</h1><p>有序集合的编码可以是<code>ziplist</code>或者<code>skiplist</code>。</p>
+<ul>
+<li><p><strong>ziplist编码</strong>：ziplist编码的压缩列表对象使用<code>压缩列表</code>作为底层实现，每个集合元素使用两个紧挨在一起的压缩列表节点来保存，<code>第一个节点保存元素的成员，第二个元素保存元素的分值</code>。<code>压缩列表内的集合元素按分值从小到大进行排序</code>，分值较小的元素被放置在靠近表头的方向，分值较大的元素则被放置在靠近表尾的方向。</p>
+</li>
+<li><p><strong>skiplist编码</strong>：skiplist编码的有序集合对象使用<code>zset结构</code>作为底层实现，<code>一个zset结构同时包含一个字典和一个跳跃表</code>。</p>
+</li>
+</ul>
+<p>zset结构如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zset</span> &#123;</span></span><br><span class="line">    <span class="comment">// 该字典为有序集合创建了一个从成员到分值的映射，字典中的每个键值对都保存了一个集合元素，字典的键保存了元素的成员，字典的值则保存了元素的分值。</span></span><br><span class="line">    dict *dict;</span><br><span class="line">    <span class="comment">// 按分值从小到大保存了所有集合的元素。</span></span><br><span class="line">    zskiplist *zsl;</span><br><span class="line">&#125; zset;</span><br></pre></td></tr></table></figure>
+
+<p><em>注：有序集合每个元素的成员都是一个字符串对象，而每个元素的分值都是一个double类型的浮点数。<u>跳跃表和字典均是通过指针来共享元素的成员和分值，因此同时使用跳跃表和字典来保存集合元素不会产生任何重复的成员或者分值，也不会因此而浪费额外的内存</u>。</em></p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zadd price 8.5 apple 5.0 banana 6.0 cherry</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br></pre></td></tr></table></figure>
+
+
+
+<p>ziplist编码的price对象：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/ziplist%E7%BC%96%E7%A0%81%E7%9A%84price%E5%AF%B9%E8%B1%A1.png" alt="ziplist编码的price对象"></p>
+<p>skiplist编码的price对象：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/skiplist%E7%BC%96%E7%A0%81%E7%9A%84price%E5%AF%B9%E8%B1%A1.png" alt="skiplist编码的price对象"></p>
+<p><strong>问: 为什么有序集合需要同时使用跳跃表和字典来实现？</strong></p>
+<p>理论上，有序集合可以单独使用字典或者跳跃表的其中一个数据结构来实现，但无论单独使用字典还是跳跃表，其性能上对比同时视同字典和跳跃表都会有所降低。</p>
+<ul>
+<li>若单独使用字典来实现有序集合，那么虽然查找时时间复杂度保留，仍然是O(1)，但是当执行范围操作时，程序都要需要对所有元素进行排序操作。而完成排序操作至少需要O(NlogN)时间复杂度，以及额外的O(N)内存空间用于保存排序后的数组。</li>
+<li>若单独使用跳跃表来实现有序集合，那么跳跃表执行范围型操作的所有优点都会被保留，但因为没有了字典，所以根据成员查找分值这一操作的复杂度将从O(1上升为O(logN)。</li>
+</ul>
+<h1 id="7-内存回收"><a href="#7-内存回收" class="headerlink" title="7 内存回收"></a>7 内存回收</h1><p>Redis在自己的对象系统中构建了一个<code>引用计数</code>技术实现内存回收机制，通过这一机制，程序可以通过跟踪对象的引用计数信息，在适当的时候自动释放对象，并进行内存回收。</p>
+<p>每个对象的计数信息由<code>redisObject结构</code>中有一个<code>refcount属性</code>记录：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> type:<span class="number">4</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> encoding:<span class="number">4</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> lru:REDIS_LRU_BITS; <span class="comment">/* lru time (relative to server.lruclock) */</span></span><br><span class="line">    <span class="comment">// 引用计数。</span></span><br><span class="line">    <span class="keyword">int</span> refcount;</span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>对象的引用计数信息会随着对象的使用状态而不断变化：</p>
+<ul>
+<li>①、在创建一个新对象时，引用计数的值会被初始化为1；</li>
+<li>②、当对象被一个新程序使用时，它的引用计数值会被赠一；</li>
+<li>③、当对象不再被一个程序引用时，它的引用计数值会被减一；</li>
+<li>④、当对象的引用计数值变为0时，对象所占用的内存会被释放掉。</li>
+</ul>
+<p>通过以下命令可以查键对应的值对象的引用计数：</p>
+<p><code>object refcount xxx</code></p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set a 100</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object refcount a</span><br><span class="line">(integer) 2</span><br></pre></td></tr></table></figure>
+
+<p><strong>问: 为什么此处引用计数是为2呢？</strong></p>
+<p>因为对象引用计数属性还带有对象共享的作用，redis在初始化服务器时，创建一万个字符对象，这些对象包括从0到9999的所有整数值，当服务器需要用到这些值时，服务器就会使用这些共享对象，而不是新创建对象。</p>
+<p>此处持有这个值对象的两个程序分别是，其示意图如下：</p>
+<ul>
+<li>①、这个值对象的服务器程序；</li>
+<li>②、共享这个值对象的键a；</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/%E6%8C%81%E6%9C%89%E5%90%8C%E4%B8%80%E5%80%BC%E5%AF%B9%E8%B1%A1%E7%9A%84%E4%B8%A4%E4%B8%AA%E7%A8%8B%E5%BA%8F.png" alt="持有同一值对象的两个程序"></p>
+<p>注：Redis会共享值为0~9999的字符串对象。</p>
+<p><strong>问: 为什么Redis不共享包含字符串的对象？</strong></p>
+<p>当服务器服务器考虑将一个共享对象设置为键的值对象时，程序需要先根据给定的共享对象和键想创建的目标对象是否完全相同，只有在共享对象和目标对象完全相同的情况下，程序才会将共享对象用作键的值对象，而一个共享对象保存的值越复杂，验证共享对象和目标对象是否相同所需的复杂度就越高，消耗的CPU时间也会越多。</p>
+<ul>
+<li>若共享对象是保存的整数值的字符串对象，那么验证操作的复杂度就是O(1).</li>
+<li>若共享对象是保存字符串值的字符串对象，那么验证操作的复杂度为O(N)。</li>
+<li>若共享对象是包含多个值（或者对象的）对象，比如列表对象或者哈希对象，那么验证操作的复杂度将会是O(N^2)。</li>
+</ul>
+<p>因此，尽管共享更复杂的对象可以节约更多的内存，但是收到CPU时间的限制，Redis值对包含整数值的字符串对象进行共享。</p>
+<h1 id="8-对象的空转时长"><a href="#8-对象的空转时长" class="headerlink" title="8 对象的空转时长"></a>8 对象的空转时长</h1><p>redisObject结构还包含一个<code>lru属性</code>，该属性<code>用于记录对象最后一次被命令程序访问的时间</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="comment">// 类型.</span></span><br><span class="line">    <span class="keyword">unsigned</span> type:<span class="number">4</span>;</span><br><span class="line">    <span class="comment">// 编码.</span></span><br><span class="line">    <span class="keyword">unsigned</span> encoding:<span class="number">4</span>;</span><br><span class="line">    <span class="comment">// 记录了对象最后一次被命令程序访问的时间。</span></span><br><span class="line">    <span class="keyword">unsigned</span> lru:REDIS_LRU_BITS; <span class="comment">/* lru time (relative to server.lruclock) */</span></span><br><span class="line">    <span class="comment">// 引用次数</span></span><br><span class="line">    <span class="keyword">int</span> refcount;</span><br><span class="line">    <span class="comment">// 指向底层实现数据结构的指针。</span></span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+
+<p><code>空转时长</code>：通过当前时间减去键的值对象的lru时间计算得出的，通过以下命令可打印出给定键的空转时长：</p>
+<p><code>object idletime xxx</code></p>
+<p><em>注：该命令的实现是特殊的，执行时并不会修改值的lru属性。</em></p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> msg <span class="string">&quot;hello world&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object idletime msg</span><br><span class="line">(<span class="built_in">integer</span>) 8</span><br><span class="line"><span class="comment"># 访问msg键的值</span></span><br><span class="line">127.0.0.1:6379&gt; get msg</span><br><span class="line"><span class="string">&quot;hello world&quot;</span></span><br><span class="line"><span class="comment"># 键处于活跃状态，空转时长为0.</span></span><br><span class="line">127.0.0.1:6379&gt; object idletime msg</span><br><span class="line">(<span class="built_in">integer</span>) 0</span><br></pre></td></tr></table></figure>
+
+<p>空转时长还有一项作用，若服务器打开了<code>maxmemory</code>选项，并且服务器用于回收内存算法为volatile-lru或者allkeys-lru，那么当服务器占用的内存数超过了maxmemory选项所设置的上限值时，空转时长较高的那么部分键会优先被服务器释放，从而回收内存。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p>1.redis设计与实现（第二版） 黄健宏</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/Note/" rel="tag"># Note</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="prev" title="Redis设计与实现-数据结构">
+                  <i class="fa fa-chevron-left"></i> Redis设计与实现-数据结构
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'b8bf0350d6b6343fa9e03a2cdff49148',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
