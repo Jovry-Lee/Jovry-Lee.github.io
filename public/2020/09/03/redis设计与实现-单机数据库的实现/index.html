@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E5%8D%95%E6%9C%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%AE%9E%E7%8E%B0/%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E7%9B%AE%E6%A0%87%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BA1%E5%8F%B7%E6%95%B0%E6%8D%AE%E5%BA%93.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E5%8D%95%E6%9C%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%AE%9E%E7%8E%B0/%E5%8C%85%E5%90%AB%E4%BA%86%E5%88%97%E8%A1%A8%E9%94%AE%E3%80%81%E5%93%88%E5%B8%8C%E8%A1%A8%E9%94%AE%E3%80%81%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%94%AE%E7%9A%84%E7%BB%93%E6%9E%84%E5%9B%BE.png">
 <meta property="article:published_time" content="2020-09-03T06:29:25.000Z">
-<meta property="article:modified_time" content="2020-09-03T06:49:23.500Z">
+<meta property="article:modified_time" content="2020-09-03T07:45:36.184Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="Note">
@@ -185,7 +185,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">1 服务器中的数据库</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%88%87%E6%8D%A2%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">2 切换数据库</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%95%B0%E6%8D%AE%E5%BA%93%E9%94%AE%E7%A9%BA%E9%97%B4"><span class="nav-text">3 数据库键空间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E5%85%B6%E4%BB%96%E9%94%AE%E7%A9%BA%E9%97%B4%E7%9A%84%E6%93%8D%E4%BD%9C"><span class="nav-text">3.1 其他键空间的操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E8%AF%BB%E5%86%99%E9%94%AE%E7%A9%BA%E9%97%B4%E6%97%B6%E7%9A%84%E7%BB%B4%E6%8A%A4%E6%93%8D%E4%BD%9C"><span class="nav-text">3.2 读写键空间时的维护操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%9A%E7%9F%A5"><span class="nav-text">4 数据库通知</span></a></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">1 服务器中的数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%88%87%E6%8D%A2%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">2 切换数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%95%B0%E6%8D%AE%E5%BA%93%E9%94%AE%E7%A9%BA%E9%97%B4"><span class="nav-text">3 数据库键空间</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E5%85%B6%E4%BB%96%E9%94%AE%E7%A9%BA%E9%97%B4%E7%9A%84%E6%93%8D%E4%BD%9C"><span class="nav-text">3.1 其他键空间的操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E8%AF%BB%E5%86%99%E9%94%AE%E7%A9%BA%E9%97%B4%E6%97%B6%E7%9A%84%E7%BB%B4%E6%8A%A4%E6%93%8D%E4%BD%9C"><span class="nav-text">3.2 读写键空间时的维护操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%9A%E7%9F%A5"><span class="nav-text">4 数据库通知</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -278,7 +278,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2020-09-03 14:29:25 / Modified: 14:49:23" itemprop="dateCreated datePublished" datetime="2020-09-03T14:29:25+08:00">2020-09-03</time>
+      <time title="Created: 2020-09-03 14:29:25 / Modified: 15:45:36" itemprop="dateCreated datePublished" datetime="2020-09-03T14:29:25+08:00">2020-09-03</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -315,13 +315,13 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="1-服务器中的数据库"><a href="#1-服务器中的数据库" class="headerlink" title="1 服务器中的数据库"></a>1 服务器中的数据库</h1><p>Redis服务器将所有数据库都保存在服务器状态<code>redis.h/redisServer</code>结构的<code>db数组</code>中，db数组的每个项都是一个<code>redis.h/redisDb</code>结构，每个redisDb结构代表了一个数据库。</p>
+        <h3 id="1-服务器中的数据库"><a href="#1-服务器中的数据库" class="headerlink" title="1 服务器中的数据库"></a>1 服务器中的数据库</h3><p>Redis服务器将所有数据库都保存在服务器状态<code>redis.h/redisServer</code>结构的<code>db数组</code>中，db数组的每个项都是一个<code>redis.h/redisDb</code>结构，每个redisDb结构代表了一个数据库。</p>
 <a id="more"></a>
 
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span> &#123;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="comment">// 一个数组，保存着服务器中的所有数据库.</span></span><br><span class="line">    redisDb *db;</span><br><span class="line">    <span class="comment">// 总配置的数据库的数量.</span></span><br><span class="line">    <span class="keyword">int</span> dbnum;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>dbnum属性的值由服务器配置的database选项决定，默认情况下，该选项的值为16。</p>
-<h1 id="2-切换数据库"><a href="#2-切换数据库" class="headerlink" title="2 切换数据库"></a>2 切换数据库</h1><p>默认情况下，Redis客户端的目标数据库为<code>0号数据库</code>，通过<code>select命令</code>可切换数据库。</p>
+<h3 id="2-切换数据库"><a href="#2-切换数据库" class="headerlink" title="2 切换数据库"></a>2 切换数据库</h3><p>默认情况下，Redis客户端的目标数据库为<code>0号数据库</code>，通过<code>select命令</code>可切换数据库。</p>
 <p>示例：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 切换到数据库2.</span></span><br><span class="line">redis&gt; select 2</span><br></pre></td></tr></table></figure>
 
@@ -336,7 +336,7 @@
 <p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E5%8D%95%E6%9C%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%AE%9E%E7%8E%B0/%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E7%9B%AE%E6%A0%87%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BA1%E5%8F%B7%E6%95%B0%E6%8D%AE%E5%BA%93.png" alt="客户端的目标数据库为1号数据库"></p>
 <p><strong>问: SELECT命令的实现原理是什么？</strong></p>
 <p>通过修改redisClient.db指针，让它指向服务器中不同数据库，从而实现切换目标数据库的功能。</p>
-<h1 id="3-数据库键空间"><a href="#3-数据库键空间" class="headerlink" title="3 数据库键空间"></a>3 数据库键空间</h1><p>Redis是一个键值对数据库服务器，服务器中的每个数据库都由一个<code>redis.h/redisDb</code>结构表示，其中，<code>redisDb</code>结构的<code>dict</code>字典保存了数据库中的所有键值对，我们将这个字典称为<strong>键空间（key space）</strong>。</p>
+<h3 id="3-数据库键空间"><a href="#3-数据库键空间" class="headerlink" title="3 数据库键空间"></a>3 数据库键空间</h3><p>Redis是一个键值对数据库服务器，服务器中的每个数据库都由一个<code>redis.h/redisDb</code>结构表示，其中，<code>redisDb</code>结构的<code>dict</code>字典保存了数据库中的所有键值对，我们将这个字典称为<strong>键空间（key space）</strong>。</p>
 <p><code>redis.h/redisDb</code>结构:</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisDb</span> &#123;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="comment">// 数据库键空间，保存着数据库中的所有键值对.</span></span><br><span class="line">    dict *dict;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;redisDb;</span><br></pre></td></tr></table></figure>
 
@@ -356,7 +356,7 @@
 <li>更新键: 更新数据库键，实际上是对键空间里面键所对应的值对象进行更新，根据值对象的类型不同，更新的具体方法也会有所不同。</li>
 <li>对键取值: 取值，实际上就是在键空间中取出键所对应的值对象，根据值对象的类型不同，具体的取值方法也会有所不同。</li>
 </ul>
-<h2 id="3-1-其他键空间的操作"><a href="#3-1-其他键空间的操作" class="headerlink" title="3.1 其他键空间的操作"></a>3.1 其他键空间的操作</h2><p>除了以上增删改查的操作，还有其他一些命令是通过对键空间进行处理来完成的。</p>
+<h4 id="3-1-其他键空间的操作"><a href="#3-1-其他键空间的操作" class="headerlink" title="3.1 其他键空间的操作"></a>3.1 其他键空间的操作</h4><p>除了以上增删改查的操作，还有其他一些命令是通过对键空间进行处理来完成的。</p>
 <p>比如说：</p>
 <ul>
 <li><code>flushdb</code>命令: 通过删除键空间中的所有键值对来实现的。</li>
@@ -364,7 +364,7 @@
 <li><code>dbsize</code>命令: 返回数据库键数量，通过返回键空间中包含的键值对的数量来完成。</li>
 <li><code>exist、rename、keys</code>等。</li>
 </ul>
-<h2 id="3-2-读写键空间时的维护操作"><a href="#3-2-读写键空间时的维护操作" class="headerlink" title="3.2 读写键空间时的维护操作"></a>3.2 读写键空间时的维护操作</h2><p>当时用redis命令对数据库进行读写时，服务器不仅会对键空间执行指定的读写操纵，还会执行一些额外的维护操作，比如：</p>
+<h4 id="3-2-读写键空间时的维护操作"><a href="#3-2-读写键空间时的维护操作" class="headerlink" title="3.2 读写键空间时的维护操作"></a>3.2 读写键空间时的维护操作</h4><p>当时用redis命令对数据库进行读写时，服务器不仅会对键空间执行指定的读写操纵，还会执行一些额外的维护操作，比如：</p>
 <ul>
 <li><p>①、在读取一个键之后（读写操作都会对键进行读取），服务器会根据键是否存在来更新服务器的键空间命中（keyspace_hit）/未命中(keyspace_misses)的次数。通过以下命令可查看其属性。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">INFO stats</span><br></pre></td></tr></table></figure>
@@ -381,7 +381,7 @@
 <li><p>⑥、若服务器开启了数据库通知功能，那么在对键进行修改之后，服务器将按配置发送相应的数据通知。</p>
 </li>
 </ul>
-<h1 id="4-数据库通知"><a href="#4-数据库通知" class="headerlink" title="4 数据库通知"></a>4 数据库通知</h1><p>数据库通知可以让客户端通过订阅给定频道或者模式，来获悉数据库中键的变化，以及数据中命令的执行情况。</p>
+<h3 id="4-数据库通知"><a href="#4-数据库通知" class="headerlink" title="4 数据库通知"></a>4 数据库通知</h3><p>数据库通知可以让客户端通过订阅给定频道或者模式，来获悉数据库中键的变化，以及数据中命令的执行情况。</p>
 
     </div>
 
