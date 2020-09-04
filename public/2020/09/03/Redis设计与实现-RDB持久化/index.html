@@ -33,10 +33,10 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%8A%B6%E6%80%81%E5%A6%82%E4%B8%8B%EF%BC%8C%E5%85%B6%E4%B8%ADdirty%E4%B8%BA123.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E4%B8%80%E4%B8%AA%E5%AE%8C%E6%95%B4%E7%9A%84RDB%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB%E4%BB%A5%E4%B8%8B%E5%87%A0%E4%B8%AA%E9%83%A8%E5%88%86.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E6%AF%8F%E4%B8%AA%E9%9D%9E%E7%A9%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8RDB%E6%96%87%E4%BB%B6%E4%B8%AD%E9%83%BD%E4%BF%9D%E5%AD%98%E7%9D%80%E4%BB%A5%E4%B8%8B%E4%B8%89%E4%B8%AA%E9%83%A8%E5%88%86.png">
-<meta property="og:image" content="http://note.youdao.com/yws/res/27224/59B1D08CBCE54A4ABF37B05EC13115AC">
-<meta property="og:image" content="http://note.youdao.com/yws/res/27248/00DEC41F530548F9ACF68721FAE15960">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E4%B8%8D%E5%B8%A6%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E9%94%AE%E5%80%BC%E5%AF%B9%E7%94%B1%E4%BB%A5%E4%B8%8B%E4%B8%89%E4%B8%AA%E9%83%A8%E5%88%86%E7%BB%84%E6%88%90.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E5%B8%A6%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E9%94%AE%E5%80%BC%E5%AF%B9%E5%9C%A8RDB%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E7%BB%84%E6%88%90.png">
 <meta property="article:published_time" content="2020-09-03T07:52:31.000Z">
-<meta property="article:modified_time" content="2020-09-03T10:31:15.762Z">
+<meta property="article:modified_time" content="2020-09-04T02:45:36.130Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="Note">
@@ -189,7 +189,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-RDB%E6%96%87%E4%BB%B6%E7%9A%84%E5%88%9B%E5%BB%BA%E4%B8%8E%E8%BD%BD%E5%85%A5"><span class="nav-text">1 RDB文件的创建与载入</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-RDB%E6%96%87%E4%BB%B6%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-text">1.1 RDB文件的创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-RDB%E6%96%87%E4%BB%B6%E7%9A%84%E8%BD%BD%E5%85%A5"><span class="nav-text">1.2 RDB文件的载入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%87%AA%E5%8A%A8%E9%97%B4%E9%9A%94%E4%BF%9D%E5%AD%98"><span class="nav-text">2 自动间隔保存</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E8%AE%BE%E7%BD%AE%E4%BF%9D%E5%AD%98%E6%9D%A1%E4%BB%B6"><span class="nav-text">2.1 设置保存条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-dirty%E8%AE%A1%E6%95%B0%E5%99%A8%E5%92%8Clastsave%E5%B1%9E%E6%80%A7"><span class="nav-text">2.2 dirty计数器和lastsave属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-%E6%A3%80%E6%9F%A5%E4%BF%9D%E5%AD%98%E6%9D%A1%E4%BB%B6%E6%98%AF%E5%90%A6%E6%BB%A1%E8%B6%B3"><span class="nav-text">2.3 检查保存条件是否满足</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-RDB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="nav-text">3 RDB文件结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-databases%E9%83%A8%E5%88%86"><span class="nav-text">3.1 databases部分</span></a></li></ol></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-RDB%E6%96%87%E4%BB%B6%E7%9A%84%E5%88%9B%E5%BB%BA%E4%B8%8E%E8%BD%BD%E5%85%A5"><span class="nav-text">1 RDB文件的创建与载入</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-RDB%E6%96%87%E4%BB%B6%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-text">1.1 RDB文件的创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-RDB%E6%96%87%E4%BB%B6%E7%9A%84%E8%BD%BD%E5%85%A5"><span class="nav-text">1.2 RDB文件的载入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%87%AA%E5%8A%A8%E9%97%B4%E9%9A%94%E4%BF%9D%E5%AD%98"><span class="nav-text">2 自动间隔保存</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E8%AE%BE%E7%BD%AE%E4%BF%9D%E5%AD%98%E6%9D%A1%E4%BB%B6"><span class="nav-text">2.1 设置保存条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-dirty%E8%AE%A1%E6%95%B0%E5%99%A8%E5%92%8Clastsave%E5%B1%9E%E6%80%A7"><span class="nav-text">2.2 dirty计数器和lastsave属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-%E6%A3%80%E6%9F%A5%E4%BF%9D%E5%AD%98%E6%9D%A1%E4%BB%B6%E6%98%AF%E5%90%A6%E6%BB%A1%E8%B6%B3"><span class="nav-text">2.3 检查保存条件是否满足</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-RDB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="nav-text">3 RDB文件结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-databases%E9%83%A8%E5%88%86"><span class="nav-text">3.1 databases部分</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-key-value-pairs%E9%83%A8%E5%88%86"><span class="nav-text">3.2 key_value_pairs部分</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-1-%E4%B8%8D%E5%B8%A6%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E9%94%AE%E5%80%BC%E5%AF%B9%E7%BB%84%E6%88%90"><span class="nav-text">3.2.1 不带过期时间的键值对组成</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-2-%E5%B8%A6%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E9%94%AE%E5%80%BC%E5%AF%B9%E7%BB%84%E6%88%90"><span class="nav-text">3.2.2 带过期时间的键值对组成</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-value%E7%BC%96%E7%A0%81"><span class="nav-text">3.3 value编码</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%88%86%E6%9E%90RDB%E6%96%87%E4%BB%B6"><span class="nav-text">4 分析RDB文件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E4%B8%8D%E5%8C%85%E5%90%AB%E4%BB%BB%E4%BD%95%E9%94%AE%E5%80%BC%E5%AF%B9%E7%9A%84RDB%E6%96%87%E4%BB%B6"><span class="nav-text">4.1 不包含任何键值对的RDB文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E5%8C%85%E5%90%AB%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%94%AE%E7%9A%84RDB%E6%96%87%E4%BB%B6"><span class="nav-text">4.2 包含字符串键的RDB文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-%E5%8C%85%E5%90%AB%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%94%AE%E7%9A%84RDB%E6%96%87%E4%BB%B6"><span class="nav-text">4.3 包含过期时间的字符串键的RDB文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-%E5%8C%85%E5%90%AB%E4%B8%80%E4%B8%AA%E9%9B%86%E5%90%88%E9%94%AE%E7%9A%84RDB%E6%96%87%E4%BB%B6"><span class="nav-text">4.4 包含一个集合键的RDB文件</span></a></li></ol></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -205,7 +205,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -280,10 +280,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2020-09-03 15:52:31 / Modified: 18:31:15" itemprop="dateCreated datePublished" datetime="2020-09-03T15:52:31+08:00">2020-09-03</time>
+      <time title="Created: 2020-09-03 15:52:31" itemprop="dateCreated datePublished" datetime="2020-09-03T15:52:31+08:00">2020-09-03</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-04 10:45:36" itemprop="dateModified" datetime="2020-09-04T10:45:36+08:00">2020-09-04</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -382,21 +388,19 @@
 <li>④、<code>EOF</code>：长度为1字节的常量，标志着RDB文件正文内容的结束。</li>
 <li>⑤、<code>check_sum</code>：长度为8字节的无符号整数，保存着通过REDIS、db_version、databases、EOF四个部分计算出的校验和。</li>
 </ul>
-<h4 id="3-1-databases部分"><a href="#3-1-databases部分" class="headerlink" title="3.1 databases部分"></a>3.1 databases部分</h4><p>一个RDB文件的databases部分可以保存任意多个非空数据库。</p>
+<h4 id="3-1-databases部分"><a href="#3-1-databases部分" class="headerlink" title="3.1 databases部分"></a>3.1 databases部分</h4><p>一个RDB文件的<code>databases</code>部分可以<code>保存任意多个非空数据库</code>。</p>
 <p>每个非空数据库在RDB文件中都保存着以下三个部分：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E6%AF%8F%E4%B8%AA%E9%9D%9E%E7%A9%BA%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9C%A8RDB%E6%96%87%E4%BB%B6%E4%B8%AD%E9%83%BD%E4%BF%9D%E5%AD%98%E7%9D%80%E4%BB%A5%E4%B8%8B%E4%B8%89%E4%B8%AA%E9%83%A8%E5%88%86.png" alt="每个非空数据库在RDB文件中都保存着以下三个部分"></p>
 <ul>
-<li>①、SELECTDB：长度为1字节的常量，表示接下来读取的将是一个数据库号码。</li>
-<li>②、db_number：长度为1字节/2字节/5字节的数据库号码。程序根据该号码，调用SELECT命令切换数据库。</li>
-<li>③、key_value_pairs：保存数据库中所有的键值对数据（注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起）。</li>
+<li>①、<code>SELECTDB</code>：长度为1字节的常量，表示接下来读取的将是一个数据库号码。</li>
+<li>②、<code>db_number</code>：长度为1字节/2字节/5字节的数据库号码。程序根据该号码，调用SELECT命令切换数据库。</li>
+<li>③、<code>key_value_pairs</code>：保存数据库中所有的键值对数据（注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起）。</li>
 </ul>
-<p>3.2 key_value_pairs部分</p>
-<p>RDB文件的每个key_value_pairs：保存数据库中所有的键值对数据（注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起）。</p>
-<p>3.2.1 不带过期时间的键值对组成</p>
-<p>不带过期时间的键值对由以下三个部分组成：</p>
-<p><img src="http://note.youdao.com/yws/res/27224/59B1D08CBCE54A4ABF37B05EC13115AC" alt="img"></p>
+<h4 id="3-2-key-value-pairs部分"><a href="#3-2-key-value-pairs部分" class="headerlink" title="3.2 key_value_pairs部分"></a>3.2 key_value_pairs部分</h4><p>RDB文件的每个<code>key_value_pairs</code>：保存数据库中所有的键值对数据（<em>注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起</em>）。</p>
+<h5 id="3-2-1-不带过期时间的键值对组成"><a href="#3-2-1-不带过期时间的键值对组成" class="headerlink" title="3.2.1 不带过期时间的键值对组成"></a>3.2.1 不带过期时间的键值对组成</h5><p>不带过期时间的键值对由以下三个部分组成：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E4%B8%8D%E5%B8%A6%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E9%94%AE%E5%80%BC%E5%AF%B9%E7%94%B1%E4%BB%A5%E4%B8%8B%E4%B8%89%E4%B8%AA%E9%83%A8%E5%88%86%E7%BB%84%E6%88%90.png" alt="不带过期时间的键值对由以下三个部分组成"></p>
 <ul>
-<li><p>①、Type：记录了value的类型，长度为1字节的常量，包括以下常量，每种常量都代表了一种类型或者底层编码，服务器根据type的值决定如何读入和解释value数据。</p>
+<li><p>①、<code>Type</code>：记录了value的类型，长度为1字节的常量，包括以下常量，每种常量都代表了一种类型或者底层编码，服务器根据type的值决定如何读入和解释value数据。</p>
 </li>
 <li><ul>
 <li>REDIS_RDB_TYPE_STRING</li>
@@ -410,29 +414,33 @@
 <li>REDIS_RDB_TYPE_HASH_ZIPLIST</li>
 </ul>
 </li>
-<li><p>②、key：保存了键值对的键对象</p>
+<li><p>②、<code>key</code>：保存了键值对的键对象</p>
 </li>
-<li><p>③、value：保存了键值对的值对象。</p>
+<li><p>③、<code>value</code>：保存了键值对的值对象。</p>
 </li>
 </ul>
-<p>3.2.2 带过期时间的键值对组成</p>
-<p>带过期时间的键值对在RDB文件中的组成如下：</p>
-<p><img src="http://note.youdao.com/yws/res/27248/00DEC41F530548F9ACF68721FAE15960" alt="img"></p>
+<h5 id="3-2-2-带过期时间的键值对组成"><a href="#3-2-2-带过期时间的键值对组成" class="headerlink" title="3.2.2 带过期时间的键值对组成"></a>3.2.2 带过期时间的键值对组成</h5><p>带过期时间的键值对在RDB文件中的组成如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/%E5%B8%A6%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E7%9A%84%E9%94%AE%E5%80%BC%E5%AF%B9%E5%9C%A8RDB%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E7%BB%84%E6%88%90.png" alt="带过期时间的键值对在RDB文件中的组成"></p>
 <p>其中TYPE、key、value三个部分的意义均与不带过期时间的组成相同。</p>
 <ul>
 <li>①、EXPIRETIME_MS：长度为1字节的常量，表示接下来读入的是一个以毫秒为单位的过期时间。</li>
 <li>②、ms：8字节长的带符号的整数，记录了一个以毫秒为单位的UNIX时间戳。</li>
 </ul>
-<p>3.3 value编码</p>
-<p>RDB文件中的每个value部分都保存了一个值对象，每个值对象的类型都有与之对应的Type记录，根据类型的不同，value部分的结构，长度也会有所不同。</p>
-<p>四、分析RDB文件</p>
-<p>通过Linux的od命令来分析Redis服务器产生的RDB文件，RDB文件路径可通过redis.conf文件中查看，如下所示，因此RDB文件路径为：/var/lib/redis/dump.rdb</p>
-<p># 打印的RDB文件名。 dbfilename dump.rdb # # 路径. dir /var/lib/redis</p>
-<p>4.1 不包含任何键值对的RDB文件</p>
-<p>执行以下命令，创建一个数据库状态为空的RDB文件：</p>
-<p>127.0.0.1:6379&gt; flushall OK 127.0.0.1:6379&gt; save OK</p>
-<p>通过od命令打印RDB文件内容，如下所示：</p>
-<p> od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 377 334 263   C 360   Z 334 0000020 362   V 0000022</p>
+<h4 id="3-3-value编码"><a href="#3-3-value编码" class="headerlink" title="3.3 value编码"></a>3.3 value编码</h4><p>RDB文件中的每个value部分都保存了一个值对象，每个值对象的类型都有与之对应的Type记录，根据类型的不同，value部分的结构，长度也会有所不同。</p>
+<h3 id="4-分析RDB文件"><a href="#4-分析RDB文件" class="headerlink" title="4 分析RDB文件"></a>4 分析RDB文件</h3><p>通过Linux的<code>od指令</code>来分析Redis服务器产生的RDB文件，使用od命令查看特殊格式的文件内容。通过指定该命令的不同选项可以以十进制、八进制、十六进制和ASCII码来显示文件。RDB文件路径可通过<code>/etc/redis/redis.conf</code>文件中查看，如下所示，因此RDB文件路径为：<code>/var/lib/redis/dump.rdb</code></p>
+<p><code>/etc/redis/redis.conf</code>中配置如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 打印的RDB文件名。</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line">#</span><br><span class="line"># 路径.</span><br><span class="line">dir &#x2F;var&#x2F;lib&#x2F;redis</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="4-1-不包含任何键值对的RDB文件"><a href="#4-1-不包含任何键值对的RDB文件" class="headerlink" title="4.1 不包含任何键值对的RDB文件"></a>4.1 不包含任何键值对的RDB文件</h4><p>执行以下命令，创建一个数据库状态为空的RDB文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; flushall</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; save</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+
+
+<p>通过od命令打印RDB文件内容，并使用ASCII或反斜杠序列展示结果(<code>-c参数</code>), 如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ od -c dump.rdb</span><br><span class="line">0000000   R   E   D   I   S   0   0   0   6 377 334 263   C 360   Z 334</span><br><span class="line">0000020 362   V</span><br><span class="line">0000022</span><br></pre></td></tr></table></figure>
+
 <p>其中：</p>
 <ul>
 <li>五个字节的“REDIS”字符串</li>
@@ -440,11 +448,15 @@
 <li>377是EOF常量</li>
 <li>334 263   C 360   Z 334 362   V为8个字节的校验和</li>
 </ul>
-<p>4.2 包含字符串键的RDB文件</p>
-<p>执行以下命令，分析一个带有单个字符串键的数据库：</p>
-<p>127.0.0.1:6379&gt; flushdb OK 127.0.0.1:6379&gt; set msg “HELLO” OK 127.0.0.1:6379&gt; save OK</p>
-<p>通过od命令打印RDB文件内容：</p>
-<p>od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0  \0 003   m   s   g 0000020 005   H   E   L   L   O 377  \n   &lt; 342 005   &lt;   A 217   4 0000037</p>
+<h4 id="4-2-包含字符串键的RDB文件"><a href="#4-2-包含字符串键的RDB文件" class="headerlink" title="4.2 包含字符串键的RDB文件"></a>4.2 包含字符串键的RDB文件</h4><p>执行以下命令，分析一个带有单个字符串键的数据库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> msg <span class="string">&quot;HELLO&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; save</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+
+
+<p>通过od命令打印RDB文件内容, 并使用ASCII或反斜杠序列展示结果(<code>-c参数</code>)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ od -c dump.rdb</span><br><span class="line">0000000   R   E   D   I   S   0   0   0   6 376  \0  \0 003   m   s   g</span><br><span class="line">0000020 005   H   E   L   L   O 377  \n   &lt; 342 005   &lt;   A 217   4</span><br><span class="line">0000037</span><br></pre></td></tr></table></figure>
+
+<p>其中:</p>
 <ul>
 <li>五个字节的“REDIS”字符串</li>
 <li>四个字节的版本号（0006）</li>
@@ -458,14 +470,18 @@
 <li>377是EOF常量</li>
 <li>\n   &lt; 342 005   &lt;   A 217   4为8个字节的校验和</li>
 </ul>
-<p>4.3 包含过期时间的字符串键的RDB文件</p>
-<p>127.0.0.1:6379&gt; flushall OK 127.0.0.1:6379&gt; setex msg 10086 “HELLO” OK 127.0.0.1:6379&gt; save OK</p>
-<p>通过od命令打印RDB文件内容：</p>
-<p>od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0 374 375   3   {   3 0000020   r 001  \0  \0  \0 003   m   s   g 005   H   E   L   L   O 377 0000040 317   W 312 301 337 313 364 201 0000050</p>
-<p>4.4 包含一个集合键的RDB文件</p>
-<p>127.0.0.1:6379&gt; flushall OK 127.0.0.1:6379&gt; sadd lang “C” “JAVA” “RUBY” (integer) 3 127.0.0.1:6379&gt; SAVE OK</p>
-<p>通过od命令打印RDB文件内容：</p>
-<p>od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0 002 004   l   a   n 0000020   g 003 004   J   A   V   A 004   R   U   B   Y 001   C 377   u 0000040 177 235 372   z 334  \f 216 0000047</p>
+<h4 id="4-3-包含过期时间的字符串键的RDB文件"><a href="#4-3-包含过期时间的字符串键的RDB文件" class="headerlink" title="4.3 包含过期时间的字符串键的RDB文件"></a>4.3 包含过期时间的字符串键的RDB文件</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; flushall</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; setex msg 10086 <span class="string">&quot;HELLO&quot;</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; save</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>通过od命令打印RDB文件内容, 并使用ASCII或反斜杠序列展示结果(<code>-c参数</code>)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ od -c dump.rdb</span><br><span class="line">0000000   R   E   D   I   S   0   0   0   6 376  \0 374 375   3   &#123;   3</span><br><span class="line">0000020   r 001  \0  \0  \0 003   m   s   g 005   H   E   L   L   O 377</span><br><span class="line">0000040 317   W 312 301 337 313 364 201</span><br><span class="line">0000050</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="4-4-包含一个集合键的RDB文件"><a href="#4-4-包含一个集合键的RDB文件" class="headerlink" title="4.4 包含一个集合键的RDB文件"></a>4.4 包含一个集合键的RDB文件</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; flushall</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; sadd lang <span class="string">&quot;C&quot;</span> <span class="string">&quot;JAVA&quot;</span> <span class="string">&quot;RUBY&quot;</span></span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line">127.0.0.1:6379&gt; SAVE</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>通过od命令打印RDB文件内容, 并使用ASCII或反斜杠序列展示结果(<code>-c参数</code>)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ od -c dump.rdb</span><br><span class="line">0000000   R   E   D   I   S   0   0   0   6 376  \0 002 004   l   a   n</span><br><span class="line">0000020   g 003 004   J   A   V   A 004   R   U   B   Y 001   C 377   u</span><br><span class="line">0000040 177 235 372   z 334  \f 216</span><br><span class="line">0000047</span><br></pre></td></tr></table></figure>
+
 
     </div>
 
@@ -488,6 +504,9 @@
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2020/09/04/Redis-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/" rel="next" title="Redis-踩坑记录">
+                  Redis-踩坑记录 <i class="fa fa-chevron-right"></i>
+                </a>
             </div>
           </div>
     </footer>

@@ -146,27 +146,31 @@ Redis的服务器周期性操作函数serverCron默认每隔`100ms`就执行一�
 
 #### 3.1 databases部分
 
-一个RDB文件的databases部分可以保存任意多个非空数据库。
+一个RDB文件的`databases`部分可以`保存任意多个非空数据库`。
 
 每个非空数据库在RDB文件中都保存着以下三个部分：
 
 ![每个非空数据库在RDB文件中都保存着以下三个部分](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis设计与实现-RDB持久化/每个非空数据库在RDB文件中都保存着以下三个部分.png)
 
-- ①、SELECTDB：长度为1字节的常量，表示接下来读取的将是一个数据库号码。
-- ②、db_number：长度为1字节/2字节/5字节的数据库号码。程序根据该号码，调用SELECT命令切换数据库。
-- ③、key_value_pairs：保存数据库中所有的键值对数据（注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起）。
+- ①、`SELECTDB`：长度为1字节的常量，表示接下来读取的将是一个数据库号码。
+- ②、`db_number`：长度为1字节/2字节/5字节的数据库号码。程序根据该号码，调用SELECT命令切换数据库。
+- ③、`key_value_pairs`：保存数据库中所有的键值对数据（注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起）。
 
-3.2 key_value_pairs部分
 
-RDB文件的每个key_value_pairs：保存数据库中所有的键值对数据（注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起）。
 
-3.2.1 不带过期时间的键值对组成
+#### 3.2 key_value_pairs部分
+
+RDB文件的每个`key_value_pairs`：保存数据库中所有的键值对数据（*注：若键值对带有过期时间，那么过期时间也会和键值对保存在一起*）。
+
+
+
+##### 3.2.1 不带过期时间的键值对组成
 
 不带过期时间的键值对由以下三个部分组成：
 
-![img](http://note.youdao.com/yws/res/27224/59B1D08CBCE54A4ABF37B05EC13115AC)
+![不带过期时间的键值对由以下三个部分组成](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis设计与实现-RDB持久化/不带过期时间的键值对由以下三个部分组成.png)
 
-- ①、Type：记录了value的类型，长度为1字节的常量，包括以下常量，每种常量都代表了一种类型或者底层编码，服务器根据type的值决定如何读入和解释value数据。
+- ①、`Type`：记录了value的类型，长度为1字节的常量，包括以下常量，每种常量都代表了一种类型或者底层编码，服务器根据type的值决定如何读入和解释value数据。
 
 - - REDIS_RDB_TYPE_STRING
   - REDIS_RDB_TYPE_LIST
@@ -178,40 +182,70 @@ RDB文件的每个key_value_pairs：保存数据库中所有的键值对数据�
   - REDIS_RDB_TYPE_ZSET_ZIPLIST
   - REDIS_RDB_TYPE_HASH_ZIPLIST
 
-- ②、key：保存了键值对的键对象
+- ②、`key`：保存了键值对的键对象
 
-- ③、value：保存了键值对的值对象。
+- ③、`value`：保存了键值对的值对象。
 
-3.2.2 带过期时间的键值对组成
+
+
+##### 3.2.2 带过期时间的键值对组成
 
 带过期时间的键值对在RDB文件中的组成如下：
 
-![img](http://note.youdao.com/yws/res/27248/00DEC41F530548F9ACF68721FAE15960)
+![带过期时间的键值对在RDB文件中的组成](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis设计与实现-RDB持久化/带过期时间的键值对在RDB文件中的组成.png)
 
 其中TYPE、key、value三个部分的意义均与不带过期时间的组成相同。
 
 - ①、EXPIRETIME_MS：长度为1字节的常量，表示接下来读入的是一个以毫秒为单位的过期时间。
 - ②、ms：8字节长的带符号的整数，记录了一个以毫秒为单位的UNIX时间戳。
 
-3.3 value编码
+
+
+#### 3.3 value编码
 
 RDB文件中的每个value部分都保存了一个值对象，每个值对象的类型都有与之对应的Type记录，根据类型的不同，value部分的结构，长度也会有所不同。
 
-四、分析RDB文件
 
-通过Linux的od命令来分析Redis服务器产生的RDB文件，RDB文件路径可通过redis.conf文件中查看，如下所示，因此RDB文件路径为：/var/lib/redis/dump.rdb
 
-\# 打印的RDB文件名。 dbfilename dump.rdb # # 路径. dir /var/lib/redis
+### 4 分析RDB文件
 
-4.1 不包含任何键值对的RDB文件
+通过Linux的`od指令`来分析Redis服务器产生的RDB文件，使用od命令查看特殊格式的文件内容。通过指定该命令的不同选项可以以十进制、八进制、十六进制和ASCII码来显示文件。RDB文件路径可通过`/etc/redis/redis.conf`文件中查看，如下所示，因此RDB文件路径为：`/var/lib/redis/dump.rdb`
+
+
+
+`/etc/redis/redis.conf`中配置如下:
+
+```
+# 打印的RDB文件名。
+dbfilename dump.rdb
+#
+# 路径.
+dir /var/lib/redis
+```
+
+
+
+#### 4.1 不包含任何键值对的RDB文件
 
 执行以下命令，创建一个数据库状态为空的RDB文件：
 
-127.0.0.1:6379> flushall OK 127.0.0.1:6379> save OK
+```bash
+127.0.0.1:6379> flushall
+OK
+127.0.0.1:6379> save
+OK
+```
 
-通过od命令打印RDB文件内容，如下所示：
 
- od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 377 334 263   C 360   Z 334 0000020 362   V 0000022
+
+通过od命令打印RDB文件内容，并使用ASCII或反斜杠序列展示结果(`-c参数`), 如下所示：
+
+```bash
+$ od -c dump.rdb
+0000000   R   E   D   I   S   0   0   0   6 377 334 263   C 360   Z 334
+0000020 362   V
+0000022
+```
 
 其中：
 
@@ -220,15 +254,33 @@ RDB文件中的每个value部分都保存了一个值对象，每个值对象的
 - 377是EOF常量
 - 334 263   C 360   Z 334 362   V为8个字节的校验和
 
-4.2 包含字符串键的RDB文件
+
+
+#### 4.2 包含字符串键的RDB文件
 
 执行以下命令，分析一个带有单个字符串键的数据库：
 
-127.0.0.1:6379> flushdb OK 127.0.0.1:6379> set msg "HELLO" OK 127.0.0.1:6379> save OK
+```bash
+127.0.0.1:6379> flushdb
+OK
+127.0.0.1:6379> set msg "HELLO"
+OK
+127.0.0.1:6379> save
+OK
+```
 
-通过od命令打印RDB文件内容：
 
-od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0  \0 003   m   s   g 0000020 005   H   E   L   L   O 377  \n   < 342 005   <   A 217   4 0000037
+
+通过od命令打印RDB文件内容, 并使用ASCII或反斜杠序列展示结果(`-c参数`)：
+
+```bash
+$ od -c dump.rdb
+0000000   R   E   D   I   S   0   0   0   6 376  \0  \0 003   m   s   g
+0000020 005   H   E   L   L   O 377  \n   < 342 005   <   A 217   4
+0000037
+```
+
+其中:
 
 - 五个字节的“REDIS”字符串
 - 四个字节的版本号（0006）
@@ -242,18 +294,49 @@ od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0  \0 003   m  
 - 377是EOF常量
 -  \n   < 342 005   <   A 217   4为8个字节的校验和
 
-4.3 包含过期时间的字符串键的RDB文件
 
-127.0.0.1:6379> flushall OK 127.0.0.1:6379> setex msg 10086 "HELLO" OK 127.0.0.1:6379> save OK
 
-通过od命令打印RDB文件内容：
+#### 4.3 包含过期时间的字符串键的RDB文件
 
-od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0 374 375   3   {   3 0000020   r 001  \0  \0  \0 003   m   s   g 005   H   E   L   L   O 377 0000040 317   W 312 301 337 313 364 201 0000050
+```bash
+127.0.0.1:6379> flushall
+OK
+127.0.0.1:6379> setex msg 10086 "HELLO"
+OK
+127.0.0.1:6379> save
+OK
+```
 
-4.4 包含一个集合键的RDB文件
+通过od命令打印RDB文件内容, 并使用ASCII或反斜杠序列展示结果(`-c参数`)：
 
-127.0.0.1:6379> flushall OK 127.0.0.1:6379> sadd lang "C" "JAVA" "RUBY" (integer) 3 127.0.0.1:6379> SAVE OK
+```bash
+$ od -c dump.rdb
+0000000   R   E   D   I   S   0   0   0   6 376  \0 374 375   3   {   3
+0000020   r 001  \0  \0  \0 003   m   s   g 005   H   E   L   L   O 377
+0000040 317   W 312 301 337 313 364 201
+0000050
+```
 
-通过od命令打印RDB文件内容：
 
-od -c dump.rdb 0000000   R   E   D   I   S   0   0   0   6 376  \0 002 004   l   a   n 0000020   g 003 004   J   A   V   A 004   R   U   B   Y 001   C 377   u 0000040 177 235 372   z 334  \f 216 0000047
+
+#### 4.4 包含一个集合键的RDB文件
+
+```bash
+127.0.0.1:6379> flushall
+OK
+127.0.0.1:6379> sadd lang "C" "JAVA" "RUBY"
+(integer) 3
+127.0.0.1:6379> SAVE
+OK
+```
+
+通过od命令打印RDB文件内容, 并使用ASCII或反斜杠序列展示结果(`-c参数`)：
+
+```bash
+$ od -c dump.rdb
+0000000   R   E   D   I   S   0   0   0   6 376  \0 002 004   l   a   n
+0000020   g 003 004   J   A   V   A 004   R   U   B   Y 001   C 377   u
+0000040 177 235 372   z 334  \f 216
+0000047
+```
+
