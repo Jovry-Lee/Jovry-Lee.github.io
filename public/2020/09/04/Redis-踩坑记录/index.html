@@ -30,7 +30,7 @@
 <meta property="og:description" content="记录一些平时遇到的Redis的坑…">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-04T02:54:33.000Z">
-<meta property="article:modified_time" content="2020-09-04T03:53:05.917Z">
+<meta property="article:modified_time" content="2020-09-04T03:58:52.794Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
@@ -274,7 +274,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2020-09-04 10:54:33 / Modified: 11:53:05" itemprop="dateCreated datePublished" datetime="2020-09-04T10:54:33+08:00">2020-09-04</time>
+      <time title="Created: 2020-09-04 10:54:33 / Modified: 11:58:52" itemprop="dateCreated datePublished" datetime="2020-09-04T10:54:33+08:00">2020-09-04</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -308,7 +308,7 @@
 
 <h3 id="1-Bitmap使用踩坑"><a href="#1-Bitmap使用踩坑" class="headerlink" title="1 Bitmap使用踩坑"></a>1 Bitmap使用踩坑</h3><h4 id="1-1-引入"><a href="#1-1-引入" class="headerlink" title="1.1 引入"></a>1.1 引入</h4><p>最近在做RTA功能，实现精准投放，主要流程是媒体平台将用户加密设备号下发给广告主，广告主根据自有数据，对设备号进行过滤，并返回投放竞价信息, 实现个性化用户筛选(是否参与竞价)及流量实时优选(根据返回信息实现优选).</p>
 <h4 id="1-2-问题"><a href="#1-2-问题" class="headerlink" title="1.2 问题"></a>1.2 问题</h4><ul>
-<li>媒体平台对RTA接口响应要求高(例如,广点通限制请求响应时间在60ms之内),其中网络耗时已经高达40<del>50ms,因此,对于我们提供的RTA接口的逻辑处理时间必须限制在10</del>15ms之内.</li>
+<li>媒体平台对RTA接口响应要求高(例如,广点通限制请求响应时间在60ms之内),其中网络耗时已经高达40到50ms,因此,对于我们提供的RTA接口的逻辑处理时间必须限制在10到15ms之内.</li>
 <li>QPS高达15W,若直接丛数据库查询,将导致数据库实例单机负载高,查询速度降低.</li>
 <li>现在用户设备号数量约为2.3亿.</li>
 </ul>
