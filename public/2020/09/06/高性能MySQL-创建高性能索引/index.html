@@ -29,17 +29,17 @@
 <meta property="og:site_name" content="Jovry&#39;s blog">
 <meta property="og:description" content="索引是存储引擎中用于快速找到记录的一种数据结构。索引优化应该是对查询性能优化最有效的手段。">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="e:/YouDaoYun/364960204@qq.com/8c4c1d759fff4a4abb708687911720c8/clipboard.png">
-<meta property="og:image" content="e:/YouDaoYun/364960204@qq.com/36e589656f9045b98395db3590af8b33/clipboard.png">
-<meta property="og:image" content="e:/YouDaoYun/364960204@qq.com/a2bb327a94e643a5a851ce92bba067c4/clipboard.png">
-<meta property="og:image" content="e:/YouDaoYun/364960204@qq.com/3bc48e9d5b664761a476e0f7be6ac1b7/clipboard.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/B-Tree%E7%B4%A2%E5%BC%95%E7%9A%84%E6%8A%BD%E8%B1%A1%E8%A1%A8%E7%A4%BA.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/%E6%99%AE%E9%80%9A%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95-%E5%85%B6%E7%BB%84%E7%BB%87%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/%E8%81%9A%E7%B0%87%E7%B4%A2%E5%BC%95%E4%B8%AD%E7%9A%84%E8%AE%B0%E5%BD%95%E5%AD%98%E6%94%BE%E7%A4%BA%E4%BE%8B.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/InnoDB%E5%92%8CMyiSAM%E4%BF%9D%E5%AD%98%E6%95%B0%E6%8D%AE%E5%92%8C%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB.png">
 <meta property="article:published_time" content="2020-09-06T11:46:30.000Z">
-<meta property="article:modified_time" content="2020-09-06T11:51:19.753Z">
+<meta property="article:modified_time" content="2020-09-07T07:17:44.286Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Note">
 <meta property="article:tag" content="MySQL">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="e:/YouDaoYun/364960204@qq.com/8c4c1d759fff4a4abb708687911720c8/clipboard.png">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/B-Tree%E7%B4%A2%E5%BC%95%E7%9A%84%E6%8A%BD%E8%B1%A1%E8%A1%A8%E7%A4%BA.png">
 
 
 <link rel="canonical" href="https://jovry-lee.github.io/2020/09/06/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/">
@@ -175,7 +175,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -187,6 +187,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80"><span class="nav-text">1 索引基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-%E7%B4%A2%E5%BC%95%E7%9A%84%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.1 索引的类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-1-B-Tree%E7%B4%A2%E5%BC%95"><span class="nav-text">1.1.1 B-Tree索引</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-2-%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95"><span class="nav-text">1.1.2 哈希索引</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-2-1-InnoDB%E7%9A%84%E8%87%AA%E9%80%82%E5%BA%94%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95"><span class="nav-text">1.1.2.1 InnoDB的自适应哈希索引</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-2-2-%E5%88%9B%E5%BB%BA%E8%87%AA%E5%AE%9A%E4%B9%89%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95"><span class="nav-text">1.1.2.2 创建自定义哈希索引</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-3-%E7%A9%BA%E9%97%B4%E6%95%B0%E6%8D%AE%E7%B4%A2%E5%BC%95%EF%BC%88R-Tree%EF%BC%89"><span class="nav-text">1.1.3 空间数据索引（R-Tree）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-4-%E5%85%A8%E6%96%87%E7%B4%A2%E5%BC%95"><span class="nav-text">1.1.4 全文索引</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%B4%A2%E5%BC%95%E7%9A%84%E4%BC%98%E7%82%B9"><span class="nav-text">2 索引的优点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E9%AB%98%E6%80%A7%E8%83%BD%E7%9A%84%E7%B4%A2%E5%BC%95%E7%AD%96%E7%95%A5"><span class="nav-text">3 高性能的索引策略</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E7%8B%AC%E7%AB%8B%E7%9A%84%E5%88%97"><span class="nav-text">3.1 独立的列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E5%89%8D%E7%BC%80%E7%B4%A2%E5%BC%95%E5%92%8C%E7%B4%A2%E5%BC%95%E9%80%89%E6%8B%A9%E6%80%A7"><span class="nav-text">3.2 前缀索引和索引选择性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-%E5%A4%9A%E5%88%97%E7%B4%A2%E5%BC%95"><span class="nav-text">3.3 多列索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-%E9%80%89%E6%8B%A9%E5%90%88%E9%80%82%E7%9A%84%E7%B4%A2%E5%BC%95%E9%A1%BA%E5%BA%8F"><span class="nav-text">3.4 选择合适的索引顺序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-%E8%81%9A%E7%B0%87%E7%B4%A2%E5%BC%95"><span class="nav-text">3.5 聚簇索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-6-%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95"><span class="nav-text">3.6 覆盖索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-7-%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95%E6%89%AB%E6%8F%8F%E6%9D%A5%E5%81%9A%E6%8E%92%E5%BA%8F"><span class="nav-text">3.7 使用索引扫描来做排序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-8-%E5%8E%8B%E7%BC%A9%EF%BC%88%E5%89%8D%E7%BC%80%E5%8E%8B%E7%BC%A9%EF%BC%89%E7%B4%A2%E5%BC%95"><span class="nav-text">3.8 压缩（前缀压缩）索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-9-%E5%86%97%E4%BD%99%E5%92%8C%E9%87%8D%E5%A4%8D%E7%B4%A2%E5%BC%95"><span class="nav-text">3.9 冗余和重复索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-10-%E6%9C%AA%E4%BD%BF%E7%94%A8%E7%9A%84%E7%B4%A2%E5%BC%95"><span class="nav-text">3.10 未使用的索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-11-%E7%B4%A2%E5%BC%95%E5%92%8C%E9%94%81"><span class="nav-text">3.11 索引和锁</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E7%B4%A2%E5%BC%95%E6%A1%88%E4%BE%8B"><span class="nav-text">4 索引案例</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E6%94%AF%E6%8C%81%E5%A4%9A%E7%A7%8D%E8%BF%87%E6%BB%A4%E6%9D%A1%E4%BB%B6"><span class="nav-text">4.1 支持多种过滤条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E9%81%BF%E5%85%8D%E5%A4%9A%E4%B8%AA%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="nav-text">4.2 避免多个范围查询</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-%E4%BC%98%E5%8C%96%E6%8E%92%E5%BA%8F"><span class="nav-text">4.3 优化排序</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E7%BB%B4%E6%8A%A4%E7%B4%A2%E5%BC%95%E5%92%8C%E8%A1%A8"><span class="nav-text">5 维护索引和表</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-%E6%89%BE%E5%88%B0%E5%B9%B6%E4%BF%AE%E5%A4%8D%E6%8D%9F%E5%9D%8F%E7%9A%84%E8%A1%A8"><span class="nav-text">5.1 找到并修复损坏的表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-%E6%9B%B4%E6%96%B0%E7%B4%A2%E5%BC%95%E7%9A%84%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF"><span class="nav-text">5.2 更新索引的统计信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-3-%E5%87%8F%E5%B0%91%E7%B4%A2%E5%BC%95%E5%92%8C%E6%95%B0%E6%8D%AE%E7%9A%84%E7%A2%8E%E7%89%87"><span class="nav-text">5.3 减少索引和数据的碎片</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E6%80%BB%E7%BB%93"><span class="nav-text">6 总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99%EF%BC%9A"><span class="nav-text">参考资料：</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -277,10 +278,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2020-09-06 19:46:30 / Modified: 19:51:19" itemprop="dateCreated datePublished" datetime="2020-09-06T19:46:30+08:00">2020-09-06</time>
+      <time title="Created: 2020-09-06 19:46:30" itemprop="dateCreated datePublished" datetime="2020-09-06T19:46:30+08:00">2020-09-06</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-07 15:17:44" itemprop="dateModified" datetime="2020-09-07T15:17:44+08:00">2020-09-07</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -319,60 +326,63 @@
         <p>索引是存储引擎中用于快速找到记录的一种数据结构。索引优化应该是对查询性能优化最有效的手段。</p>
 <a id="more"></a>
 
-<p><strong>一 索引基础</strong></p>
-<p>索引可以包含一个或多个列（联合索引）的值。如果索引包含多个列，其列的顺序非常重要，因为MySql只能高效地使用索引的最左前缀列。</p>
-<p><strong>1.1 索引的类型</strong></p>
-<p>Mysql中的索引实现是在存储引擎层中实现的，而不是服务层，因此没有统一的索引标准（不同的存储引擎的工作方式不一样）</p>
-<p><strong>1.1.1 B-Tree索引</strong></p>
-<p>此处的B-Tree是泛指，例如InnoDB实际使用的B+Tree；NDB实际使用的T-Tree。 大多数MySql引擎都使用这种索引。</p>
+<h3 id="1-索引基础"><a href="#1-索引基础" class="headerlink" title="1 索引基础"></a>1 索引基础</h3><p>索引可以包含一个或多个列（联合索引）的值。如果索引包含多个列，其列的顺序非常重要，因为MySql只能高效地使用索引的最左前缀列。</p>
+<h4 id="1-1-索引的类型"><a href="#1-1-索引的类型" class="headerlink" title="1.1 索引的类型"></a>1.1 索引的类型</h4><p><code>Mysql中的索引实现是在存储引擎层中实现的，而不是服务层</code>，因此没有统一的索引标准（不同的存储引擎的工作方式不一样）</p>
+<h5 id="1-1-1-B-Tree索引"><a href="#1-1-1-B-Tree索引" class="headerlink" title="1.1.1 B-Tree索引"></a>1.1.1 B-Tree索引</h5><p>此处的B-Tree是泛指，例如InnoDB实际使用的B+Tree；NDB实际使用的T-Tree。 大多数MySql引擎都使用这种索引。</p>
 <p>B-Tree索引的其特征如下：</p>
 <ul>
 <li>所有的值都是按顺序存储的。</li>
 <li>每个叶子页到根的距离相同。</li>
 </ul>
 <p>下图为B-Tree索引的抽象表示：</p>
-<p><img src="E:\YouDaoYun\364960204@qq.com\8c4c1d759fff4a4abb708687911720c8\clipboard.png" alt="img"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/B-Tree%E7%B4%A2%E5%BC%95%E7%9A%84%E6%8A%BD%E8%B1%A1%E8%A1%A8%E7%A4%BA.png" alt="B-Tree索引的抽象表示"></p>
 <p>其中，每个节点表示一个页，对于InnoDB存储引擎的逻辑页大小为16k。</p>
 <p>示例：假设有一个联合索引的表，如下：</p>
-<p>create table People (    <code>id</code> int unsigned not null auto_increment comment ‘主键id’,    <code>last_name</code> varchar(50) not null default ‘’ comment ‘姓氏’,    <code>first_name</code> varchar(50) not null default ‘’ comment ‘名称’,    <code>dob</code> date not null comment ‘生日’,    <code>gender</code> enum(‘m’,’f’) not null comment ‘性别’,    primary key (<code>id</code>),    key <code>idx_name_dob</code>(<code>last_name</code>, <code>first_name</code>, <code>dob</code>) ) engine=InnoDB default charset=utf8mb4 comment=’用户信息表’</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">create table People (</span><br><span class="line">    &#96;id&#96; int unsigned not null auto_increment comment &#39;主键id&#39;,</span><br><span class="line">    &#96;last_name&#96; varchar(50) not null default &#39;&#39; comment &#39;姓氏&#39;,</span><br><span class="line">    &#96;first_name&#96; varchar(50) not null default &#39;&#39; comment &#39;名称&#39;,</span><br><span class="line">    &#96;dob&#96; date not null comment &#39;生日&#39;,</span><br><span class="line">    &#96;gender&#96; enum(&#39;m&#39;,&#39;f&#39;) not null comment &#39;性别&#39;,</span><br><span class="line">    primary key (&#96;id&#96;),</span><br><span class="line">    key &#96;idx_name_dob&#96;(&#96;last_name&#96;, &#96;first_name&#96;, &#96;dob&#96;)</span><br><span class="line">) engine&#x3D;InnoDB default charset&#x3D;utf8mb4 comment&#x3D;&#39;用户信息表&#39;</span><br></pre></td></tr></table></figure>
+
 <p>对于表中的普通联合索引，其组织数据的存储结构如下：</p>
-<p><img src="E:\YouDaoYun\364960204@qq.com\36e589656f9045b98395db3590af8b33\clipboard.png" alt="img"></p>
-<p>注：①、索引对多个值进行排序的依据是CREATE TABLE语句中定义索引时列的顺序。</p>
-<p>②、图中最后两个条目的人名都一样，其排序是使用出生日期进行排序的。</p>
-<p>B-Tree适应哪些查询类型？</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/%E6%99%AE%E9%80%9A%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95-%E5%85%B6%E7%BB%84%E7%BB%87%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png" alt="普通联合索引-其组织数据的存储结构"></p>
+<p>注：</p>
+<ul>
+<li><p>①、索引对多个值进行排序的依据是CREATE TABLE语句中定义索引时列的顺序。</p>
+</li>
+<li><p>②、图中最后两个条目的人名都一样，其排序是使用出生日期进行排序的。</p>
+</li>
+</ul>
+<p><strong>B-Tree适应哪些查询类型？</strong></p>
 <ul>
 <li>全键值查询</li>
 <li>键值范围查询</li>
-<li>键前缀查询（只适用于最左前缀查询）</li>
+<li>键前缀查询（<em>只适用于最左前缀查询</em>）</li>
 </ul>
-<p>联合索引能适用于哪些查询类型呢？</p>
+<p><strong>联合索引能适用于哪些查询类型呢？</strong></p>
 <ul>
-<li>全值匹配：和索引中的所有列进行匹配；</li>
-<li>匹配最左前缀：例如，使用索引中的第一列，或者第一及第二列；</li>
-<li>匹配列前缀：匹配某一列的值的开头部分，如查找示例所有姓为J开头的人；</li>
-<li>匹配范围值：如查找示例中姓氏在Allen和Barrymore之间的人；</li>
-<li>精确匹配某一列并范围匹配另一列：例如示例中，查询所有姓氏为Allen，并且名字是字母K开头的人，即第一列全值匹配，第二列范围匹配；</li>
-<li>只访问索引的查询：B-Tree通常可以支持只访问索引，而无需访问数据行。</li>
+<li><code>全值匹配</code>：和索引中的所有列进行匹配；</li>
+<li><code>匹配最左前缀</code>：例如，使用索引中的第一列，或者第一及第二列；</li>
+<li><code>匹配列前缀</code>：匹配某一列的值的开头部分，如查找示例所有姓为J开头的人；</li>
+<li><code>匹配范围值</code>：如查找示例中姓氏在Allen和Barrymore之间的人；</li>
+<li><code>精确匹配某一列并范围匹配另一列</code>：例如示例中，查询所有姓氏为Allen，并且名字是字母K开头的人，即第一列全值匹配，第二列范围匹配；</li>
+<li><code>只访问索引的查询</code>：B-Tree通常可以支持只访问索引，而无需访问数据行。</li>
 </ul>
-<p>注：由于B-Tree索引树中的节点是有序的，因此该索引还可以用于查询ORDER BY操作（排序）。</p>
-<p>B-Tree索引有哪些限制（缺点）？</p>
+<p><em>注：由于B-Tree索引树中的节点是有序的，因此该索引还可以用于查询ORDER BY操作（排序）。</em></p>
+<p><strong>B-Tree索引有哪些限制（缺点）？</strong></p>
 <ul>
 <li>①、如果不是按照索引的最左列开始查找，则无法使用索引。</li>
 <li>②、不能跳过索引中的列。</li>
 <li>③、如果查询中有某个列的范围查询，则其右边所有列都无法使用索引优化查找（即全表扫描）。</li>
 </ul>
-<p>为什么MySQL数据库大部分索引结构要使用B+Tree？</p>
-<p><strong>1.1.2 哈希索引</strong></p>
-<p>哈希索引（hash index）基于哈希表实现，只有精确匹配索引所有列的查询才有效。对于每一行数据，存储引擎都会对所有的索引列计算出一个哈希码，哈希索引将所有的哈希码存储在索引中，同时在哈希表中保存指向每个数据行的指针。 </p>
+<p><strong>为什么MySQL数据库大部分索引结构要使用B+Tree？</strong></p>
+<h5 id="1-1-2-哈希索引"><a href="#1-1-2-哈希索引" class="headerlink" title="1.1.2 哈希索引"></a>1.1.2 哈希索引</h5><p><code>哈希索引（hash index）基于哈希表实现，只有精确匹配索引所有列的查询才有效。</code>对于每一行数据，存储引擎都会对所有的索引列计算出一个哈希码，哈希索引将所有的哈希码存储在索引中，同时在哈希表中保存指向每个数据行的指针。 </p>
 <p>Mysql中只有Memory引擎显式支持且默认支持哈希索引。</p>
 <p>示例：</p>
-<p># 建表 create table <code>testhash</code> (    <code>fname</code> varchar(50) not null,    <code>lname</code> varchar(50) not null,    key using hash(fname) )engine=memory; # 添加数据 insert into <code>testhash</code> (<code>fname</code>,<code>lname</code>)  values     (‘Arjen’,’Lentz’),    (‘Baron’, ‘Schwartz’),    (‘Peter’, ‘Zartsev’),    (‘Vadim’, ‘Tkachenko’);</p>
-<p>哈希索引的优点：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 建表</span><br><span class="line">create table &#96;testhash&#96; (</span><br><span class="line">    &#96;fname&#96; varchar(50) not null,</span><br><span class="line">    &#96;lname&#96; varchar(50) not null,</span><br><span class="line">    key using hash(fname)</span><br><span class="line">)engine&#x3D;memory;</span><br><span class="line"></span><br><span class="line"># 添加数据</span><br><span class="line">insert into &#96;testhash&#96; (&#96;fname&#96;,&#96;lname&#96;) </span><br><span class="line">values </span><br><span class="line">    (&#39;Arjen&#39;,&#39;Lentz&#39;),</span><br><span class="line">    (&#39;Baron&#39;, &#39;Schwartz&#39;),</span><br><span class="line">    (&#39;Peter&#39;, &#39;Zartsev&#39;),</span><br><span class="line">    (&#39;Vadim&#39;, &#39;Tkachenko&#39;);</span><br></pre></td></tr></table></figure>
+
+<p><strong>哈希索引的优点</strong>：</p>
 <ul>
 <li>①、索引自身只需存储对应的哈希值，因此索引结构紧凑。</li>
 <li>②、查找速度非常快。</li>
 </ul>
-<p>哈希索引的限制(缺点)：</p>
+<p><strong>哈希索引的限制(缺点)：</strong></p>
 <ul>
 <li>①、不能使用索引中的值来直接读取行（哈希索引只包含哈希值和行指针，而不存储字段值）</li>
 <li>②、哈希索引数据不是按照索引值顺序存储的，因此无法用于排序。</li>
@@ -380,74 +390,76 @@
 <li>④、哈希索引只支持等值比较查询（=，IN(), &lt;=&gt;），也不支持任何的范围查询。</li>
 <li>⑤、当有很多哈希冲突时，会导致访问速度变慢，且维护成本代价也会很高。</li>
 </ul>
-<p>哈希索引比树型索引更快，为什么MySQL的索引结构要设计成B-Tree结构？</p>
-<p>对于哈希索引，其增删改查的平均时间复杂度为O(1)；</p>
-<p>而Tree型索引，其增删改查的平均时间复杂度为O(lg(n))；</p>
-<p>对于单行数据的读写，哈希索引均比Tree型索引块，但是对于某些特殊的查询SQL，例如分组、排序、比较等情况，哈希索引的时间复杂度会退化为O(n)，而Tree索引因为其有序的特性，能依旧保持O(lg(n))的高效率。</p>
-<p>注：InnoDB存储引擎不支持哈希索引。</p>
-<p>哈希索引的适用场景举例？？？？</p>
+<p><strong>哈希索引比树型索引更快，为什么MySQL的索引结构要设计成B-Tree结构？</strong></p>
+<ul>
+<li>对于哈希索引，其增删改查的平均时间复杂度为O(1)；</li>
+</ul>
+<ul>
+<li>而Tree型索引，其增删改查的平均时间复杂度为O(lg(n))；</li>
+</ul>
+<ul>
+<li>对于单行数据的读写，哈希索引均比Tree型索引块，但是对于某些特殊的查询SQL，例如分组、排序、比较等情况，哈希索引的时间复杂度会退化为O(n)，而Tree索引因为其有序的特性，能依旧保持O(lg(n))的高效率。</li>
+</ul>
+<p><em>注：InnoDB存储引擎不支持哈希索引。</em></p>
+<p><strong>哈希索引的适用场景举例？</strong></p>
 <p>在数据仓库的应用中有一种经典的“星型”schema，需要关联很多查找表，哈希索引就非常适合查找表的需求。</p>
-<p>1.1.2.1 InnoDB的自适应哈希索引</p>
-<p>InnoDB会将某些使用非常频繁的索引在内存中基于B-Tree索引之上再创建一个哈希索引。这是一个完全自动、内部的行为，用于无法控制或配置，如有必要，可关闭该功能。</p>
-<p>1.1.2.2 创建自定义哈希索引</p>
-<p>思路：在B-Tree基础上创建一个伪哈希索引。需要做的就是在查询的WHERE字句中手动指定使用的哈希函数。（实例见高性能MySQL P156），为避免冲突问题，必须在WHERE条件中带入哈希值和对应的列值。</p>
+<h6 id="1-1-2-1-InnoDB的自适应哈希索引"><a href="#1-1-2-1-InnoDB的自适应哈希索引" class="headerlink" title="1.1.2.1 InnoDB的自适应哈希索引"></a>1.1.2.1 InnoDB的自适应哈希索引</h6><p>InnoDB会将某些使用非常频繁的索引在内存中基于B-Tree索引之上再创建一个哈希索引。这是一个完全自动、内部的行为，用于无法控制或配置，如有必要，可关闭该功能。</p>
+<h6 id="1-1-2-2-创建自定义哈希索引"><a href="#1-1-2-2-创建自定义哈希索引" class="headerlink" title="1.1.2.2 创建自定义哈希索引"></a>1.1.2.2 创建自定义哈希索引</h6><p><strong>思路</strong>：<code>在B-Tree基础上创建一个伪哈希索引</code>。需要做的就是在查询的WHERE字句中手动指定使用的哈希函数。（<em>实例见高性能MySQL P156</em>），为避免冲突问题，必须在WHERE条件中带入哈希值和对应的列值。</p>
 <p>示例：需要存储大量的URL，并根据URL进行搜索查找，若使用B-Tree来存储URL，存储的内容就会很大，因为URL本身很长。因此可以新增一个被索引的url_crc列，使用crc32做哈希，然后查询时使用以下方式查询：</p>
-<p>select id from url where url=”<a target="_blank" rel="noopener" href="http://www/mysql.com&quot;">http://www/mysql.com&quot;</a> and url_crc=crc32(“<a target="_blank" rel="noopener" href="http://www/mysql.com&quot;">http://www/mysql.com&quot;</a>);</p>
-<p>这样做的优点是性能非常高，但是需要维护哈希值（维护方式可以手动维护，即程序控制，还可以通过触发器维护（触发器示例看参考资料1P149））。</p>
-<p><strong>1.1.3 空间数据索引（R-Tree）</strong></p>
-<p>MyISAM引擎支持空间索引，可以样做地理数据存储。该索引可以从所有维度来查询数据。必须使用MySQL的GIS相关函数来维护数据。MySQL对GIS支持不完善，不推荐使用此特性。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select id from url where url&#x3D;&quot;http:&#x2F;&#x2F;www&#x2F;mysql.com&quot; and url_crc&#x3D;crc32(&quot;http:&#x2F;&#x2F;www&#x2F;mysql.com&quot;);</span><br></pre></td></tr></table></figure>
+
+<p>这样做的优点是性能非常高，但是需要维护哈希值（维护方式可以手动维护，即程序控制，还可以通过触发器维护（<em>触发器示例看参考资料1P149</em>））。</p>
+<h5 id="1-1-3-空间数据索引（R-Tree）"><a href="#1-1-3-空间数据索引（R-Tree）" class="headerlink" title="1.1.3 空间数据索引（R-Tree）"></a>1.1.3 空间数据索引（R-Tree）</h5><p><code>MyISAM引擎支持空间索引，可以样做地理数据存储</code>。该索引可以从所有维度来查询数据。必须使用MySQL的GIS相关函数来维护数据。MySQL对GIS支持不完善，不推荐使用此特性。</p>
 <p>开源关系数据库系统对GIS的解决方案做的比较好的是：PostgreSQL的PostGIS</p>
-<p><strong>1.1.4 全文索引</strong></p>
-<p>全文索引是一种特殊类型的索引，它查找的是文本中的关键词，而不是直接比较索引中的值。</p>
-<p><strong>二 索引的优点</strong></p>
-<p>索引可以让服务器快速定位指定位置，根据创建索引的数据结构不同，索引还有一些其他的附加作用。例如B-Tree索引，按照顺序存储数据，索引可以用于ORDER BY 和GROUP BY操作。</p>
-<p>应用索引有哪些优点？</p>
+<h5 id="1-1-4-全文索引"><a href="#1-1-4-全文索引" class="headerlink" title="1.1.4 全文索引"></a>1.1.4 全文索引</h5><p>全文索引是一种特殊类型的索引，<code>它查找的是文本中的关键词，而不是直接比较索引中的值。</code></p>
+<h3 id="2-索引的优点"><a href="#2-索引的优点" class="headerlink" title="2 索引的优点"></a>2 索引的优点</h3><p>索引可以让服务器快速定位指定位置，根据创建索引的数据结构不同，索引还有一些其他的附加作用。例如B-Tree索引，按照顺序存储数据，索引可以用于ORDER BY 和GROUP BY操作。</p>
+<p><strong>应用索引有哪些优点？</strong></p>
 <ul>
 <li>减少服务器需要扫描的数据量</li>
 <li>帮助服务器避免排序和临时表</li>
 <li>将随机I/O变为顺序I/O</li>
 </ul>
-<p><strong>三 高性能的索引策略</strong></p>
-<p><strong>3.1 独立的列</strong></p>
-<p>独立的列指索引列不能是表达式的一部分，也不能是函数的参数。</p>
+<h3 id="3-高性能的索引策略"><a href="#3-高性能的索引策略" class="headerlink" title="3 高性能的索引策略"></a>3 高性能的索引策略</h3><h4 id="3-1-独立的列"><a href="#3-1-独立的列" class="headerlink" title="3.1 独立的列"></a>3.1 独立的列</h4><p><code>独立的列指索引列不能是表达式的一部分，也不能是函数的参数。</code></p>
 <p>示例：</p>
-<p># 下面的这个查询无法使用actor_id列的索引。 select actor_id from sakila.actor where actor_id + 1 = 5; # 优化后的查询 select actor_id from sakila.actor where actor_id = 4;</p>
-<p><strong>3.2 前缀索引和索引选择性</strong></p>
-<p>当索引很长字符列时，会让索引变得大且慢，解决方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 下面的这个查询无法使用actor_id列的索引。</span><br><span class="line">select actor_id from sakila.actor where actor_id + 1 &#x3D; 5;</span><br><span class="line"></span><br><span class="line"># 优化后的查询</span><br><span class="line">select actor_id from sakila.actor where actor_id &#x3D; 4;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="3-2-前缀索引和索引选择性"><a href="#3-2-前缀索引和索引选择性" class="headerlink" title="3.2 前缀索引和索引选择性"></a>3.2 前缀索引和索引选择性</h4><p>当索引很长字符列时，会让索引变得大且慢，解决方法：</p>
 <ul>
 <li>①、模拟哈希索引</li>
 <li>②、前缀索引+索引的选择</li>
 </ul>
-<p>前缀索引：索引开始的部分字符，节约索引空间，提高索引效率。前缀索引会降低索引的选择性。</p>
-<p>索引的选择性：指不重复的索引值和数据表的记录总数的比值。索引的选择性索高则查询的效率越高。</p>
+<p><code>前缀索引</code>：索引开始的部分字符，节约索引空间，提高索引效率。前缀索引会降低索引的选择性。</p>
+<p><code>索引的选择性</code>：<u>指不重复的索引值和数据表的记录总数的比值。索引的选择性索高则查询的效率越高</u>。</p>
 <p>示例：创建前缀索引</p>
-<p>alter table sakila.city_demo add key (city(7))</p>
-<p>前缀索引的优缺点分别是什么？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table sakila.city_demo add key (city(7))</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>前缀索引的优缺点分别是什么？</strong></p>
 <ul>
 <li>优点：使索引能更小、更快。</li>
 <li>缺点：Mysql无法使用前缀索引做ORDERY BY 和GROUP BY，也无法使用前缀索引做覆盖扫描。</li>
 </ul>
-<p>前缀索引常见的应用场景：针对很长的十六进制唯一ID使用前缀索引。</p>
-<p>既然有前缀索引，那么有没有<strong>后缀索引</strong>呢？</p>
-<p>其实是有后缀索引的，但MySQL原生不支持反向索引，但可以吧字符串反转后存储，并基于此建立前缀索引。</p>
-<p><strong>3.3 多列索引</strong></p>
-<p><strong>3.4 选择合适的索引顺序</strong></p>
-<p>正确的顺序依赖于使用该索引的查询，并且同时需要考虑如何更好地满足排序和分组的需要。</p>
+<p><code>前缀索引常见的应用场景</code>：<u>针对很长的十六进制唯一ID使用前缀索引。</u></p>
+<p><strong>既然有前缀索引，那么有没有后缀索引呢？</strong></p>
+<p>其实是有后缀索引的，但MySQL原生不支持反向索引，但可以把字符串反转后存储，并基于此建立前缀索引。</p>
+<h4 id="3-3-多列索引"><a href="#3-3-多列索引" class="headerlink" title="3.3 多列索引"></a>3.3 多列索引</h4><h4 id="3-4-选择合适的索引顺序"><a href="#3-4-选择合适的索引顺序" class="headerlink" title="3.4 选择合适的索引顺序"></a>3.4 选择合适的索引顺序</h4><p>正确的顺序依赖于使用该索引的查询，并且同时需要考虑如何更好地满足排序和分组的需要。</p>
 <p>在一个多列B-Tree索引中，索引列的顺序意味着索引首先按照最左列进行排序，其次是第二列，等等。所以索引可以按照升序或者降序进行扫描，以满足精确符合列顺序的ORDER BY、GROUP BY和DISTINCT等字句的查询。</p>
-<p>通常来说，当不需要考虑排序或分组时，将选择性高的列放到索引最前列是很好的。</p>
-<p><strong>3.5 聚簇索引</strong></p>
-<p>聚簇索引并不是一种单独的索引类型，而是一种数据存储方式。具体的实现细节依赖于其实现方式，但InnoDB的聚簇索引实际上在同一个结构中保存了B-Tree索引和数据行。</p>
-<p>聚簇索引的数据行实际存放在索引的叶子页（leaf page），术语“聚簇”表示数据行和相邻的键值紧凑地存储在一起。（一个表只会有一个聚簇索引）</p>
+<p><code>通常来说，当不需要考虑排序或分组时，将选择性高的列放到索引最前列是很好的。</code></p>
+<h4 id="3-5-聚簇索引"><a href="#3-5-聚簇索引" class="headerlink" title="3.5 聚簇索引"></a>3.5 聚簇索引</h4><p><code>聚簇索引并不是一种单独的索引类型，而是一种数据存储方式</code>。具体的实现细节依赖于其实现方式，但<u>InnoDB的聚簇索引实际上在同一个结构中保存了B-Tree索引和数据行。</u></p>
+<p><code>聚簇索引的数据行实际存放在索引的叶子页（leaf page）</code>，术语“聚簇”表示数据行和相邻的键值紧凑地存储在一起。（一个表只会有一个聚簇索引）</p>
 <p>聚簇索引中的记录存放示例：</p>
-<p><img src="E:\YouDaoYun\364960204@qq.com\a2bb327a94e643a5a851ce92bba067c4\clipboard.png" alt="img"></p>
-<p>对于InnoDB，通过主键聚集数据，若没有主键，InnoDB会选择一个唯一的非空索引代替，若没有唯一非空索引，InnoDB会隐式定义一个主键来作为聚簇索引。</p>
-<p>聚簇索引的优点？</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/%E8%81%9A%E7%B0%87%E7%B4%A2%E5%BC%95%E4%B8%AD%E7%9A%84%E8%AE%B0%E5%BD%95%E5%AD%98%E6%94%BE%E7%A4%BA%E4%BE%8B.png" alt="聚簇索引中的记录存放示例"></p>
+<p><em>对于InnoDB，通过主键聚集数据，若没有主键，InnoDB会选择一个唯一的非空索引代替，若没有唯一非空索引，InnoDB会隐式定义一个主键来作为聚簇索引。</em></p>
+<p><strong>聚簇索引的优点</strong>？</p>
 <ul>
 <li>可以将数据保存在一起。例如试下电子邮箱时，可以根据用户ID来聚集数据，这样只需要从此磁盘读取少数的数据页就能获取某个用户的全部邮件，若没有使用聚簇索引，则每封邮件都可能导致一次磁盘I/O。</li>
 <li>数据访问更快；</li>
 <li>使用覆盖索引扫描的查询可以直接使用页结点中的主键值。</li>
 </ul>
-<p>聚簇索引的缺点？</p>
+<p><strong>聚簇索引的缺点？</strong></p>
 <ul>
 <li>聚簇索引最大限度地提高了I/O密集型应用的性能，但如果数据全部放在内存中，则访问的顺序就没有那么重要了，聚簇索引也就没有什么优势了。</li>
 <li>插入的速度严重依赖于插入的顺序。</li>
@@ -457,108 +469,103 @@
 <li>二级索引可能比想象的要更大，因为二级索引的叶子节点包含了引用行的主键列。</li>
 <li>二级索引访问需要两次索引查询，而不是一次。</li>
 </ul>
-<p>InnoDB和MyiSAM保存数据和索引的区别？</p>
-<p><img src="E:\YouDaoYun\364960204@qq.com\3bc48e9d5b664761a476e0f7be6ac1b7\clipboard.png" alt="img"></p>
-<p>在InnoDB表时应该尽可能地按主键顺序插入数据，并且尽可能使用单调增加的聚簇键的值来插入新行。</p>
-<p>那么顺序的主键有不适用的时候吗？是什么时候呢？</p>
+<p><strong>InnoDB和MyISAM保存数据和索引的区别？</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E9%AB%98%E6%80%A7%E8%83%BDMySQL_%E7%AC%AC%E4%B8%89%E7%89%88-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/InnoDB%E5%92%8CMyiSAM%E4%BF%9D%E5%AD%98%E6%95%B0%E6%8D%AE%E5%92%8C%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB.png" alt="InnoDB和MyiSAM保存数据和索引的区别"></p>
+<p><em>在InnoDB表时应该尽可能地按主键顺序插入数据，并且尽可能使用单调增加的聚簇键的值来插入新行。</em></p>
+<p><strong>那么顺序的主键有不适用的时候吗？是什么时候呢？</strong></p>
 <p>对于高并发负载，在InnoDB中按主键顺序插入可能会造成明显的争用。主键的上界会成为“热点”，因为所有的插入都发生在这里，所以并发插入可能导致间隙锁竞争。另一个热点可能是auto_increment锁机制。</p>
-<p><strong>3.6 覆盖索引</strong></p>
-<p>定义：如果一个索引包含（或者说覆盖）所有需要查询的字段的值，我们就称为覆盖索引。</p>
+<h4 id="3-6-覆盖索引"><a href="#3-6-覆盖索引" class="headerlink" title="3.6 覆盖索引"></a>3.6 覆盖索引</h4><p>定义：<code>如果一个索引包含（或者说覆盖）所有需要查询的字段的值，我们就称为覆盖索引。</code></p>
 <p>优点：</p>
 <ul>
 <li>①、索引条目远小于数据行大小，此时Mysql会极大的减少数据访问量。</li>
 <li>②、索引按照列值顺序存储（至少单页内是如此），所以对于I/O密集型的范围查询会比随机从磁盘读取每一行的数据的I/O要少得多。</li>
-<li>③、一些存储索引（如：MyISAM）在内存中值缓存索引，数据则依赖于操作系统来缓存，因此牙哦访问数据需要系统系统调用。这可能会导致严重的性能问题，尤其是那桐调用占了数据访问中最大开销的场景。</li>
+<li>③、一些存储索引（如：MyISAM）在内存中值缓存索引，数据则依赖于操作系统来缓存，因此要访问数据需要系统调用。这可能会导致严重的性能问题，尤其是那桐调用占了数据访问中最大开销的场景。</li>
 <li>④、InnoDB是聚簇索引，覆盖索引对InnoDB表特别有用，使用覆盖索引可以避免对主键索引的二次查询。</li>
 </ul>
 <p>（注：不是所有类型的索引都可以成为覆盖索引，覆盖索引必须要存储索引列的值，而哈希索引、空间索引和全文索引等都不存储索引列的值，所以MySQL只能使用B-Tree索引做覆盖索引）</p>
-<p>如何知道一个查询被索引覆盖？</p>
-<p>在EXPLAIN的EXtra列可以看到“Using index”的信息。</p>
-<p><strong>3.7 使用索引扫描来做排序</strong></p>
-<p>MySQL生成有序结果的方式有哪些？</p>
+<p><strong>如何知道一个查询被索引覆盖？</strong></p>
+<p>在EXPLAIN的EXtra列可以看到<code>“Using index”</code>的信息。</p>
+<h4 id="3-7-使用索引扫描来做排序"><a href="#3-7-使用索引扫描来做排序" class="headerlink" title="3.7 使用索引扫描来做排序"></a>3.7 使用索引扫描来做排序</h4><p><strong>MySQL生成有序结果的方式有哪些？</strong></p>
 <ul>
 <li>①、排序操作。</li>
 <li>②、索引顺序扫描。</li>
 </ul>
-<p>为什么按索引顺序读取数据的速度通常要比顺序地全表扫描慢？</p>
+<p><strong>为什么按索引顺序读取数据的速度通常要比顺序地全表扫描慢？</strong></p>
 <p>扫描索引本身是很快的，但如果索引不能覆盖查询所需的全部列，那就不得不每扫描一条索引记录就得回表查询一次对应的行，这基本上都是随机I/O，因此会比顺序地全表扫描慢，尤其是在I/O密集型工作负载时。</p>
-<p>MySQL可以使用同一个索引既满足排序，有用于查找行，因此，设计索引时应该尽可能的同事满足索引和排序这两种任务。只有当索引的列顺序和ORDER BY子句的顺序完全一致，并且所有列的排序方向（正序或倒序）都一样时，MySQL才能使用索引来对接过做排序。</p>
-<p>（注：若多表关联查询，只有当ORDER BY子句引用的字段全部为第一个表时，才能使用索引做排序。）</p>
+<p>MySQL可以使用同一个索引既满足排序，又用于查找行，因此，设计索引时应该尽可能的同事满足索引和排序这两种任务。只有当索引的列顺序和ORDER BY子句的顺序完全一致，并且所有列的排序方向（正序或倒序）都一样时，MySQL才能使用索引来对接过做排序。</p>
+<p>（<u>注：若多表关联查询，只有当ORDER BY子句引用的字段全部为第一个表时，才能使用索引做排序。</u>）</p>
 <p>特殊情况：有一种情况ORDER BY子句不满足索引的最左前缀的要求，就是前导列为常量的时候，如果WHERE子句或者JOIN子句中对这些列指定了常量，就可以“弥补”索引的不足。</p>
-<p><strong>3.8 压缩（前缀压缩）索引</strong></p>
-<p>MyISAM使用前缀压缩来减少索引的大小，从而让更多的索引可以放入内存中，这在某些情况下能极大地提高性能，默认只压缩字符串，但通过参数设置也可以对整数做压缩。</p>
-<p>MyISAM压缩每个索引块的方法是怎么样的？</p>
-<p>先完全保存索引快中的第一个值，然后将其他值和第一个值比较，的到相同前缀的字节数和剩余不同后缀部分，把这不跟存储起来即可。</p>
-<p>示例：索引块中第一个值是“perform”，第二个值为“performance”，那么第二个指的前缀压缩后存储的值类似于“7，ance”这样的形式。</p>
-<p>注：MyISAM对行指针也采用前缀索引方式。</p>
-<p>压缩（前缀压缩）索引的优缺点？</p>
+<h4 id="3-8-压缩（前缀压缩）索引"><a href="#3-8-压缩（前缀压缩）索引" class="headerlink" title="3.8 压缩（前缀压缩）索引"></a>3.8 压缩（前缀压缩）索引</h4><p><code>MyISAM使用前缀压缩来减少索引的大小，从而让更多的索引可以放入内存中，这在某些情况下能极大地提高性能，</code>默认只压缩字符串，但通过参数设置也可以对整数做压缩。`</p>
+<p><strong>MyISAM压缩每个索引块的方法是怎么样的？</strong></p>
+<p>先完全保存索引块中的第一个值，然后将其他值和第一个值比较，得到相同前缀的字节数和剩余不同后缀部分，把这部分存储起来即可。</p>
+<p><code>示例</code>：索引块中第一个值是“perform”，第二个值为“performance”，那么第二个指的前缀压缩后存储的值类似于“7，ance”这样的形式。</p>
+<p><em>注：MyISAM对行指针也采用前缀索引方式。</em></p>
+<p><strong>压缩（前缀压缩）索引的优缺点？</strong></p>
 <ul>
 <li>优点：使用更少的空间；</li>
 <li>缺点：某些操作可能更慢，比如，每个值的压缩前缀都依赖前面的值，所以MyISAM查找时无法在索引块使用二分查找而是只能从头开始扫描。倒序扫描也支持得不是很好。</li>
 </ul>
-<p>在CREATE TABLE语句中使用PACK_KEYS参数来控制索引压缩的方式。</p>
-<p><strong>3.9 冗余和重复索引</strong></p>
-<p>MySQL允许在相同列上创建多个索引，无论有意还是无意。</p>
-<p>重复索引：指在相同的列上按照相同的顺序创建相同类型的索引。应该避免这样创建重复索引！</p>
-<p>冗余索引：冗余索引与重复索引有些许不同，比如，已有联合索引（A，B），若在创建索引A，则算是冗余索引。</p>
-<p><strong>3.10 未使用的索引</strong></p>
-<p>怎样检查那些索引未使用到？</p>
+<p>在CREATE TABLE语句中使用<code>PACK_KEYS参数</code>来控制索引压缩的方式。</p>
+<h4 id="3-9-冗余和重复索引"><a href="#3-9-冗余和重复索引" class="headerlink" title="3.9 冗余和重复索引"></a>3.9 冗余和重复索引</h4><p>MySQL允许在相同列上创建多个索引，无论有意还是无意。</p>
+<p><code>重复索引</code>：指在相同的列上按照相同的顺序创建相同类型的索引。应该避免这样创建重复索引！</p>
+<p><code>冗余索引</code>：冗余索引与重复索引有些许不同，比如，已有联合索引（A，B），若在创建索引A，则算是冗余索引。</p>
+<h4 id="3-10-未使用的索引"><a href="#3-10-未使用的索引" class="headerlink" title="3.10 未使用的索引"></a>3.10 未使用的索引</h4><p><strong>怎样检查那些索引未使用到？</strong></p>
 <ul>
 <li>①、在Percona Server或者MariaDB中先打开userstates服务器变量（默认是关闭的），然后让服务器正常运行一段时间，再通过查询INFORMATION_SCHEMA.INDEX_STATISTICS就能查到每个索引的使用频率。</li>
 <li>②、使用Percona Toolkit中pt-index-usage，该工具可以读取查询日志，并对日志中的每条查询进行EXPLAIN操作，然后打印出关于索引和查询的报告。</li>
 </ul>
-<p><strong>3.11 索引和锁</strong></p>
-<p>索引可以让查询锁定更少的行。</p>
-<p>InnoDB只有在访问行的时候才会对其加锁，而索引能够减少innoDB访问的行数，从而减少锁的数量。（仅在InnoDB在存储引擎层能够过滤掉所有不需要的行时才有效。）</p>
-<p>InnoDB在耳机索引上使用共享锁，但访问主键索引需要排他锁。</p>
-<p><strong>四 索引案例</strong></p>
-<p>案例描述：</p>
+<h4 id="3-11-索引和锁"><a href="#3-11-索引和锁" class="headerlink" title="3.11 索引和锁"></a>3.11 索引和锁</h4><p>索引可以让查询锁定更少的行。InnoDB只有在访问行的时候才会对其加锁，而索引能够减少innoDB访问的行数，从而减少锁的数量。（仅在InnoDB在存储引擎层能够过滤掉所有不需要的行时才有效。）</p>
+<p><code>InnoDB在二级索引上使用共享锁，但访问主键索引需要排他锁</code>。</p>
+<h3 id="4-索引案例"><a href="#4-索引案例" class="headerlink" title="4 索引案例"></a>4 索引案例</h3><p>案例描述：</p>
 <p>假设要涉及一个在线约会网站，用户信息表有很多列，包括国家、地区、城市、性别、眼睛颜色等等。网站必须支持上面这些特征的各种组合来搜索用户，还必须允许更具用户的最后在线时间、其他会员对用户的评分等对用户进行排序并对结果进行限制。</p>
-<p>第一件要考虑的事情是：需要使用索引来排序，还是先检索数据再排序。</p>
-<p><strong>4.1 支持多种过滤条件</strong></p>
-<p>分析哪些列拥有很多不同的取值，哪些列在WHERE子句中出现的最频繁。通常在有更多不同的值的创建索引的选择性会更好。</p>
+<p><code>第一件要考虑的事情是：需要使用索引来排序，还是先检索数据再排序。</code></p>
+<h4 id="4-1-支持多种过滤条件"><a href="#4-1-支持多种过滤条件" class="headerlink" title="4.1 支持多种过滤条件"></a>4.1 支持多种过滤条件</h4><p>分析哪些列拥有很多不同的取值，哪些列在WHERE子句中出现的最频繁。<code>通常在有更多不同的值的创建索引的选择性会更好</code>。</p>
 <p>根据实际业务场景，country列的选择性通常不高，sex列的选择性肯定很低，但是他们在很多查询中都会用到。因此建议在创建不同组合索引的时候，将（sex, country）列作为前缀，其原因如下：</p>
 <p>①、几乎所有查询都会用到sex列（若对sex列没有限制，可以通过一些技巧绕过最左前缀限制）。</p>
-<p>技巧：若某个查询不限制性别，那么可以通过在查询条件中新增AND SEX IN(‘m’,’f’)来让MySQL选择该索引。</p>
-<p>考虑常见的where条件的组合，了解哪些组合在没有合适的索引情况下会很慢。(sex,country,age)上建立索引。</p>
-<p>对于生僻的搜索条件，及时他们选择性高，使用不频繁，可以忽略他们。</p>
-<p><strong>4.2 避免多个范围查询</strong></p>
-<p>对于范围查询，MySQL无法使用联合查询后面的索引。</p>
-<p>假设有一个last_onlie列，并希望通过以下的查询显示在过去几周上线过的用户：</p>
-<p>where eye_color in (‘brown’,’blue’,’hazel’)    and hair_color in (‘black’, ‘red’, ‘blonde’, ‘brown’)    and sex in (‘M’,’F’)    and last_online &gt; DATE_SUB(NOW(), INTERVAL 7 DAY)    and age between 18 and 25</p>
+<p>技巧：<u>若某个查询不限制性别，那么可以通过在查询条件中新增AND SEX IN(‘m’,’f’)来让MySQL选择该索引。</u></p>
+<p>②、考虑常见的where条件的组合，了解哪些组合在没有合适的索引情况下会很慢。(sex,country,age)上建立索引。</p>
+<p><code>对于生僻的搜索条件，及时他们选择性高，使用不频繁，可以忽略他们。</code></p>
+<h4 id="4-2-避免多个范围查询"><a href="#4-2-避免多个范围查询" class="headerlink" title="4.2 避免多个范围查询"></a>4.2 避免多个范围查询</h4><p><code>对于范围查询，MySQL无法使用联合查询后面的索引。</code></p>
+<p>假设有一个last_online列，并希望通过以下的查询显示在过去几周上线过的用户：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">where eye_color in (&#39;brown&#39;,&#39;blue&#39;,&#39;hazel&#39;)</span><br><span class="line">    and hair_color in (&#39;black&#39;, &#39;red&#39;, &#39;blonde&#39;, &#39;brown&#39;)</span><br><span class="line">    and sex in (&#39;M&#39;,&#39;F&#39;)</span><br><span class="line">    and last_online &gt; DATE_SUB(NOW(), INTERVAL 7 DAY)</span><br><span class="line">    and age between 18 and 25</span><br></pre></td></tr></table></figure>
+
 <p>这个查询中，他有两个范围查询条件，last_online和age列，MySQL可以使用last_online列索引或者age列索引，但无法同时使用他们。</p>
-<p><strong>4.3 优化排序</strong></p>
-<p>使用文件排序对小数据集是很快的，但如果一个查询匹配的结果有上白万行会怎样？</p>
+<h4 id="4-3-优化排序"><a href="#4-3-优化排序" class="headerlink" title="4.3 优化排序"></a>4.3 优化排序</h4><p>使用文件排序对小数据集是很快的，但如果一个查询匹配的结果有上白万行会怎样？</p>
 <p>示例：高效地利用(sex,rating)索引进行排序和分页？</p>
-<p>利用延迟关联策略，通过覆盖索引查询返回需要的主键，在更具这些主键关联原表获得需要的行。</p>
-<p>select <cols> from profiles inner join (    select <primary key cols> from profiles    where x.sex=’M’ order by reting limt 1000000, 10 ) as x using(<primary key cols>);</p>
-<p><strong>五 维护索引和表</strong></p>
-<p>维护表的目的：找到并修复损坏的表，维护准确的索引统计信息，减少碎片。</p>
-<p><strong>5.1 找到并修复损坏的表</strong></p>
-<p>通过以下命令可以检查表是否发生了损坏：</p>
-<p>check table</p>
-<p>通过以下命令可以修复损坏的表：</p>
-<p>repair table</p>
-<p>注：以上两个命令并不是所有存储引擎都支持。</p>
-<p>若存储引擎不支持，可以通过一个不做任何操作的alter操作来重建表，如下示例所示：</p>
-<p>alter table innodb_tb1 engine=innodb;</p>
+<p><code>利用延迟关联策略，通过覆盖索引查询返回需要的主键，再根据这些主键关联原表获得需要的行。</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">select &lt;cols&gt; from profiles inner join (</span><br><span class="line">    select &lt;primary key cols&gt; from profiles</span><br><span class="line">    where x.sex&#x3D;&#39;M&#39; order by rating limt 1000000, 10</span><br><span class="line">) as x using(&lt;primary key cols&gt;);</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="5-维护索引和表"><a href="#5-维护索引和表" class="headerlink" title="5 维护索引和表"></a>5 维护索引和表</h3><p>维护表的目的：找到并修复损坏的表，维护准确的索引统计信息，减少碎片。</p>
+<h4 id="5-1-找到并修复损坏的表"><a href="#5-1-找到并修复损坏的表" class="headerlink" title="5.1 找到并修复损坏的表"></a>5.1 找到并修复损坏的表</h4><p>通过以下命令可以<code>检查表是否发生了损坏</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">check table</span><br></pre></td></tr></table></figure>
+
+<p>通过以下命令可以<code>修复损坏的表</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">repair table</span><br></pre></td></tr></table></figure>
+
+<p><em>注：以上两个命令并不是所有存储引擎都支持。</em></p>
+<p><u>若存储引擎不支持，可以通过一个不做任何操作的alter操作来重建表</u>，如下示例所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table innodb_tb1 engine&#x3D;innodb;</span><br></pre></td></tr></table></figure>
+
 <p>通常来说InnoDB引擎的表不容易损坏，若发生损坏，一般要么是数据库的硬件问题，例如内存或磁盘问题，要么是由于数据库管理员的错误，例如，在MySQL外部操作了数据文件（有可能）或者InnoDB本身的缺陷（不太可能）。</p>
-<p><strong>5.2 更新索引的统计信息</strong></p>
-<p>MySQL的查询优化器会通过两个API来了解存储引擎的索引值的分布信息：</p>
+<h4 id="5-2-更新索引的统计信息"><a href="#5-2-更新索引的统计信息" class="headerlink" title="5.2 更新索引的统计信息"></a>5.2 更新索引的统计信息</h4><p>MySQL的查询优化器会通过两个API来了解存储引擎的索引值的分布信息：</p>
 <ul>
-<li>record_in_range()：通过向存储引擎传入两个边界值获取这个范围大概有多少条记录。</li>
-<li>info()：返回各种类型的数据，包括索引的基数（每个键值有多少条记录）</li>
+<li><code>record_in_range()</code>：通过向存储引擎传入两个边界值获取这个范围大概有多少条记录。</li>
+<li><code>info()</code>：返回各种类型的数据，包括索引的基数（每个键值有多少条记录）</li>
 </ul>
 <p>若存储引擎向优化器提供的扫描行数信息不准确或者执行计划本身太复杂，以至于无法准确地获取各个阶段匹配的行数，那么优化器会使用索引统计信息来估算扫描行数。</p>
-<p>MySQL优化器使用的是基于成本的模型，而衡量成本的主要指标就是一个查询需要扫描多少行。</p>
+<p><code>MySQL优化器使用的是基于成本的模型，而衡量成本的主要指标就是一个查询需要扫描多少行。</code></p>
 <p>通过以下命令来生成统计信息解决表没有统计信息或者统计信息不准确的情况。</p>
-<p>analyze table</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">analyze table</span><br></pre></td></tr></table></figure>
+
 <p>通过以下命令查看索引的基数：</p>
-<p>show index from <table_name></p>
-<p><strong>5.3 减少索引和数据的碎片</strong></p>
-<p>见参考资料1 P191</p>
-<p><strong>六 总结</strong></p>
-<p>针对B-Tree索引，在选择索引和编写利用这些索引的查询时，需要记住以下三个原则：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show index from &lt;table_name&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="5-3-减少索引和数据的碎片"><a href="#5-3-减少索引和数据的碎片" class="headerlink" title="5.3 减少索引和数据的碎片"></a>5.3 减少索引和数据的碎片</h4><p>见参考资料1 P191</p>
+<h3 id="6-总结"><a href="#6-总结" class="headerlink" title="6 总结"></a>6 总结</h3><p>针对B-Tree索引，在选择索引和编写利用这些索引的查询时，需要记住以下三个原则：</p>
 <ul>
 <li>①、单行访问是很慢的。特别是在机械硬盘存储中。最好读取的块中能尽可能多的包含所需的行。</li>
 <li>②、按顺序访问范围数据是很快的，其原因是：第一，顺序I/O比随机I/O快很多。第二，服务器按顺序读取数据就不需要额外的排序操作。</li>
@@ -569,8 +576,8 @@
 <li>①、按响应时间来对查询进行分析。找出那些消耗最长时间的查询或者那些给服务器最大压力的查询。</li>
 <li>②、检查这些查询的schema、SQL和索引结构，判断是否有查询扫描了太多的行，是否做了很多额外的排序或者使用了临时表，是否使用了随机I/O访问数据，或者有太多徽标查询那些不在索引中的列的操作。</li>
 </ul>
-<p>参考资料：</p>
-<p>\1. 高性能MySQL_第3版 P177</p>
+<hr>
+<h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><p>1  高性能MySQL_第3版 P177</p>
 
     </div>
 
