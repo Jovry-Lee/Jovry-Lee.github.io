@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1、简介事务是一组原子性的SQL查询，或者说一个独立的工作单元。事务将数据库从一种一致状态转换为另一种一致状态,事务内的语句，要么全部执行成功，要么全部执行失败。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="高性能MySQL-事务基础">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/09/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E4%BA%8B%E5%8A%A1%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1、简介事务是一组原子性的SQL查询，或者说一个独立的工作单元。事务将数据库从一种一致状态转换为另一种一致状态,事务内的语句，要么全部执行成功，要么全部执行失败。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-09T07:05:02.000Z">
+<meta property="article:modified_time" content="2020-09-09T10:20:00.093Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Note">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/09/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E4%BA%8B%E5%8A%A1%E5%9F%BA%E7%A1%80/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>高性能MySQL-事务基础 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E7%AE%80%E4%BB%8B"><span class="nav-text">1、简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E4%BA%8B%E5%8A%A1%E7%9A%84ACID%E6%A6%82%E5%BF%B5"><span class="nav-text">2、事务的ACID概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%E3%80%81%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">3、隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-READ-UNCOMMITTED%EF%BC%88%E6%9C%AA%E6%8F%90%E4%BA%A4%E8%AF%BB%EF%BC%89%EF%BC%88%E4%B8%8D%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-text">3.1 READ UNCOMMITTED（未提交读）（不推荐）</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-1-1-InnoDB%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-text">3.1.1 InnoDB的实现方式</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-READ-COMMITTED%EF%BC%88%E6%8F%90%E4%BA%A4%E8%AF%BB%EF%BC%89%EF%BC%88%E5%88%AB%E5%90%8D%EF%BC%9A%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%EF%BC%89"><span class="nav-text">3.2 READ COMMITTED（提交读）（别名：不可重复读）</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-2-1-InnoDB%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-text">3.2.1 InnoDB的实现方式</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-REPEATABLE-READ%EF%BC%88%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%EF%BC%89%E2%80%94%E2%80%94Mysql%E7%9A%84%E9%BB%98%E8%AE%A4%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-3-1-InnoDB%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-text">3.3.1 InnoDB的实现方式</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-4-SERIALIZABLE%EF%BC%88%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96%EF%BC%89"><span class="nav-text">3.4 SERIALIZABLE（可串行化）</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-4-1-InnoDB%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-text">3.4.1 InnoDB的实现方式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%E3%80%81%E6%AD%BB%E9%94%81"><span class="nav-text">4、死锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%E3%80%81MySQL%E4%B8%AD%E7%9A%84%E4%BA%8B%E5%8A%A1"><span class="nav-text">5、MySQL中的事务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%E3%80%81%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%EF%BC%88MVCC%EF%BC%89"><span class="nav-text">6、多版本并发控制（MVCC）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#6-1-InnoDB%E7%9A%84MVCC%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">6.1 InnoDB的MVCC的实现</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%E3%80%81Mysql%E7%BB%88%E7%AB%AF%E6%A8%A1%E6%8B%9F%E5%B9%B6%E5%8F%91%E4%BA%8B%E5%8A%A1"><span class="nav-text">7、Mysql终端模拟并发事务</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#7-1-%E5%87%A0%E4%B8%AA%E5%85%B3%E9%94%AE%E7%9A%84%E9%85%8D%E7%BD%AE"><span class="nav-text">7.1 几个关键的配置</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#7-1-1-%E5%8C%BA%E9%97%B4%E9%94%81%E6%98%AF%E5%90%A6%E5%85%B3%E9%97%AD"><span class="nav-text">7.1.1 区间锁是否关闭</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-1-2-%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4"><span class="nav-text">7.1.2 事务自动提交</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-1-3-%E4%BA%8B%E5%8A%A1%E7%9A%84%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">7.1.3 事务的隔离级别</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-2-%E6%A8%A1%E6%8B%9F%E5%B9%B6%E5%8F%91%E4%BA%8B%E5%8A%A1%E5%89%8D%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-text">7.2 模拟并发事务前准备工作</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-3-%E5%AE%9E%E9%AA%8C"><span class="nav-text">7.3 实验</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#7-3-1-%E9%97%B4%E9%9A%99%E9%94%81%E4%BA%92%E6%96%A5%E5%AE%9E%E9%AA%8C"><span class="nav-text">7.3.1 间隙锁互斥实验</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-3-2-%E5%85%B1%E4%BA%AB%E6%8E%92%E5%AE%83%E9%94%81%E7%9A%84%E6%AD%BB%E9%94%81%E5%AE%9E%E9%AA%8C"><span class="nav-text">7.3.2 共享排它锁的死锁实验</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-3-3-%E5%B9%B6%E5%8F%91%E9%97%B4%E9%9A%99%E9%94%81%E7%9A%84%E6%AD%BB%E9%94%81"><span class="nav-text">7.3.3 并发间隙锁的死锁</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/09/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E4%BA%8B%E5%8A%A1%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          高性能MySQL-事务基础
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2020-09-09 15:05:02 / Modified: 18:20:00" itemprop="dateCreated datePublished" datetime="2020-09-09T15:05:02+08:00">2020-09-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/Note/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/" itemprop="url" rel="index"><span itemprop="name">高性能MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h4 id="1、简介"><a href="#1、简介" class="headerlink" title="1、简介"></a>1、简介</h4><p>事务是一组原子性的SQL查询，或者说一个独立的工作单元。事务将数据库从一种一致状态转换为另一种一致状态,事务内的语句，要么全部执行成功，要么全部执行失败。</p>
+<a id="more"></a>
+
+<h4 id="2、事务的ACID概念"><a href="#2、事务的ACID概念" class="headerlink" title="2、事务的ACID概念"></a>2、事务的ACID概念</h4><ul>
+<li><p><code>A： 原子性（automicity）</code><br>一个事务必须被视为一个不可分割的最小单元，整个事务中所有的操作要么全部提交成功，要么全部失败回滚。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">问题: </span><br><span class="line">    对于单核单进程单个指令操作需要考虑事务的原子性吗?</span><br><span class="line"></span><br><span class="line">理解:</span><br><span class="line">    首先我们知道,在计算机中的大概分层如下,其次数据库的数据实际是存储在磁盘上,因此,针对单条指令,如insert,插入一条数</span><br><span class="line">据到数据库,实际上是由应用层&#x2F;CPU(针对不同的编程语言可能会不同,如C语言可编译为二进制形式直接在CPU上运行,而PHP等</span><br><span class="line">语言需要通过OS)执行代码将需要的数据存储到磁盘中,此时若出现操作系统崩溃或者异常掉电的情况,则可能出现数据不一致的情况.</span><br><span class="line"></span><br><span class="line">结论:即使单核单进程单条指令操作也是需要考虑事务的原子性.</span><br><span class="line"></span><br><span class="line"> 应用层</span><br><span class="line">-------</span><br><span class="line">  OS层</span><br><span class="line">-------</span><br><span class="line">  CPU</span><br><span class="line">-------</span><br><span class="line">  内存</span><br><span class="line">-------</span><br><span class="line">  磁盘</span><br><span class="line">-------</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p><code>C： 一致性（consistency）</code><br>数据库总是从一个一致性的状态转换到另一个一致性的状态。保证数据库的完整性约束没有被破坏.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">例如:</span><br><span class="line">    在表t中有一个字段id,为唯一约束,即在表中id不能重复.假设当前表t中有一条id&#x3D;1的记录,此时事务A对id&#x3D;1的记录进行了删</span><br><span class="line">除但尚未提交,事务B又创建了一个id&#x3D;1的记录并提交,事务A回滚,若没有一致性约束,此时表t中存在两条id&#x3D;1的记录,违反了id为唯一约束.</span><br><span class="line"></span><br><span class="line">Trans A              Trans B</span><br><span class="line"></span><br><span class="line">Start T</span><br><span class="line">delete id &#x3D;1</span><br><span class="line"> </span><br><span class="line">                      Start T</span><br><span class="line">                      insert id&#x3D;1</span><br><span class="line">                      Commit T</span><br><span class="line">Rollback T</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>I： 隔离性（isolation）</code><br>  通常来说，一个事务所做的修改在最终提交前，对其他事务是不可见的。（<em>与隔离级别有关</em>)</p>
+<p>  <u>通常通过锁来实现</u>,当前数据库系统中都提供了一种粒度锁(granular lock)的策略,允许事务仅锁住一个实体对象的子集,以此来提高事务之间的并发度.</p>
+</li>
+<li><p><code>D： 持久性（durability）</code><br>一旦事务提交，则其所作的修改就会永久保存到数据库中。</p>
+</li>
+</ul>
+<h4 id="3、隔离级别"><a href="#3、隔离级别" class="headerlink" title="3、隔离级别"></a>3、隔离级别</h4><p>在SQL标准中定义了四种隔离级别，每一种级别都规定了一个事务中所做的修改，哪些是在事务内和事务间是可见的，哪些是不可见的。<br><em>（不同事物的隔离级别，实际上是一致性与并发性的一个权衡与折中。）</em></p>
+<h5 id="3-1-READ-UNCOMMITTED（未提交读）（不推荐）"><a href="#3-1-READ-UNCOMMITTED（未提交读）（不推荐）" class="headerlink" title="3.1 READ UNCOMMITTED（未提交读）（不推荐）"></a>3.1 READ UNCOMMITTED（未提交读）（不推荐）</h5><p>事务中的修改，即使没有提交，对其他事务也是可见的。</p>
+<ul>
+<li>优点：性能上比另外三种级别好很多（并发性高）。</li>
+<li>缺点：读取到未提交的数据，出现<strong>脏读</strong>。且缺乏其他级别的好处（<code>一致性最差</code>）。</li>
+</ul>
+<h6 id="3-1-1-InnoDB的实现方式"><a href="#3-1-1-InnoDB的实现方式" class="headerlink" title="3.1.1 InnoDB的实现方式"></a>3.1.1 InnoDB的实现方式</h6><p>InnoDB在此种事务隔离级别下，select语句不加锁（官方文档原文：SELECT statements are performed in a nonlocking fashion.）。</p>
+<h5 id="3-2-READ-COMMITTED（提交读）（别名：不可重复读）"><a href="#3-2-READ-COMMITTED（提交读）（别名：不可重复读）" class="headerlink" title="3.2 READ COMMITTED（提交读）（别名：不可重复读）"></a>3.2 READ COMMITTED（提交读）（别名：不可重复读）</h5><p>事务开始直到提交之前，所做的任何修改对其他事务都是不可见的。</p>
+<ul>
+<li>缺点：不可重复读，当两次执行同样的查询，可能会得到不一样的结果。  </li>
+</ul>
+<h6 id="3-2-1-InnoDB的实现方式"><a href="#3-2-1-InnoDB的实现方式" class="headerlink" title="3.2.1 InnoDB的实现方式"></a>3.2.1 InnoDB的实现方式</h6><ul>
+<li>普通读是快照读；</li>
+<li>加锁的select，update，delete等语句，除了在外面约束检查以及重复键检查时会封锁区间，其他时刻都只使用记录锁；此时其他事务的插入依旧可以执行，就可能导致幻读。</li>
+</ul>
+<h5 id="3-3-REPEATABLE-READ（可重复读）——Mysql的默认事务隔离级别"><a href="#3-3-REPEATABLE-READ（可重复读）——Mysql的默认事务隔离级别" class="headerlink" title="3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别"></a>3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别</h5><p>该级别解决了脏读的问题，且保证同一个事务中多次读取同样的记录结果是一致的。</p>
+<ul>
+<li>缺点：可能会出现幻读，即当某个事务在读取某个范围内的记录时，另外一个事务又在该范围插入了新的记录，就会产生幻行。</li>
+<li>解决： InnoDB和XtraDB通过<code>多版本并发控制（MVCC, Multiversion Concurrency Control）</code>解决了上述缺点。</li>
+</ul>
+<h6 id="3-3-1-InnoDB的实现方式"><a href="#3-3-1-InnoDB的实现方式" class="headerlink" title="3.3.1 InnoDB的实现方式"></a>3.3.1 InnoDB的实现方式</h6><p>RR隔离级别为InnoDB的默认隔离级别。</p>
+<p>①、普通的select使用快照读（snapshot read），这是一种不加锁的一致性读（Consistent Nonlocking Read），底层使用MVCC来实现。</p>
+<p>②、加锁的select（select … in share mode/select … fro update）,update，delete等语句，他们的锁，依赖于他们<u>是否在唯一索引上使用了唯一的查询条件，或者范围查询条件</u>：</p>
+<ul>
+<li>在唯一索引上使用唯一的查询条件，会使用<code>记录锁（record lock）</code>，而不会封锁记录之间的间隔，即不会使用间隙锁（gap lock）和临键锁（next-key lock）。</li>
+<li>范围查询条件，会使用<code>间隙锁与临键锁</code>，锁住索引记录之间的范围，避免范围间插入记录，以避免产生幻行记录，及避免不可重读的读。</li>
+</ul>
+<h5 id="3-4-SERIALIZABLE（可串行化）"><a href="#3-4-SERIALIZABLE（可串行化）" class="headerlink" title="3.4 SERIALIZABLE（可串行化）"></a>3.4 SERIALIZABLE（可串行化）</h5><p>强制事务串行执行，避免可重复读的幻读问题。</p>
+<ul>
+<li>有点：一致性最好</li>
+<li>缺点：该级别会在读取的每一行数据加锁，可能导致大量的超时和锁争用问题（<strong>并发性最差</strong>）。</li>
+</ul>
+<h6 id="3-4-1-InnoDB的实现方式"><a href="#3-4-1-InnoDB的实现方式" class="headerlink" title="3.4.1 InnoDB的实现方式"></a>3.4.1 InnoDB的实现方式</h6><p>这种事务的隔离级别下，所有的select语句都会被隐式的转化为select … in share mode.  </p>
+<p>这可能导致，如果有未提交的事务正在修改某些行，所有读取这些行的select都会被阻塞（官方文档原文：To force a plain SELECT to block if other transactions have modified the selected rows.）。</p>
+<hr>
+<p>关于“脏读”，“不可重复读”，“幻读”示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">假设有InnoDB表：</span><br><span class="line">t(id PK, name);</span><br><span class="line"> </span><br><span class="line">表中有三条记录：</span><br><span class="line">1, shenjian</span><br><span class="line">2, zhangsan</span><br><span class="line">3, lisi</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>脏读<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行，处于未提交的状态：</span><br><span class="line">insert into t values(4, wangwu);</span><br><span class="line"> </span><br><span class="line">事务B，后执行，也未提交：</span><br><span class="line">select * from t;</span><br><span class="line"> </span><br><span class="line">如果事务B能够读取到(4, wangwu)这条记录，事务A就对事务B产生了影响，这个影响叫做“读脏”，读到了未提交事务操作的记录。</span><br></pre></td></tr></table></figure></li>
+<li>不可重复读  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行：</span><br><span class="line">select * from t where id&#x3D;1;</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">1, shenjian</span><br><span class="line"> </span><br><span class="line">事务B，后执行，并且提交：</span><br><span class="line">update t set name&#x3D;xxoo where id&#x3D;1;</span><br><span class="line">commit;</span><br><span class="line"> </span><br><span class="line">事务A，再次执行相同的查询：</span><br><span class="line">select * from t where id&#x3D;1;</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">1, xxoo</span><br><span class="line"> </span><br><span class="line">这次是已提交事务B对事务A产生的影响，这个影响叫做“不可重复读”，一个事务内相同的查询，得到了不同的结果。</span><br></pre></td></tr></table></figure></li>
+<li>幻读  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行：</span><br><span class="line">select * from t where id&gt;3;</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">NULL</span><br><span class="line">    </span><br><span class="line">事务B，后执行，并且提交：</span><br><span class="line">insert into t values(4, wangwu);</span><br><span class="line">commit;</span><br><span class="line"> </span><br><span class="line">事务A，首次查询了id&gt;3的结果为NULL，于是想插入一条为4的记录：</span><br><span class="line">insert into t values(4, xxoo);</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">Error : duplicate key!</span><br><span class="line"> </span><br><span class="line">事务A的内心OS是：你TM在逗我，查了id&gt;3为空集，insert id&#x3D;4告诉我PK冲突？</span><br><span class="line"> </span><br><span class="line">这次是已提交事务B对事务A产生的影响，这个影响叫做“幻读”。</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<hr>
+<h4 id="4、死锁"><a href="#4、死锁" class="headerlink" title="4、死锁"></a>4、死锁</h4><p>死锁是指<code>两个或多个事务在同一资源上相互占用，并请求锁定对方占用的资源，从而导致恶性循环的现象。</code></p>
+<p>解决方式：</p>
+<ul>
+<li>①、数据库系统实现了各种死锁检测和死锁超时机制。<br>（<code>InnoDB处理方式：将持有最少行级排它锁的事务进行回滚</code>）</li>
+<li>②、当查询的时间达到锁等待超时的设定后当其锁请求。</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">事务A：</span><br><span class="line">    start transaction;</span><br><span class="line">    update stockprice set close &#x3D; 45.50 where stock_id &#x3D;4 and date &#x3D;&#39;2020-05-01&#39;;</span><br><span class="line">    update stockprice set close &#x3D; 19.80 where stock_id &#x3D;3 and date &#x3D; &#39;2020-05-02&#39;;</span><br><span class="line">    commit;</span><br><span class="line"></span><br><span class="line">事务B：</span><br><span class="line">    start transaction；</span><br><span class="line">    update stockprice set close &#x3D; 20.12 where stock_id &#x3D; 3 and date &#x3D; &#39;2020-05-02&#39;;</span><br><span class="line">    update stockprice set close &#x3D; 47.20 where stock_id &#x3D; 4 and date &#x3D; &#39;2020-05-01&#39;;</span><br><span class="line">    commit;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="5、MySQL中的事务"><a href="#5、MySQL中的事务" class="headerlink" title="5、MySQL中的事务"></a>5、MySQL中的事务</h4><p>Mysql提供了两种事务型存储引擎：<code>InnoDB</code>和<code>NDB Cluster</code>。</p>
+<ul>
+<li><p>设置自动提交模式</p>
+<p><code>Mysql默认采用自动提交模式</code>，即如果不是显式地开始一个事务，每个查询都被当做一个事务执行提交操作。更改自动提交的命令如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET AUTOCOMMIT &#x3D; 1;(0：启用，1：禁用)</span><br></pre></td></tr></table></figure></li>
+<li><p><code>设置隔离级别</code><br>Mysql能识别所有的4个ANSI隔离级别，InnoDB也支持所有隔离级别。<br>命令示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED</span><br></pre></td></tr></table></figure></li>
+<li><p>Mysql中的事务是<u>由下层的存储引擎实现的，同一个事务中使用多种存储引擎是不可靠的</u>。</p>
+</li>
+</ul>
+<h4 id="6、多版本并发控制（MVCC）"><a href="#6、多版本并发控制（MVCC）" class="headerlink" title="6、多版本并发控制（MVCC）"></a>6、多版本并发控制（MVCC）</h4><p>MVCC可以被认为是行级锁的一个变种，但他在很多情况下避免了加锁操作，因此开销更低。</p>
+<p>MVCC的实现：<strong>通过保存数据在某个时间点的快照来实现的。</strong></p>
+<p>典型的存储引擎的MVCC实现：</p>
+<ul>
+<li>乐观并发控制（optimistic）</li>
+<li>悲观并发控制（pessimistic）</li>
+</ul>
+<h5 id="6-1-InnoDB的MVCC的实现"><a href="#6-1-InnoDB的MVCC的实现" class="headerlink" title="6.1 InnoDB的MVCC的实现"></a>6.1 InnoDB的MVCC的实现</h5><p>InnoDB的MVCC是通过在每行记录后面保存两个隐藏的列来实现的。这两个列一个保存了行的创建时间（系统版本号），一个保存行的过期时间（删除时间）（系统版本号）。每开始一个新的事务，系统版本号都会自动递增。事务开始时的系统版本号作为事务的版本号，用来和查询到的每行记录的版本号进行比较。</p>
+<p>REPEATABLE READ隔离级别下，MVCC具体操作：</p>
+<ul>
+<li><p><code>SELECT</code><br>InnoDB会根据以下两个条件检索：</p>
+<ul>
+<li>a、InnoDB查找行的系统版本号小于/等于事务的系统版本号，确保事务读取的行，要么在事务开始前已经存在，要么是事务自身插入或修改过的。</li>
+<li>b、行的删除版本要么未定义，要么大于当前事务版本号，确保事务读取到的行，在事务开始前未被删除。</li>
+</ul>
+</li>
+<li><p><code>INSERT</code><br>InnoDB为新插入的每一行保存当前系统版本号作为行版本号。</p>
+</li>
+<li><p><code>DELETE</code><br>InnoDB为删除的每一行保存当前系统版本号作为行删除标识。</p>
+</li>
+<li><p><code>UPDATE</code><br>InnoDB为新插入的每一行保存当前系统版本号作为行版本号，同时保存当前系统版本号到原来的行作为删除标识。</p>
+</li>
+</ul>
+<p>注：<u>MVCC只在REPEATABLE READ和READ COMMITTED两个隔离级别下工作</u>。（READ UNCOMMITTED总是读取最新的数据行，而SERIALIZABLE则会对所有读取的行都加锁）</p>
+<h4 id="7、Mysql终端模拟并发事务"><a href="#7、Mysql终端模拟并发事务" class="headerlink" title="7、Mysql终端模拟并发事务"></a>7、Mysql终端模拟并发事务</h4><h5 id="7-1-几个关键的配置"><a href="#7-1-几个关键的配置" class="headerlink" title="7.1 几个关键的配置"></a>7.1 几个关键的配置</h5><p>要测试InnoDB的锁互斥，以及死锁，有几个配置需要提前确认：</p>
+<ul>
+<li>①、区间锁（间隙锁，临键锁）是否关闭</li>
+<li>②、事务自动提交（auto commit）是否关闭</li>
+<li>③、事务的隔离级别</li>
+</ul>
+<h6 id="7-1-1-区间锁是否关闭"><a href="#7-1-1-区间锁是否关闭" class="headerlink" title="7.1.1 区间锁是否关闭"></a>7.1.1 区间锁是否关闭</h6><p>区间锁（间隙锁，临键锁）是InnoDB特有施加在索引记录区间的锁，Mysql5.6可以手动关闭区间锁。  </p>
+<p>控制参数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">innodb_locks_unsafe_for_binlog</span><br></pre></td></tr></table></figure>
+<p>该参数支持两个值：</p>
+<ul>
+<li>ON: 表示关闭区间锁，此时一致性会被破坏（所以是unsafe）</li>
+<li>OFF：表示开启区间锁（默认）</li>
+</ul>
+<p>查询该参数的方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#39;innodb_locks%&#39;;</span><br><span class="line">+--------------------------------+-------+</span><br><span class="line">| Variable_name                  | Value |</span><br><span class="line">+--------------------------------+-------+</span><br><span class="line">| innodb_locks_unsafe_for_binlog | OFF   |</span><br><span class="line">+--------------------------------+-------+</span><br><span class="line">1 row in set (0.03 sec)</span><br></pre></td></tr></table></figure>
+
+<p>修改方法：修改配置文件（/etc/mysql/mysql.conf.d/mysqld.cnf）文件，添加更改选项并重新启动服务：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">innodb_locks_unsafe_for_binlog &#x3D; 1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo service mysql restart</span><br></pre></td></tr></table></figure>
+
+
+
+<h6 id="7-1-2-事务自动提交"><a href="#7-1-2-事务自动提交" class="headerlink" title="7.1.2 事务自动提交"></a>7.1.2 事务自动提交</h6><p>Mysql默认把每一个单独的SQL语句作为一个事务，自动提交。</p>
+<p>控制参数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">autocommit</span><br></pre></td></tr></table></figure>
+
+<p>MySQL5.7默认开启</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#39;autocommit&#39;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| autocommit    | ON    |</span><br><span class="line">+---------------+-------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>设置（关闭）方式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set session autocommit&#x3D;0;</span><br></pre></td></tr></table></figure>
+
+
+
+<h6 id="7-1-3-事务的隔离级别"><a href="#7-1-3-事务的隔离级别" class="headerlink" title="7.1.3 事务的隔离级别"></a>7.1.3 事务的隔离级别</h6><p>不同事务的隔离级别，InnoDB的锁实现是不一样的。默认为repeatable read。</p>
+<p>控制参数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tx_isolation</span><br></pre></td></tr></table></figure>
+<p>查询事务的隔离级别的方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show global variables like &#39;tx_isolation&#39;;</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">| Variable_name | Value           |</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">| tx_isolation  | REPEATABLE-READ |</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>设置事务的隔离级别的方式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set session transaction isolation level &lt;X&gt;&#39;;</span><br></pre></td></tr></table></figure>
+<p>其中X可取值为：</p>
+<ul>
+<li>read uncommitted</li>
+<li>read committed</li>
+<li>repeatable read</li>
+<li>serializable</li>
+</ul>
+<h5 id="7-2-模拟并发事务前准备工作"><a href="#7-2-模拟并发事务前准备工作" class="headerlink" title="7.2 模拟并发事务前准备工作"></a>7.2 模拟并发事务前准备工作</h5><ul>
+<li>①、配置准备<br>要模拟并发事务，需要修改事务自动提交这个选项，每个session要改为手动提交。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; set session autocommit&#x3D;0;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show variables like &#39;autocommit&#39;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| autocommit    | OFF   |</span><br><span class="line">+---------------+-------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><p>②、数据准备<br>InnoDB的行锁都是实现在索引上，实验时可以使用主键，建表时设定为innodb引擎：</p>
+<ul>
+<li><p>建表</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create table t_id_pk( id int(10) primary key) engine&#x3D;innodb;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>准备初始数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; insert into t_id_pk(id) values (1),(3),(10);</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="7-3-实验"><a href="#7-3-实验" class="headerlink" title="7.3 实验"></a>7.3 实验</h5><h6 id="7-3-1-间隙锁互斥实验"><a href="#7-3-1-间隙锁互斥实验" class="headerlink" title="7.3.1 间隙锁互斥实验"></a>7.3.1 间隙锁互斥实验</h6><p>开启区间锁，RR的隔离级别下，上例会有以下四个区间：</p>
+<ul>
+<li>（-infinity， 1）</li>
+<li>（1， 3）</li>
+<li>（3， 10）</li>
+<li>（10， infinity）</li>
+</ul>
+<p>事务A删除某个某个区间不存在的记录，获取到<strong>共享间隙锁</strong>，会阻止其他事务B在相应的区间插入数据，因为插入需要获取<strong>排他间隙锁</strong>。<br>sessionA：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; set autocommit&#x3D;0;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; delete from t_id_pk where id &#x3D; 5;</span><br><span class="line">Query OK, 0 rows affected (0.05 sec)</span><br></pre></td></tr></table></figure>
+
+<p>sessionB：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; set autocommit&#x3D;0;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id)values(0);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id)values(2);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id)values(12);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id)values(7);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>事务B插入的值：0，2，12都不在（3， 10）区间内，能够插入，而7在（3， 10）这个区间，会阻塞。<code>若事务A一直不提交，事务B就会一直等待，直到超时</code>，超时后会有如下提示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction</span><br></pre></td></tr></table></figure>
+
+
+<hr>
+<p>可以<code>使用以下命令查看锁的情况</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show engine innodb status;</span><br></pre></td></tr></table></figure>
+<p>当前实验锁部分情况如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">TRANSACTIONS</span><br><span class="line">------------</span><br><span class="line">Trx id counter 66634</span><br><span class="line">Purge done for trx&#39;s n:o &lt; 66634 undo n:o &lt; 0 state: running but idle</span><br><span class="line">History list length 20</span><br><span class="line">LIST OF TRANSACTIONS FOR EACH SESSION:</span><br><span class="line">---TRANSACTION 66629, ACTIVE 52 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 2 lock struct(s), heap size 1136, 1 row lock(s), undo log entries 3</span><br><span class="line">MySQL thread id 20, OS thread handle 140324098004736, query id 196 localhost root update</span><br><span class="line">insert into t_id_pk(id)values(7)</span><br><span class="line">------- TRX HAS BEEN WAITING 38 SEC FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 445 page no 3 n bits 80 index PRIMARY of table &#96;seven&#96;.&#96;t_id_pk&#96; trx id 66629 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 4 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 4; hex 8000000a; asc     ;;</span><br><span class="line"> 1: len 6; hex 00000001043f; asc      ?;;</span><br><span class="line"> 2: len 7; hex af00000123012a; asc     # *;;</span><br><span class="line"></span><br><span class="line">------------------</span><br></pre></td></tr></table></figure>
+<p>可知insert into t_id_pk(id)values(7)正在等待事务A提交或回滚，这样事务B就能获得相应的锁，以继续执行。</p>
+<hr>
+<h6 id="7-3-2-共享排它锁的死锁实验"><a href="#7-3-2-共享排它锁的死锁实验" class="headerlink" title="7.3.2 共享排它锁的死锁实验"></a>7.3.2 共享排它锁的死锁实验</h6><p>该实验需要三个并发的session。</p>
+<p>sessionA：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id) values(7);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>sessionB:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id) values(7);</span><br></pre></td></tr></table></figure>
+
+<p>sessionC:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; set autocommit&#x3D;0;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id) values(7);</span><br></pre></td></tr></table></figure>
+<p>此时三个事务都试图往表中插入一条为7的记录：</p>
+<ul>
+<li>A先执行，插入成功，并获取id=7的<code>排它锁</code>；</li>
+<li>B后执行，需要进行PK校验，故需要先获取id=7的<code>共享锁</code>，阻塞；</li>
+<li>C后执行，也需要进行PK校验，也要先获取id=7的<code>共享锁</code>，阻塞；</li>
+</ul>
+<p>此时若sessionA执行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; rollback;</span><br><span class="line">Query OK, 0 rows affected (0.11 sec)</span><br></pre></td></tr></table></figure>
+<p>id=7的排它锁释放，则B，C会继续进行主键校验：</p>
+<ul>
+<li>①、B会获取到id=7共享锁，主键未互斥；</li>
+<li>②、C也会获取到id=7共享锁，主键未互斥；<br>B和C要想插入成功，必须获得id=7的排他锁，但由于双方都已经获取到id=7的共享锁，它们都无法获取到彼此的排他锁，死锁就出现了。</li>
+</ul>
+<p>InnoDB有死锁检测机制，B和C中的一个事务会插入成功，另一个会自动放弃：<br>sessionB：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; insert into t_id_pk(id) values(7);</span><br><span class="line">ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</span><br></pre></td></tr></table></figure>
+<p>sessionC:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; insert into t_id_pk(id) values(7);</span><br><span class="line">Query OK, 1 row affected (7.40 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<h6 id="7-3-3-并发间隙锁的死锁"><a href="#7-3-3-并发间隙锁的死锁" class="headerlink" title="7.3.3 并发间隙锁的死锁"></a>7.3.3 并发间隙锁的死锁</h6><p>共享排它锁，在并发量插入相同记录的情况下，相应的案例比较容易分析，而并发的间隙锁死锁，是比较难定位的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">A：set session autocommit&#x3D;0;</span><br><span class="line">A：start transaction;</span><br><span class="line">A：delete from t where id&#x3D;6;</span><br><span class="line">         B：set session autocommit&#x3D;0;</span><br><span class="line">         B：start transaction;</span><br><span class="line">         B：delete from t where id&#x3D;7;</span><br><span class="line">A：insert into t values(5);</span><br><span class="line">         B：insert into t values(8);</span><br></pre></td></tr></table></figure>
+
+<p>sessionA:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; delete from t_id_pk  where id&#x3D;6;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id)values(5);</span><br><span class="line">Query OK, 1 row affected (8.73 sec)</span><br></pre></td></tr></table></figure>
+
+<p>sessionB:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; delete from t_id_pk where id&#x3D;7;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t_id_pk(id)values(8);</span><br><span class="line">ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>A执行delete后，会获得(3, 10)的共享间隙锁。</li>
+<li>B执行delete后，也会获得(3, 10)的共享间隙锁。</li>
+<li>A执行insert后，希望获得(3, 10)的排他间隙锁，于是会阻塞。</li>
+<li>B执行insert后，也希望获得(3, 10)的排他间隙锁，于是死锁出现。</li>
+</ul>
+<p>使用show engine innodb status查看死锁的情况：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">2019-05-14 15:05:35 0x7f9fc003d700</span><br><span class="line">*** (1) TRANSACTION:</span><br><span class="line">TRANSACTION 66641, ACTIVE 58 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 3 lock struct(s), heap size 1136, 2 row lock(s)</span><br><span class="line">MySQL thread id 18, OS thread handle 140323966887680, query id 226 localhost root update</span><br><span class="line">insert into t_id_pk(id)values(5)</span><br><span class="line">*** (1) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 445 page no 3 n bits 80 index PRIMARY of table &#96;seven&#96;.&#96;t_id_pk&#96; trx id 66641 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 4 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 4; hex 8000000a; asc     ;;</span><br><span class="line"> 1: len 6; hex 00000001043f; asc      ?;;</span><br><span class="line"> 2: len 7; hex af00000123012a; asc     # *;;</span><br><span class="line"></span><br><span class="line">*** (2) TRANSACTION:</span><br><span class="line">TRANSACTION 66642, ACTIVE 33 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">3 lock struct(s), heap size 1136, 2 row lock(s)</span><br><span class="line">MySQL thread id 20, OS thread handle 140324098004736, query id 227 localhost root update</span><br><span class="line">insert into t_id_pk(id)values(8)</span><br><span class="line">*** (2) HOLDS THE LOCK(S):</span><br><span class="line">RECORD LOCKS space id 445 page no 3 n bits 80 index PRIMARY of table &#96;seven&#96;.&#96;t_id_pk&#96; trx id 66642 lock_mode X locks gap before rec</span><br><span class="line">Record lock, heap no 4 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 4; hex 8000000a; asc     ;;</span><br><span class="line"> 1: len 6; hex 00000001043f; asc      ?;;</span><br><span class="line"> 2: len 7; hex af00000123012a; asc     # *;;</span><br><span class="line"></span><br><span class="line">*** (2) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 445 page no 3 n bits 80 index PRIMARY of table &#96;seven&#96;.&#96;t_id_pk&#96; trx id 66642 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 4 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 4; hex 8000000a; asc     ;;</span><br><span class="line"> 1: len 6; hex 00000001043f; asc      ?;;</span><br><span class="line"> 2: len 7; hex af00000123012a; asc     # *;;</span><br><span class="line"></span><br><span class="line">*** WE ROLL BACK TRANSACTION (2)</span><br></pre></td></tr></table></figure>
+
+<p>从事务锁的情况可以看出，当检测到死锁后，事务2自动回滚了。</p>
+<p>总结：</p>
+<ul>
+<li>①、并发事务，间隙锁可能互斥；<ul>
+<li>a. A删除不存在的记录，获取共享间隙锁；</li>
+<li>b. B插入，必须获得排他间隙锁，故互斥；</li>
+</ul>
+</li>
+<li>②、并发插入相同的记录，可能死锁（某一个回滚）；</li>
+<li>③、并发插入，可能出现间隙锁死锁（难排查）。</li>
+</ul>
+<hr>
+<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><ul>
+<li><ol>
+<li>MySQL第三版</li>
+</ol>
+</li>
+<li><ol start="2">
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/x_7E2R2i27Ci5O7kLQF0UA">4种事务的隔离级别，InnoDB如何巧妙实现</a></li>
+</ol>
+</li>
+<li><ol start="3">
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/_36Sy0FldFRNvLRpHxfucQ">超赞，InnoDB调试死锁的方法！</a></li>
+</ol>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Note/" rel="tag"># Note</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/07/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B-%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/" rel="prev" title="MySQL-为什么使用B+树作为索引结构">
+                  <i class="fa fa-chevron-left"></i> MySQL-为什么使用B+树作为索引结构
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '66716a2dc619ebb275f729a62797c6f1',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
