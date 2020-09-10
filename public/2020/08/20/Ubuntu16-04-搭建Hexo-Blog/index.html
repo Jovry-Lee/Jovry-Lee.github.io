@@ -22,15 +22,15 @@
     var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="简介​    GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。">
+  <meta name="description" content="1 简介GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Ubuntu16.04-搭建Hexo-Blog">
 <meta property="og:url" content="https://jovry-lee.github.io/2020/08/20/Ubuntu16-04-%E6%90%AD%E5%BB%BAHexo-Blog/index.html">
 <meta property="og:site_name" content="Jovry&#39;s blog">
-<meta property="og:description" content="简介​    GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。">
+<meta property="og:description" content="1 简介GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-08-20T09:19:56.000Z">
-<meta property="article:modified_time" content="2020-08-30T12:42:36.923Z">
+<meta property="article:modified_time" content="2020-09-10T07:47:25.992Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Ubuntu">
 <meta property="article:tag" content="Config">
@@ -183,7 +183,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-text">简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEGit"><span class="nav-text">配置Git</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%89%E8%A3%85node-js"><span class="nav-text">安装node.js</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%89%E8%A3%85Hexo"><span class="nav-text">安装Hexo</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hexo%E5%88%9B%E5%BB%BA%E6%9C%AC%E5%9C%B0%E5%8D%9A%E5%AE%A2"><span class="nav-text">Hexo创建本地博客</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B0%86%E6%9C%AC%E5%9C%B0Hexo%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E5%88%B0Github%E4%B8%8A"><span class="nav-text">将本地Hexo博客部署到Github上</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E4%BB%A3%E7%A0%81%E4%BB%93%E5%BA%93"><span class="nav-text">创建代码仓库</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E6%9C%AC%E5%9C%B0%E4%BB%A3%E7%A0%81%E4%BB%93%E5%BA%93"><span class="nav-text">配置本地代码仓库</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8Next%E4%B8%BB%E9%A2%98"><span class="nav-text">使用Next主题</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%85%8D%E7%BD%AENexT%E4%B8%BB%E9%A2%98"><span class="nav-text">配置NexT主题</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#NexT%E4%B8%BB%E9%A2%98%E4%BC%98%E5%8C%96"><span class="nav-text">NexT主题优化</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9NexT%E4%B8%BB%E9%A2%98Scheme"><span class="nav-text">修改NexT主题Scheme</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E8%AE%BF%E9%97%AE%E7%BB%9F%E8%AE%A1"><span class="nav-text">添加访问统计</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E5%A4%B4%E5%83%8F"><span class="nav-text">添加头像</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0About-Tags-Categories%E7%AD%89%E9%A1%B5%E9%9D%A2"><span class="nav-text">添加About&#x2F;Tags&#x2F;Categories等页面</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%88%86%E7%B1%BB%E5%92%8C%E6%A0%87%E7%AD%BE%E9%A1%B5%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90categories-amp-tags"><span class="nav-text">分类和标签页自动生成categories&amp;tags</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%8E%BB%E6%8E%89%E7%9B%AE%E5%BD%95%E6%A0%8F%E5%BA%8F%E5%8F%B7"><span class="nav-text">去掉目录栏序号</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E4%BE%A7%E8%BE%B9%E6%A0%8F%E7%A4%BE%E4%BA%A4%E9%93%BE%E6%8E%A5"><span class="nav-text">设置侧边栏社交链接</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8ENexT%E4%B8%BB%E9%A2%98%E5%BC%80%E5%90%AF%E8%AF%84%E8%AE%BA%E5%8A%9F%E8%83%BD%E2%80%94%E2%80%94Gitalk"><span class="nav-text">基于NexT主题开启评论功能——Gitalk</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%B3%A8%E5%86%8COAuth-Application"><span class="nav-text">注册OAuth Application</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%AD%98%E6%94%BEGitalk-comments%E7%9A%84repository"><span class="nav-text">创建存放Gitalk-comments的repository</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0Gitalk%E5%88%B0%E5%8D%9A%E5%AE%A2"><span class="nav-text">添加Gitalk到博客</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E7%AB%AF%E4%BD%BF%E7%94%A8Hexo%E5%8D%9A%E5%AE%A2"><span class="nav-text">多端使用Hexo博客</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%B8%BB%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-text">主端配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E7%94%B5%E8%84%91%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-text">其他电脑端配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8F%91%E5%B8%83%E6%9B%B4%E6%96%B0%E5%8D%9A%E5%AE%A2"><span class="nav-text">发布更新博客</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E5%9B%BE%E5%BA%8A"><span class="nav-text">设置图床</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEGithub"><span class="nav-text">配置Github</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEPicGo%EF%BC%8C%E5%B9%B6%E4%BD%BF%E7%94%A8jsdelivr%E4%BD%9C%E4%B8%BACDN%E5%8A%A0%E9%80%9F"><span class="nav-text">配置PicGo，并使用jsdelivr作为CDN加速</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9B%BE%E7%89%87%E5%8E%8B%E7%BC%A9%E5%B7%A5%E5%85%B7"><span class="nav-text">图片压缩工具</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0-%E8%8E%B7%E5%8F%96"><span class="nav-text">图片上传&#x2F;获取</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Markdown%E7%BC%96%E8%BE%91%E5%99%A8%E5%AE%89%E8%A3%85"><span class="nav-text">Markdown编辑器安装</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Typora"><span class="nav-text">Typora</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E9%85%8D%E7%BD%AEGit"><span class="nav-text">2 配置Git</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%AE%89%E8%A3%85node-js"><span class="nav-text">3 安装node.js</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E5%AE%89%E8%A3%85Hexo"><span class="nav-text">4 安装Hexo</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-Hexo%E5%88%9B%E5%BB%BA%E6%9C%AC%E5%9C%B0%E5%8D%9A%E5%AE%A2"><span class="nav-text">5 Hexo创建本地博客</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-%E5%B0%86%E6%9C%AC%E5%9C%B0Hexo%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E5%88%B0Github%E4%B8%8A"><span class="nav-text">6 将本地Hexo博客部署到Github上</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#6-1-%E5%88%9B%E5%BB%BA%E4%BB%A3%E7%A0%81%E4%BB%93%E5%BA%93"><span class="nav-text">6.1 创建代码仓库</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-2-%E9%85%8D%E7%BD%AE%E6%9C%AC%E5%9C%B0%E4%BB%A3%E7%A0%81%E4%BB%93%E5%BA%93"><span class="nav-text">6.2 配置本地代码仓库</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-%E4%BD%BF%E7%94%A8Next%E4%B8%BB%E9%A2%98"><span class="nav-text">7 使用Next主题</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#7-1-%E9%85%8D%E7%BD%AENexT%E4%B8%BB%E9%A2%98"><span class="nav-text">7.1 配置NexT主题</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-2-NexT%E4%B8%BB%E9%A2%98%E4%BC%98%E5%8C%96"><span class="nav-text">7.2 NexT主题优化</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-1-%E4%BF%AE%E6%94%B9NexT%E4%B8%BB%E9%A2%98Scheme"><span class="nav-text">7.2.1 修改NexT主题Scheme</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-2-%E6%B7%BB%E5%8A%A0%E8%AE%BF%E9%97%AE%E7%BB%9F%E8%AE%A1"><span class="nav-text">7.2.2 添加访问统计</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-3-%E6%B7%BB%E5%8A%A0%E5%A4%B4%E5%83%8F"><span class="nav-text">7.2.3 添加头像</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-4-%E6%B7%BB%E5%8A%A0About-Tags-Categories%E7%AD%89%E9%A1%B5%E9%9D%A2"><span class="nav-text">7.2.4 添加About&#x2F;Tags&#x2F;Categories等页面</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-5-%E5%88%86%E7%B1%BB%E5%92%8C%E6%A0%87%E7%AD%BE%E9%A1%B5%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90categories-amp-tags"><span class="nav-text">7.2.5 分类和标签页自动生成categories&amp;tags</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-6-%E5%8E%BB%E6%8E%89%E7%9B%AE%E5%BD%95%E6%A0%8F%E5%BA%8F%E5%8F%B7"><span class="nav-text">7.2.6 去掉目录栏序号</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-7-%E8%AE%BE%E7%BD%AE%E4%BE%A7%E8%BE%B9%E6%A0%8F%E7%A4%BE%E4%BA%A4%E9%93%BE%E6%8E%A5"><span class="nav-text">7.2.7 设置侧边栏社交链接</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-8-%E8%AE%BE%E7%BD%AEPost-Body%E5%AD%97%E4%BD%93%E5%A4%A7%E5%B0%8F"><span class="nav-text">7.2.8 设置Post Body字体大小</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-2-9-%E8%AE%BE%E7%BD%AE%E4%BB%A3%E7%A0%81%E9%AB%98%E4%BA%AE%E6%A0%B7%E5%BC%8F"><span class="nav-text">7.2.9 设置代码高亮样式</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-3-%E5%9F%BA%E4%BA%8ENexT%E4%B8%BB%E9%A2%98%E5%BC%80%E5%90%AF%E8%AF%84%E8%AE%BA%E5%8A%9F%E8%83%BD%E2%80%94%E2%80%94Gitalk"><span class="nav-text">7.3 基于NexT主题开启评论功能——Gitalk</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#7-3-1-%E6%B3%A8%E5%86%8COAuth-Application"><span class="nav-text">7.3.1 注册OAuth Application</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-3-2-%E5%88%9B%E5%BB%BA%E5%AD%98%E6%94%BEGitalk-comments%E7%9A%84repository"><span class="nav-text">7.3.2 创建存放Gitalk-comments的repository</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#7-3-3-%E6%B7%BB%E5%8A%A0Gitalk%E5%88%B0%E5%8D%9A%E5%AE%A2"><span class="nav-text">7.3.3 添加Gitalk到博客</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-%E5%A4%9A%E7%AB%AF%E4%BD%BF%E7%94%A8Hexo%E5%8D%9A%E5%AE%A2"><span class="nav-text">8 多端使用Hexo博客</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#8-1-%E4%B8%BB%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-text">8.1 主端配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#8-2-%E5%85%B6%E4%BB%96%E7%94%B5%E8%84%91%E7%AB%AF%E9%85%8D%E7%BD%AE"><span class="nav-text">8.2 其他电脑端配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#8-3-%E5%8F%91%E5%B8%83%E6%9B%B4%E6%96%B0%E5%8D%9A%E5%AE%A2"><span class="nav-text">8.3 发布更新博客</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-%E8%AE%BE%E7%BD%AE%E5%9B%BE%E5%BA%8A"><span class="nav-text">9 设置图床</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#9-1-%E9%85%8D%E7%BD%AEGithub"><span class="nav-text">9.1 配置Github</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-2-%E9%85%8D%E7%BD%AEPicGo%EF%BC%8C%E5%B9%B6%E4%BD%BF%E7%94%A8jsdelivr%E4%BD%9C%E4%B8%BACDN%E5%8A%A0%E9%80%9F"><span class="nav-text">9.2 配置PicGo，并使用jsdelivr作为CDN加速</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-3-%E5%9B%BE%E7%89%87%E5%8E%8B%E7%BC%A9%E5%B7%A5%E5%85%B7"><span class="nav-text">9.3 图片压缩工具</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-4-%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0-%E8%8E%B7%E5%8F%96"><span class="nav-text">9.4 图片上传&#x2F;获取</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Markdown%E7%BC%96%E8%BE%91%E5%99%A8%E5%AE%89%E8%A3%85"><span class="nav-text">Markdown编辑器安装</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Typora"><span class="nav-text">Typora</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -282,7 +282,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-30 20:42:36" itemprop="dateModified" datetime="2020-08-30T20:42:36+08:00">2020-08-30</time>
+        <time title="Modified: 2020-09-10 15:47:25" itemprop="dateModified" datetime="2020-09-10T15:47:25+08:00">2020-09-10</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -315,19 +315,19 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h4 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h4><p>​    GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。</p>
+        <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>GitHub Pages 是一项静态站点托管服务，它直接从 GitHub 上的仓库获取 HTML、CSS 和 JavaScript 文件，通过构建过程运行文件，然后发布网站。 Hexo是高效的静态站点生成框架，它基于Node.js. 通过Hexo，可以直接使用Markdown语法来撰写博客。</p>
 <a id="more"></a>
 
-<h4 id="配置Git"><a href="#配置Git" class="headerlink" title="配置Git"></a>配置Git</h4><p>​    配置方式参考：<a href="https://jovry-lee.github.io/2020/08/18/Ubuntu16-04-Github%E9%85%8D%E7%BD%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/#more">Ubuntu16.04 Github配置及使用</a></p>
-<h4 id="安装node-js"><a href="#安装node-js" class="headerlink" title="安装node.js"></a>安装node.js</h4><p>​    安装方式参考：<a href="https://jovry-lee.github.io/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/">Ubuntu16.04 Node.js安装.note</a></p>
-<h4 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h4><p>​    安装命令：</p>
+<h4 id="2-配置Git"><a href="#2-配置Git" class="headerlink" title="2 配置Git"></a>2 配置Git</h4><p>配置方式参考：<a href="https://jovry-lee.github.io/2020/08/18/Ubuntu16-04-Github%E9%85%8D%E7%BD%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/#more">Ubuntu16.04 Github配置及使用</a></p>
+<h4 id="3-安装node-js"><a href="#3-安装node-js" class="headerlink" title="3 安装node.js"></a>3 安装node.js</h4><p>安装方式参考：<a href="https://jovry-lee.github.io/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/">Ubuntu16.04 Node.js安装.note</a></p>
+<h4 id="4-安装Hexo"><a href="#4-安装Hexo" class="headerlink" title="4 安装Hexo"></a>4 安装Hexo</h4><p>安装命令：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ npm install -g hexo-cli</span><br></pre></td></tr></table></figure>
 
-<p>​    检查hexo是否安装成功：</p>
+<p>检查hexo是否安装成功：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo -v</span><br></pre></td></tr></table></figure>
 
-<p>​    <em>得到hexo-cli：4.2.0等一串数据，安装成功。</em></p>
-<h4 id="Hexo创建本地博客"><a href="#Hexo创建本地博客" class="headerlink" title="Hexo创建本地博客"></a>Hexo创建本地博客</h4><ul>
+<p><em>得到hexo-cli：4.2.0等一串数据，安装成功。</em></p>
+<h4 id="5-Hexo创建本地博客"><a href="#5-Hexo创建本地博客" class="headerlink" title="5 Hexo创建本地博客"></a>5 Hexo创建本地博客</h4><ul>
 <li><p>初始化本地站点</p>
 <p>本地博客路径在<code>~/ProjectWork/githubBlog</code>下,本地博客搭建操作在此路径下进行操作.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">cd</span> ~/ProjectWork</span><br><span class="line">$ mkdir githubBlog <span class="comment"># 创建本地博客路径</span></span><br><span class="line">$ hexo init <span class="comment"># 初始化本地站点</span></span><br></pre></td></tr></table></figure>
@@ -366,7 +366,7 @@
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ hexo g </span><br><span class="line">$ hexo s</span><br></pre></td></tr></table></figure>
 
-<h4 id="将本地Hexo博客部署到Github上"><a href="#将本地Hexo博客部署到Github上" class="headerlink" title="将本地Hexo博客部署到Github上"></a>将本地Hexo博客部署到Github上</h4><h5 id="创建代码仓库"><a href="#创建代码仓库" class="headerlink" title="创建代码仓库"></a>创建代码仓库</h5><ul>
+<h4 id="6-将本地Hexo博客部署到Github上"><a href="#6-将本地Hexo博客部署到Github上" class="headerlink" title="6 将本地Hexo博客部署到Github上"></a>6 将本地Hexo博客部署到Github上</h4><h5 id="6-1-创建代码仓库"><a href="#6-1-创建代码仓库" class="headerlink" title="6.1 创建代码仓库"></a>6.1 创建代码仓库</h5><ul>
 <li><p>在Github中创建一个以.github.io结尾的Repository。</p>
 </li>
 <li><ul>
@@ -380,8 +380,8 @@
 <li><p>打开网页：<code>jovry-Lee.github.io</code> 这里就可以看到 README.md 里的内容了。</p>
 </li>
 </ul>
-<h5 id="配置本地代码仓库"><a href="#配置本地代码仓库" class="headerlink" title="配置本地代码仓库"></a>配置本地代码仓库</h5><ul>
-<li>获取Github对应的Repository的链接。（<a href="mailto:&#103;&#105;&#x74;&#64;&#x67;&#x69;&#x74;&#x68;&#117;&#98;&#x2e;&#x63;&#x6f;&#109;">&#103;&#105;&#x74;&#64;&#x67;&#x69;&#x74;&#x68;&#117;&#98;&#x2e;&#x63;&#x6f;&#109;</a>:Jovry-Lee/Jovry-Lee.github.io.git）</li>
+<h5 id="6-2-配置本地代码仓库"><a href="#6-2-配置本地代码仓库" class="headerlink" title="6.2 配置本地代码仓库"></a>6.2 配置本地代码仓库</h5><ul>
+<li>获取Github对应的Repository的链接。（<a href="mailto:&#103;&#x69;&#x74;&#x40;&#103;&#x69;&#116;&#x68;&#x75;&#x62;&#46;&#x63;&#111;&#109;">&#103;&#x69;&#x74;&#x40;&#103;&#x69;&#116;&#x68;&#x75;&#x62;&#46;&#x63;&#111;&#109;</a>:Jovry-Lee/Jovry-Lee.github.io.git）</li>
 </ul>
 <ul>
 <li>修改本地站点配置文件。</li>
@@ -400,7 +400,7 @@
 
 <p><em>得到 INFO Deploy done: git 即为部署成功</em></p>
 <p>此时访问<code>Jovry-Lee.github.io</code>即可看到博客页面。</p>
-<h4 id="使用Next主题"><a href="#使用Next主题" class="headerlink" title="使用Next主题"></a>使用Next主题</h4><h5 id="配置NexT主题"><a href="#配置NexT主题" class="headerlink" title="配置NexT主题"></a>配置NexT主题</h5><ul>
+<h4 id="7-使用Next主题"><a href="#7-使用Next主题" class="headerlink" title="7 使用Next主题"></a>7 使用Next主题</h4><h5 id="7-1-配置NexT主题"><a href="#7-1-配置NexT主题" class="headerlink" title="7.1 配置NexT主题"></a>7.1 配置NexT主题</h5><ul>
 <li>获取主题代码</li>
 </ul>
 <p>​    克隆主题代码到本地博客<code>themes/next</code>路径下.    </p>
@@ -438,13 +438,13 @@
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo g -d</span><br></pre></td></tr></table></figure>
 
-<h5 id="NexT主题优化"><a href="#NexT主题优化" class="headerlink" title="NexT主题优化"></a>NexT主题优化</h5><h6 id="修改NexT主题Scheme"><a href="#修改NexT主题Scheme" class="headerlink" title="修改NexT主题Scheme"></a>修改NexT主题Scheme</h6><p>​    NexT当前支持4种风格,默认为Muse,在NexT主题配置文件(<code>themes/next/_config.yml</code>)中可以修改Scheme,配置如下:</p>
+<h5 id="7-2-NexT主题优化"><a href="#7-2-NexT主题优化" class="headerlink" title="7.2 NexT主题优化"></a>7.2 NexT主题优化</h5><h6 id="7-2-1-修改NexT主题Scheme"><a href="#7-2-1-修改NexT主题Scheme" class="headerlink" title="7.2.1 修改NexT主题Scheme"></a>7.2.1 修改NexT主题Scheme</h6><p>​    NexT当前支持4种风格,默认为Muse,在NexT主题配置文件(<code>themes/next/_config.yml</code>)中可以修改Scheme,配置如下:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># Schemes</span><br><span class="line">#scheme: Muse</span><br><span class="line">#scheme: Mist</span><br><span class="line">#scheme: Pisces</span><br><span class="line">scheme: Gemini</span><br></pre></td></tr></table></figure>
 
-<h6 id="添加访问统计"><a href="#添加访问统计" class="headerlink" title="添加访问统计"></a>添加访问统计</h6><p>​    通过配置NexT主题配置文件,修改busuanzi_count.配置如下:</p>
+<h6 id="7-2-2-添加访问统计"><a href="#7-2-2-添加访问统计" class="headerlink" title="7.2.2 添加访问统计"></a>7.2.2 添加访问统计</h6><p>​    通过配置NexT主题配置文件,修改busuanzi_count.配置如下:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># Show Views &#x2F; Visitors of the website &#x2F; page with busuanzi.</span><br><span class="line"># Get more information on http:&#x2F;&#x2F;ibruce.info&#x2F;2015&#x2F;04&#x2F;04&#x2F;busuanzi</span><br><span class="line">busuanzi_count:</span><br><span class="line">  enable: true</span><br><span class="line">  total_visitors: true</span><br><span class="line">  total_visitors_icon: fa fa-user</span><br><span class="line">  total_views: true</span><br><span class="line">  total_views_icon: fa fa-eye</span><br><span class="line">  post_views: true</span><br><span class="line">  post_views_icon: far fa-eye</span><br></pre></td></tr></table></figure>
 
-<h6 id="添加头像"><a href="#添加头像" class="headerlink" title="添加头像"></a>添加头像</h6><p>​    添加的头像可以保存到主站目录下,或者主题目录下.</p>
+<h6 id="7-2-3-添加头像"><a href="#7-2-3-添加头像" class="headerlink" title="7.2.3 添加头像"></a>7.2.3 添加头像</h6><p>​    添加的头像可以保存到主站目录下,或者主题目录下.</p>
 <ul>
 <li>Site路径: 保存到<code>~/ProjectWork/Jovry-Lee.github.io/public/uploads</code>路径下.</li>
 <li>theme路径下:<code>~/ProjectWork/Jovry-Lee.github.io/themes/next/source/images</code>路径下</li>
@@ -452,7 +452,7 @@
 <p>配置NexT主题配置文件,修改avatar项:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># Sidebar Avatar</span><br><span class="line">avatar:</span><br><span class="line">  # in theme directory(source&#x2F;images): &#x2F;images&#x2F;avatar.gif</span><br><span class="line">  # in site  directory(source&#x2F;uploads): &#x2F;uploads&#x2F;avatar.gif</span><br><span class="line">  # Replace the default image and set the url here.</span><br><span class="line">  url: &#x2F;uploads&#x2F;princess.jpeg</span><br><span class="line">  # 配置为true时,头像会在一个圈圈中.</span><br><span class="line">  rounded: true</span><br><span class="line">  # 配置为true时,鼠标放在头像上,头像有旋转效果.</span><br><span class="line">  rotated: true</span><br></pre></td></tr></table></figure>
 
-<h6 id="添加About-Tags-Categories等页面"><a href="#添加About-Tags-Categories等页面" class="headerlink" title="添加About/Tags/Categories等页面"></a>添加About/Tags/Categories等页面</h6><p>​    默认情况下,About页面是不存在的,即使将主页展示了About的图标,若不进行页面配置,点击跳转会报404. 配置方式如下:</p>
+<h6 id="7-2-4-添加About-Tags-Categories等页面"><a href="#7-2-4-添加About-Tags-Categories等页面" class="headerlink" title="7.2.4 添加About/Tags/Categories等页面"></a>7.2.4 添加About/Tags/Categories等页面</h6><p>​    默认情况下,About页面是不存在的,即使将主页展示了About的图标,若不进行页面配置,点击跳转会报404. 配置方式如下:</p>
 <ul>
 <li>进入博客Bash路径,生成about等页面.</li>
 </ul>
@@ -466,7 +466,7 @@
 <ul>
 <li>​    添加about个人介绍,直接在<code>~/ProjectWork/Jovry-Lee.github.io/source/about/index.md</code>文件上进行编辑即可.</li>
 </ul>
-<h6 id="分类和标签页自动生成categories-amp-tags"><a href="#分类和标签页自动生成categories-amp-tags" class="headerlink" title="分类和标签页自动生成categories&amp;tags"></a>分类和标签页自动生成categories&amp;tags</h6><ul>
+<h6 id="7-2-5-分类和标签页自动生成categories-amp-tags"><a href="#7-2-5-分类和标签页自动生成categories-amp-tags" class="headerlink" title="7.2.5 分类和标签页自动生成categories&amp;tags"></a>7.2.5 分类和标签页自动生成categories&amp;tags</h6><ul>
 <li>分类页面配置</li>
 </ul>
 <p>​    在生成的分类页面<code>~/ProjectWork/Jovry-Lee.github.io/source/categories/index.md</code>上进行如下修改:</p>
@@ -478,12 +478,21 @@
 <p>​    在生成的分类页面<code>~/ProjectWork/Jovry-Lee.github.io/source/tags/index.md</code>上进行如下修改:    </p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: tags</span><br><span class="line">date: 2020-08-19 15:30:01</span><br><span class="line">type: tags</span><br><span class="line">---</span><br></pre></td></tr></table></figure>
 
-<h6 id="去掉目录栏序号"><a href="#去掉目录栏序号" class="headerlink" title="去掉目录栏序号"></a>去掉目录栏序号</h6><p>配置NexT主题配置文件,修改<code>toc</code>项,将<code>number</code>项设置为<code>false</code>, 修改如下:</p>
+<h6 id="7-2-6-去掉目录栏序号"><a href="#7-2-6-去掉目录栏序号" class="headerlink" title="7.2.6 去掉目录栏序号"></a>7.2.6 去掉目录栏序号</h6><p>由于本地写文章时，已经对文章标题进行编号，而NexT主题默认是自动添加目录编号，因此，这里选择关闭该功能．</p>
+<p>修改NexT主题配置文件<code>toc</code>项,将<code>number</code>项设置为<code>false</code>, 修改如下:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># Table of Contents in the Sidebar</span><br><span class="line"># Front-matter variable (unsupport wrap expand_all).</span><br><span class="line">toc:</span><br><span class="line">  enable: true</span><br><span class="line">  # Automatically add list number to toc.</span><br><span class="line">  number: false</span><br></pre></td></tr></table></figure>
 
-<h6 id="设置侧边栏社交链接"><a href="#设置侧边栏社交链接" class="headerlink" title="设置侧边栏社交链接"></a>设置侧边栏社交链接</h6><p>​    社交连接也是在NexT配置文件中进行修改, 关键字<code>social</code>,进行修改,去掉<code>#</code>,添加个人链接即可.</p>
-<h5 id="基于NexT主题开启评论功能——Gitalk"><a href="#基于NexT主题开启评论功能——Gitalk" class="headerlink" title="基于NexT主题开启评论功能——Gitalk"></a>基于NexT主题开启评论功能——Gitalk</h5><p>​    该评论功能使用Gitalk服务实现。</p>
-<h6 id="注册OAuth-Application"><a href="#注册OAuth-Application" class="headerlink" title="注册OAuth Application"></a>注册OAuth Application</h6><ul>
+<h6 id="7-2-7-设置侧边栏社交链接"><a href="#7-2-7-设置侧边栏社交链接" class="headerlink" title="7.2.7 设置侧边栏社交链接"></a>7.2.7 设置侧边栏社交链接</h6><p>社交连接也是在NexT配置文件中进行修改, 关键字<code>social</code>,进行修改,去掉<code>#</code>,添加个人链接即可.</p>
+<h6 id="7-2-8-设置Post-Body字体大小"><a href="#7-2-8-设置Post-Body字体大小" class="headerlink" title="7.2.8 设置Post Body字体大小"></a>7.2.8 设置Post Body字体大小</h6><p>由于NexT主题中Post Body部分的字体大小默认为1.125em，个人觉得不是很好看，因此自定义修改该字体的大小．</p>
+<p>通过查看<code>&lt;site&gt;/themes/next/source/css/_variables/base.styl</code>文件中定义了一系列<code>Font Size</code>．其中<code>post-body</code>默认使用的font-size-large，即1.125em大小．对<code>&lt;site&gt;/themes/next/source/css/_common/components/post/post-body.styl</code>进行设置．</p>
+<figure class="highlight css"><figcaption><span><site>/themes/next/source/css/_common/components/post/post-body.styl</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-class">.post-body</span> &#123;</span><br><span class="line">  <span class="attribute">font-family</span>: $font-family-posts;</span><br><span class="line">  word-wrap();</span><br><span class="line"></span><br><span class="line">  +<span class="selector-tag">desktop-large</span>() &#123;</span><br><span class="line">    // font-size: $font-size-large;</span><br><span class="line">    <span class="selector-tag">font-size</span>: <span class="selector-tag">font-size-medium</span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h6 id="7-2-9-设置代码高亮样式"><a href="#7-2-9-设置代码高亮样式" class="headerlink" title="7.2.9 设置代码高亮样式"></a>7.2.9 设置代码高亮样式</h6><p>在<a target="_blank" rel="noopener" href="https://theme-next.js.org/highlight/#">NexT Highlight Theme Preview</a>中找到自己喜欢的格式，然后进行配置．</p>
+<p>当前使用默认的Highlight.js插件，选用atelier-seaside-light样式，对NexT主题配置如下：</p>
+<figure class="highlight tex"><figcaption><span>/themes/next/_config.yml</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">codeblock:</span><br><span class="line">  # Code Highlight theme</span><br><span class="line">  # All available themes: https://theme-next.js.org/highlight/</span><br><span class="line">  theme:</span><br><span class="line">    light: atelier-seaside-light</span><br><span class="line">    dark: atelier-seaside-dark</span><br><span class="line">  ．．．</span><br></pre></td></tr></table></figure>
+
+<h5 id="7-3-基于NexT主题开启评论功能——Gitalk"><a href="#7-3-基于NexT主题开启评论功能——Gitalk" class="headerlink" title="7.3 基于NexT主题开启评论功能——Gitalk"></a>7.3 基于NexT主题开启评论功能——Gitalk</h5><p>该评论功能使用Gitalk服务实现。</p>
+<h6 id="7-3-1-注册OAuth-Application"><a href="#7-3-1-注册OAuth-Application" class="headerlink" title="7.3.1 注册OAuth Application"></a>7.3.1 注册OAuth Application</h6><ul>
 <li>登录GitHub</li>
 <li>前往 <code>https://github.com/settings/profile</code></li>
 <li>点击左侧下方的 <code>Developer settings</code></li>
@@ -500,12 +509,12 @@
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Client ID：xxx </span><br><span class="line"></span><br><span class="line">Client Secret： xxxx</span><br></pre></td></tr></table></figure>
 
-<h6 id="创建存放Gitalk-comments的repository"><a href="#创建存放Gitalk-comments的repository" class="headerlink" title="创建存放Gitalk-comments的repository"></a>创建存放Gitalk-comments的repository</h6><ul>
+<h6 id="7-3-2-创建存放Gitalk-comments的repository"><a href="#7-3-2-创建存放Gitalk-comments的repository" class="headerlink" title="7.3.2 创建存放Gitalk-comments的repository"></a>7.3.2 创建存放Gitalk-comments的repository</h6><ul>
 <li>创建 repository。 Repository name 为：<code>gitalk-comments</code></li>
 <li>地址：<code>https://github.com/Jovry-Lee/gitalk-comments</code></li>
 <li>注意稍后配置中填的是 <code>gitalk-comments</code>，<u>不是地址</u>。</li>
 </ul>
-<h6 id="添加Gitalk到博客"><a href="#添加Gitalk到博客" class="headerlink" title="添加Gitalk到博客"></a>添加Gitalk到博客</h6><ul>
+<h6 id="7-3-3-添加Gitalk到博客"><a href="#7-3-3-添加Gitalk到博客" class="headerlink" title="7.3.3 添加Gitalk到博客"></a>7.3.3 添加Gitalk到博客</h6><ul>
 <li>打开本地博客路径下next主题的配置文件</li>
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ vim ~/ProjectWork/Jovry-Lee.github.io/themes/next/_config.yml</span><br></pre></td></tr></table></figure>
@@ -522,8 +531,8 @@
 
 
 
-<h4 id="多端使用Hexo博客"><a href="#多端使用Hexo博客" class="headerlink" title="多端使用Hexo博客"></a>多端使用Hexo博客</h4><p>​    首先应该确保某一台电脑搭建好了Hexo博客，然后进行后续操作。</p>
-<h5 id="主端配置"><a href="#主端配置" class="headerlink" title="主端配置"></a>主端配置</h5><ul>
+<h4 id="8-多端使用Hexo博客"><a href="#8-多端使用Hexo博客" class="headerlink" title="8 多端使用Hexo博客"></a>8 多端使用Hexo博客</h4><p>首先应该确保某一台电脑搭建好了Hexo博客，然后进行后续操作。</p>
+<h5 id="8-1-主端配置"><a href="#8-1-主端配置" class="headerlink" title="8.1 主端配置"></a>8.1 主端配置</h5><ul>
 <li><p>①、登录Github，在<code>username.github.io</code>仓库上新建hexo分支。</p>
 <p>在博客仓库上新建一个分支，例如“hexo”，切换到该分支，并设置该分支为默认分支（Setting-&gt;Branches-&gt;Default branch）</p>
 </li>
@@ -547,7 +556,7 @@
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ npm install</span><br></pre></td></tr></table></figure>
 
-<h5 id="其他电脑端配置"><a href="#其他电脑端配置" class="headerlink" title="其他电脑端配置"></a>其他电脑端配置</h5><p>​    安装Hexo环境，然后克隆<code>username.github.io</code>仓库的hexo分支到本地，此时本地git仓库处于hexo分支；切换到username.github.io目录，安装依赖包。</p>
+<h5 id="8-2-其他电脑端配置"><a href="#8-2-其他电脑端配置" class="headerlink" title="8.2 其他电脑端配置"></a>8.2 其他电脑端配置</h5><p>​    安装Hexo环境，然后克隆<code>username.github.io</code>仓库的hexo分支到本地，此时本地git仓库处于hexo分支；切换到username.github.io目录，安装依赖包。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> git@github.com:Jovry-Lee/Jovry-Lee.github.io.git</span><br><span class="line">$ <span class="built_in">cd</span> Jovry-Lee.github.io</span><br><span class="line">$ npm install</span><br></pre></td></tr></table></figure>
 
 <p>这里，如果npm install出错，如”npm ERR! Unexpected end of JSON input while parsing near”,可尝试：</p>
@@ -556,12 +565,12 @@
 <li>清除cache: npm cache clean –force</li>
 <li>不要用淘宝镜像：npm set registry <a target="_blank" rel="noopener" href="https://registry.npmjs.org/">https://registry.npmjs.org/</a></li>
 </ul>
-<h5 id="发布更新博客"><a href="#发布更新博客" class="headerlink" title="发布更新博客"></a>发布更新博客</h5><p>​    更新博客内容后提交到github,执行以下操作进行提交及其部署.</p>
+<h5 id="8-3-发布更新博客"><a href="#8-3-发布更新博客" class="headerlink" title="8.3 发布更新博客"></a>8.3 发布更新博客</h5><p>更新博客内容后提交到github,执行以下操作进行提交及其部署.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ git add .</span><br><span class="line">$ git commint -m <span class="string">&quot;注释&quot;</span></span><br><span class="line">$ git push</span><br><span class="line">$ hexo d -g</span><br></pre></td></tr></table></figure>
 
 <p><em>注：每次操作时，最好先git pull 一下。</em></p>
-<h4 id="设置图床"><a href="#设置图床" class="headerlink" title="设置图床"></a>设置图床</h4><p>​    为了解决图片的存储问题，使用第三方静态资源库，即图床，获取图片Url，目前可供选择的图床很多，小众一些的容易挂，大厂存储服务又需要花钱，因此，这里使用Github + jsDelivr + PicGo + Imagine打造自己的图床。</p>
-<h5 id="配置Github"><a href="#配置Github" class="headerlink" title="配置Github"></a>配置Github</h5><ul>
+<h4 id="9-设置图床"><a href="#9-设置图床" class="headerlink" title="9 设置图床"></a>9 设置图床</h4><p>为了解决图片的存储问题，使用第三方静态资源库，即图床，获取图片Url，目前可供选择的图床很多，小众一些的容易挂，大厂存储服务又需要花钱，因此，这里使用Github + jsDelivr + PicGo + Imagine打造自己的图床。</p>
+<h5 id="9-1-配置Github"><a href="#9-1-配置Github" class="headerlink" title="9.1 配置Github"></a>9.1 配置Github</h5><ul>
 <li><p>创建仓库</p>
 </li>
 <li><ul>
@@ -582,7 +591,7 @@
 <li><p>获取Token秘钥：<u>该秘钥只会显示一次，注意自己保存一下，方便后续使用</u>。</p>
 </li>
 </ul>
-<h5 id="配置PicGo，并使用jsdelivr作为CDN加速"><a href="#配置PicGo，并使用jsdelivr作为CDN加速" class="headerlink" title="配置PicGo，并使用jsdelivr作为CDN加速"></a>配置PicGo，并使用jsdelivr作为CDN加速</h5><ul>
+<h5 id="9-2-配置PicGo，并使用jsdelivr作为CDN加速"><a href="#9-2-配置PicGo，并使用jsdelivr作为CDN加速" class="headerlink" title="9.2 配置PicGo，并使用jsdelivr作为CDN加速"></a>9.2 配置PicGo，并使用jsdelivr作为CDN加速</h5><ul>
 <li><p>下载PicGo</p>
 </li>
 <li><ul>
@@ -605,7 +614,7 @@
 </ul>
 </li>
 </ul>
-<h5 id="图片压缩工具"><a href="#图片压缩工具" class="headerlink" title="图片压缩工具"></a>图片压缩工具</h5><p>​    通常情况下，图片大小都是超过200KB的，网页加载会比较慢，所以需要对图片进行压缩。</p>
+<h5 id="9-3-图片压缩工具"><a href="#9-3-图片压缩工具" class="headerlink" title="9.3 图片压缩工具"></a>9.3 图片压缩工具</h5><p>通常情况下，图片大小都是超过200KB的，网页加载会比较慢，所以需要对图片进行压缩。</p>
 <ul>
 <li><p>在线网站压缩</p>
 <p><a target="_blank" rel="noopener" href="https://tinypng.com/">网站地址</a></p>
@@ -614,14 +623,14 @@
 <p><a target="_blank" rel="noopener" href="https://github.com/meowtec/Imagine">下载地址</a></p>
 </li>
 </ul>
-<h5 id="图片上传-获取"><a href="#图片上传-获取" class="headerlink" title="图片上传/获取"></a>图片上传/获取</h5><ul>
+<h5 id="9-4-图片上传-获取"><a href="#9-4-图片上传-获取" class="headerlink" title="9.4 图片上传/获取"></a>9.4 图片上传/获取</h5><ul>
 <li>上传: 上传区进行图片上传，PicGo工具支持多个图床,需要选择上传的图床,选择<code>GitHub图床</code>。</li>
 </ul>
 <ul>
 <li>获取: PicGo应用点击<code>相册</code>，选择图床，即可显示该图床下的所有图片。</li>
 </ul>
 <p>生成的图片的链接示例：<code>https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E7%9F%A9%E5%BD%A2@3x.png</code></p>
-<h4 id="Markdown编辑器安装"><a href="#Markdown编辑器安装" class="headerlink" title="Markdown编辑器安装"></a>Markdown编辑器安装</h4><p>​    GitHub page支持Markdown语法,推荐使用Markdown进行编辑.</p>
+<h4 id="Markdown编辑器安装"><a href="#Markdown编辑器安装" class="headerlink" title="Markdown编辑器安装"></a>Markdown编辑器安装</h4><p>GitHub page支持Markdown语法,推荐使用Markdown进行编辑.</p>
 <h5 id="Typora"><a href="#Typora" class="headerlink" title="Typora"></a>Typora</h5><p><a target="_blank" rel="noopener" href="https://typora.io/">Typora官网</a></p>
 <p>安装方法：</p>
 <ul>
