@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="记录一些常用或者不常用的命令或方法，方便后续直接查看．．．">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL-命令&#x2F;方法备忘录">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/11/MySQL-%E5%91%BD%E4%BB%A4%E5%8F%8A%E6%96%B9%E6%B3%95%E5%A4%87%E5%BF%98%E5%BD%95/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="记录一些常用或者不常用的命令或方法，方便后续直接查看．．．">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-11T03:52:09.000Z">
+<meta property="article:modified_time" content="2020-09-11T10:32:25.701Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="InnoDB">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/11/MySQL-%E5%91%BD%E4%BB%A4%E5%8F%8A%E6%96%B9%E6%B3%95%E5%A4%87%E5%BF%98%E5%BD%95/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MySQL-命令/方法备忘录 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E5%8D%95%E7%9B%91%E6%8E%A7%E5%BD%93%E5%89%8D%E4%BA%8B%E5%8A%A1%E5%8F%8A%E5%88%86%E6%9E%90%E9%94%81%E9%97%AE%E9%A2%98"><span class="nav-text">1 简单监控当前事务及分析锁问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-INNODB-TRX%E8%A1%A8"><span class="nav-text">1.1 INNODB_TRX表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-INNODB-LOCKS%E8%A1%A8"><span class="nav-text">1.2 INNODB_LOCKS表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-INNODB-LOCK-WAITS%E8%A1%A8"><span class="nav-text">1.3 INNODB_LOCK_WAITS表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#INNODB-LOCK-WAITS"><span class="nav-text">INNODB_LOCK_WAITS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">2 隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E6%9F%A5%E7%9C%8B%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E6%96%B9%E6%B3%95"><span class="nav-text">2.1 查看隔离级别方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E8%AE%BE%E7%BD%AE%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">2.2 设置隔离级别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4"><span class="nav-text">3 事务自动提交</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E6%9F%A5%E7%9C%8B%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E6%A8%A1%E5%BC%8F"><span class="nav-text">3.1 查看事务自动提交模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E8%AE%BE%E7%BD%AE%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E6%A8%A1%E5%BC%8F"><span class="nav-text">3.2 设置事务自动提交模式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BA%BF%E7%A8%8B"><span class="nav-text">4 数据库线程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E6%9F%A5%E7%9C%8B%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BA%BF%E7%A8%8B%E4%BD%BF%E7%94%A8%E6%83%85%E5%86%B5"><span class="nav-text">4.1 查看数据库线程使用情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E6%9D%80%E6%8E%89%E7%BA%BF%E7%A8%8B"><span class="nav-text">4.2 杀掉线程</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/11/MySQL-%E5%91%BD%E4%BB%A4%E5%8F%8A%E6%96%B9%E6%B3%95%E5%A4%87%E5%BF%98%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL-命令/方法备忘录
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2020-09-11 11:52:09 / Modified: 18:32:25" itemprop="dateCreated datePublished" datetime="2020-09-11T11:52:09+08:00">2020-09-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/InnoDB/" itemprop="url" rel="index"><span itemprop="name">InnoDB</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>记录一些常用或者不常用的命令或方法，方便后续直接查看．．．</p>
+<a id="more"></a>
+
+<h3 id="1-简单监控当前事务及分析锁问题"><a href="#1-简单监控当前事务及分析锁问题" class="headerlink" title="1 简单监控当前事务及分析锁问题"></a>1 简单监控当前事务及分析锁问题</h3><p>从InnoDB1.0开始，在<code>INFORMATION_SCHEMA</code>架构下添加了表INNODB_TRX，INNODB_LOCKS, INNODB_LOCK_WAITS．<code>通过这三张表可以简单的监控当前事务并分析可能存在的锁问题</code>．</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">表结构：</span><br><span class="line">mysql&gt; explain t_id_incr;</span><br><span class="line">+-------+------------------+------+-----+---------+----------------+</span><br><span class="line">| Field | Type             | Null | Key | Default | Extra          |</span><br><span class="line">+-------+------------------+------+-----+---------+----------------+</span><br><span class="line">| id    | int(10) unsigned | NO   | MUL | NULL    | auto_increment |</span><br><span class="line">| name  | varchar(10)      | NO   |     |         |                |</span><br><span class="line">+-------+------------------+------+-----+---------+----------------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">表数据如下：</span><br><span class="line">mysql&gt; select * from t_id_incr;</span><br><span class="line">+----+----------+</span><br><span class="line">| id | name     |</span><br><span class="line">+----+----------+</span><br><span class="line">|  1 | seven    |</span><br><span class="line">|  2 | zhangsan |</span><br><span class="line">|  3 | lisi     |</span><br><span class="line">+----+----------+</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">按以下顺序执行，产生锁等待</span><br><span class="line">Ａ：start transaction;</span><br><span class="line">Ａ：update t_id_idcr set name&#x3D;&#39;seven1&#39; where id &#x3D; 1;</span><br><span class="line">	Ｂ：start transaction;</span><br><span class="line">	Ｂ：update t_id_incr set name&#x3D;&#39;zhangsan1&#39; where id &#x3D; 2;</span><br><span class="line">Ａ：update t_id_incr set name&#x3D;&#39;zhangsan2&#39; where id &#x3D; 2;</span><br><span class="line">	</span><br><span class="line">此时由于事务Ｂ正在修改id&#x3D;2的行，因此Ａ需等待事务Ｂ释放id&#x3D;2的行锁．</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="1-1-INNODB-TRX表"><a href="#1-1-INNODB-TRX表" class="headerlink" title="1.1 INNODB_TRX表"></a>1.1 INNODB_TRX表</h4><p>INNODB_TRX表提供了当前INNODB引擎内每个事务的信息，包括事务是否在锁等待，正在执行的语句，隔离级别等等．</p>
+<p>详细信息可查看：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/information-schema-innodb-trx-table.html">INNODB_TRX</a></p>
+<p>查看innodb_trx表信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from information_schema.INNODB_TRX\G;</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">                    trx_id: 101153</span><br><span class="line">                 trx_state: RUNNING</span><br><span class="line">               trx_started: 2020-09-11 16:43:15</span><br><span class="line">     trx_requested_lock_id: NULL</span><br><span class="line">          trx_wait_started: NULL</span><br><span class="line">                trx_weight: 5</span><br><span class="line">       trx_mysql_thread_id: 6</span><br><span class="line">                 trx_query: select * from information_schema.INNODB_TRX</span><br><span class="line">       trx_operation_state: NULL</span><br><span class="line">         trx_tables_in_use: 0</span><br><span class="line">         trx_tables_locked: 1</span><br><span class="line">          trx_lock_structs: 4</span><br><span class="line">     trx_lock_memory_bytes: 1136</span><br><span class="line">           trx_rows_locked: 3</span><br><span class="line">         trx_rows_modified: 1</span><br><span class="line">   trx_concurrency_tickets: 0</span><br><span class="line">       trx_isolation_level: REPEATABLE READ</span><br><span class="line">         trx_unique_checks: 1</span><br><span class="line">    trx_foreign_key_checks: 1</span><br><span class="line">trx_last_foreign_key_error: NULL</span><br><span class="line"> trx_adaptive_hash_latched: 0</span><br><span class="line"> trx_adaptive_hash_timeout: 0</span><br><span class="line">          trx_is_read_only: 0</span><br><span class="line">trx_autocommit_non_locking: 0</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">                    trx_id: 101152</span><br><span class="line">                 trx_state: LOCK WAIT</span><br><span class="line">               trx_started: 2020-09-11 16:43:05</span><br><span class="line">     trx_requested_lock_id: 101152:444:4:3</span><br><span class="line">          trx_wait_started: 2020-09-11 16:43:22</span><br><span class="line">                trx_weight: 6</span><br><span class="line">       trx_mysql_thread_id: 5</span><br><span class="line">                 trx_query: update t_id_incr set name&#x3D;&#39;zhangsan2&#39; where id &#x3D; 2</span><br><span class="line">       trx_operation_state: starting index read</span><br><span class="line">         trx_tables_in_use: 1</span><br><span class="line">         trx_tables_locked: 1</span><br><span class="line">          trx_lock_structs: 5</span><br><span class="line">     trx_lock_memory_bytes: 1136</span><br><span class="line">           trx_rows_locked: 4</span><br><span class="line">         trx_rows_modified: 1</span><br><span class="line">   trx_concurrency_tickets: 0</span><br><span class="line">       trx_isolation_level: REPEATABLE READ</span><br><span class="line">         trx_unique_checks: 1</span><br><span class="line">    trx_foreign_key_checks: 1</span><br><span class="line">trx_last_foreign_key_error: NULL</span><br><span class="line"> trx_adaptive_hash_latched: 0</span><br><span class="line"> trx_adaptive_hash_timeout: 0</span><br><span class="line">          trx_is_read_only: 0</span><br><span class="line">trx_autocommit_non_locking: 0</span><br><span class="line">2 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="1-2-INNODB-LOCKS表"><a href="#1-2-INNODB-LOCKS表" class="headerlink" title="1.2 INNODB_LOCKS表"></a>1.2 INNODB_LOCKS表</h4><p>INNODB_LOCKS表提供关于InnoDB事务已请求但尚未获取的每个锁的信息，以及事务持有的阻止另一个事务的每个锁的信息．（ MySQL 8.0.1起不推荐使用该表，并删除了该表。改用性能架构<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/performance-schema-data-locks-table.html"><code>data_locks</code></a> 表）</p>
+<p>详细信息可查看：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/information-schema-innodb-locks-table.html">INNODB_LOCKS</a></p>
+<p>查看innodb_locks表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from information_schema.innodb_locks\G;</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">    lock_id: 101152:444:4:3</span><br><span class="line">lock_trx_id: 101152</span><br><span class="line">  lock_mode: X</span><br><span class="line">  lock_type: RECORD</span><br><span class="line"> lock_table: &#96;seven&#96;.&#96;t_id_incr&#96;</span><br><span class="line"> lock_index: idx_id</span><br><span class="line"> lock_space: 444</span><br><span class="line">  lock_page: 4</span><br><span class="line">   lock_rec: 3</span><br><span class="line">  lock_data: 2, 0x000000000301</span><br><span class="line">*************************** 2. row ***************************</span><br><span class="line">    lock_id: 101153:444:4:3</span><br><span class="line">lock_trx_id: 101153</span><br><span class="line">  lock_mode: X</span><br><span class="line">  lock_type: RECORD</span><br><span class="line"> lock_table: &#96;seven&#96;.&#96;t_id_incr&#96;</span><br><span class="line"> lock_index: idx_id</span><br><span class="line"> lock_space: 444</span><br><span class="line">  lock_page: 4</span><br><span class="line">   lock_rec: 3</span><br><span class="line">  lock_data: 2, 0x000000000301</span><br><span class="line">2 rows in set, 1 warning (0.02 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="1-3-INNODB-LOCK-WAITS表"><a href="#1-3-INNODB-LOCK-WAITS表" class="headerlink" title="1.3 INNODB_LOCK_WAITS表"></a>1.3 INNODB_LOCK_WAITS表</h4><p>INNODB_LOCK_WAITS表为每个被阻止的InnoDB事务包含一个或多个行，指示它已请求的锁以及正在阻止该请求的所有锁．（MySQL 8.0.1起不推荐使用该表，并删除了该表。改用性能架构 <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/performance-schema-data-lock-waits-table.html"><code>data_lock_waits</code></a>表。）</p>
+<p>详细信息可查看：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/information-schema-innodb-lock-waits-table.html">INNODB_LOCK_WAITS</a></p>
+<p>查看innodb_lock_waits表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from information_schema.INNODB_LOCK_WAITS\G;</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">requesting_trx_id: 101152</span><br><span class="line">requested_lock_id: 101152:444:4:3</span><br><span class="line">  blocking_trx_id: 101153</span><br><span class="line"> blocking_lock_id: 101153:444:4:3</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="INNODB-LOCK-WAITS"><a href="#INNODB-LOCK-WAITS" class="headerlink" title="INNODB_LOCK_WAITS"></a>INNODB_LOCK_WAITS</h3><h3 id="2-隔离级别"><a href="#2-隔离级别" class="headerlink" title="2 隔离级别"></a>2 隔离级别</h3><p>不同事务的隔离级别，InnoDB的锁实现是不一样的．支持的隔离级别包括：</p>
+<ul>
+<li>read uncommitted</li>
+<li>read committed</li>
+<li>repeatable read（默认）</li>
+<li>serializable</li>
+</ul>
+<h4 id="2-1-查看隔离级别方法"><a href="#2-1-查看隔离级别方法" class="headerlink" title="2.1 查看隔离级别方法"></a>2.1 查看隔离级别方法</h4><ul>
+<li>查看当前会话隔离级别</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">show variables like &#39;tx_isolation&#39;</span><br><span class="line">或</span><br><span class="line">select @@tx_isolation</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>查看系统隔离级别</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">show global variables like &#39;tx_isolation&#39;</span><br><span class="line">或</span><br><span class="line">select @@global.tx_isolation</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-2-设置隔离级别"><a href="#2-2-设置隔离级别" class="headerlink" title="2.2 设置隔离级别"></a>2.2 设置隔离级别</h4><ul>
+<li>设置当前会话隔离级别：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set session transaction isolation level &lt;隔离级别&gt;&#39;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>设置系统隔离级别：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set global transaction isolation level &lt;隔离级别&gt;&#39;;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-事务自动提交"><a href="#3-事务自动提交" class="headerlink" title="3 事务自动提交"></a>3 事务自动提交</h3><p>Mysql默认采用自动提交模式（即<code>autocommit=1</code>），即如果不是显式地开始一个事务，每个查询都被当做一个事务执行提交操作。</p>
+<h4 id="3-1-查看事务自动提交模式"><a href="#3-1-查看事务自动提交模式" class="headerlink" title="3.1 查看事务自动提交模式"></a>3.1 查看事务自动提交模式</h4><ul>
+<li>查看当前会话自动提交模式命令：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show variables like &#39;autocommit&#39;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>查看数据库系统自动提交模式命令：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show global variables like &#39;autocommit&#39;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="3-2-设置事务自动提交模式"><a href="#3-2-设置事务自动提交模式" class="headerlink" title="3.2 设置事务自动提交模式"></a>3.2 设置事务自动提交模式</h4><ul>
+<li>设置当前会话自动提交模式命令：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set autocommit &#x3D; ０　&#x2F;&#x2F; 0表示关闭，１表示开启</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>设置系统自动提交模式命令：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set global autocommit &#x3D; 0;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-数据库线程"><a href="#4-数据库线程" class="headerlink" title="4 数据库线程"></a>4 数据库线程</h3><h4 id="4-1-查看数据库线程使用情况"><a href="#4-1-查看数据库线程使用情况" class="headerlink" title="4.1 查看数据库线程使用情况"></a>4.1 查看数据库线程使用情况</h4><p>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show processlist</span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt;  show processlist;</span><br><span class="line">+----+------+-----------+-------+---------+------+----------+------------------+</span><br><span class="line">| Id | User | Host      | db    | Command | Time | State    | Info             |</span><br><span class="line">+----+------+-----------+-------+---------+------+----------+------------------+</span><br><span class="line">|  3 | root | localhost | seven | Query   |    0 | starting | show processlist |</span><br><span class="line">|  4 | root | localhost | seven | Sleep   | 1450 |          | NULL             |</span><br><span class="line">+----+------+-----------+-------+---------+------+----------+------------------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="4-2-杀掉线程"><a href="#4-2-杀掉线程" class="headerlink" title="4.2 杀掉线程"></a>4.2 杀掉线程</h4><p>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kill &lt;id&gt;</span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; kill 4;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt;  show processlist;</span><br><span class="line">+----+------+-----------+-------+---------+------+----------+------------------+</span><br><span class="line">| Id | User | Host      | db    | Command | Time | State    | Info             |</span><br><span class="line">+----+------+-----------+-------+---------+------+----------+------------------+</span><br><span class="line">|  3 | root | localhost | seven | Query   |    0 | starting | show processlist |</span><br><span class="line">+----+------+-----------+-------+---------+------+----------+------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>5 查看表自增长计数器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select max(auto_inc_col) from &lt;table_name&gt; for update</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/InnoDB/" rel="tag"># InnoDB</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/10/MySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" rel="prev" title="MySQL-并发控制">
+                  <i class="fa fa-chevron-left"></i> MySQL-并发控制
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'f82d48b9d1ad184167fe07674ebacec3',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

@@ -1,11 +1,13 @@
 ---
-title: 高性能MySQL-并发控制
+title: MySQL-并发控制
 date: 2020-09-10 16:54:48
-tags: ["MySQL","Note"]
-categories: ["MySQL", "Note", "高性能MySQL"]
+tags: ["MySQL","锁","Note","高性能MySQL"]
+categories: ["MySQL", "锁",]
 ---
 
 无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用`锁的方式`来防止数据不一致．
+
+锁是数据库系统区别于文件系统的一个关键特性．`锁机制用于管理对共享资源（临界资源）的并发访问`．
 
 <!--more-->
 
@@ -15,10 +17,21 @@ categories: ["MySQL", "Note", "高性能MySQL"]
 - ①、共享锁（shared lock）——读锁， 多个客户在同一时刻读取同一个资源，而互不干扰。
 - ②、排它锁（exclusive lock）——写锁， 写锁会阻塞其他的写锁和读锁。
 
+
+
 #### 2、锁粒度
+
 一种提高共享资源并发性的方式就是让锁定对象更具有选择性．尽量只锁定需要修改的部分数据，而不是所有的资源．更理想的方式是只对对修改的数据片进行精确锁定．`任何时候，在给定的资源上，锁定的数据量越少，并发度越高．`
 
 问题是，加锁需要消耗资源．因此需要寻求一种策略，`在锁的开销和数据安全性之间做平衡，这就是锁策略`．
+
+
+
+每种数据库及相同数据库下不同引擎的锁策略都不同，例如：
+
+- MySQL的MyISAM存储引擎，其锁是表锁设计．在并发情况下的读没有问题，但是并发写时性能就会差一些．
+- 对于Microsoft SQL Server数据库，2005版本之前是采用的页锁，相对于MyISAM引擎来说，并发性有所提高，但是对于热点数据页的并发问题，仍然无能为力．2005版本之后，通过支持乐观并发和悲观并发，在乐观并发下开始支持行级锁（其实现方式与InnoDB存储引擎完全不同）．
+- InnoDB引擎锁的实现与Oracle数据库类似，提供一致性非锁定读，行级锁支持．
 
 
 
@@ -49,12 +62,13 @@ InnoDB共有七种类型的锁：
 - ⑥、`插入意向锁（Insert Intention Locks）`
 - ⑦、`自增锁（Auto-inc Locks）`
 
+
+
 ##### 3.1 共享锁/排它锁（Shared and Exclusive Locks）
-在InnoDB里实现了标准的行级锁(row-level locking)，共享/排它锁：  
+
+在InnoDB里实现了`标准的行级锁(row-level locking)`，共享/排它锁：  
  (1)事务拿到某一行记录的共享S锁，才可以读取这一行；  
  (2)事务拿到某一行记录的排它X锁，才可以修改或者删除这一行；
-
-
 
 其兼容互斥表如下：
 
@@ -111,7 +125,7 @@ sudo service mysql restart
 
 ```mysql
 MySQL，InnoDB，默认的隔离级别(RR)，假设有数据表：
-t(id AUTO_INCREMENT, name);
+t_id_incr(id AUTO_INCREMENT, name);
  
 数据表中有数据：
 1, shenjian
@@ -129,35 +143,53 @@ A:insert into t_id_incr(name) values('ooo');
 A:insert into t_id_incr(name) values('xoo');
 A:select * from t_id_incr;
 ```
-该示例，将innodb_autoinc_lock_mode修改为0后，事务B依旧没有阻塞
+<u>该示例，将innodb_autoinc_lock_mode修改为0,1,2任何一个值，事务B依旧均没有阻塞？？？？这是正常的吗？？？？</u>
+
+
 
 ##### 3.3 意向锁（Intention Locks）
-InnoDB支持多粒度锁(multiple granularity locking)，它允许行级锁与表级锁共存，实际应用中，InnoDB使用的是意向锁。 
 
-意向锁指的是：未来的某个时刻，事务可能要加共享/排他锁了，先提前声明一个意向。
+InnoDB支持多粒度锁(multiple granularity locking)，它允许行级锁与表级锁共存．因此InnoDB支持一个额外的锁方式，即意向锁（Intention Lock）．
 
-意向锁的特点：
+
+
+意向锁是将锁定的对象分为多个层次，意味着事务希望在更细的粒度上进行加锁．例如：`需要对页上的记录ｒ进行上Ｘ锁，那么分别需要对数据库Ａ，表，页上意向锁IX，最后低记录ｒ上Ｘ锁．所起中任何一个部分导致等待，那么该操作需要等待粗粒度锁的完成．`
+
+
+
+实际上，InnoDB支持的意向锁设计简练，即为表锁．是为了在一个事务中揭示下一行将被请求的锁类型． 
+
+InnoDB意向锁的特点：
 - ①、意向锁是一个表级别的锁（table-level locking）;
+
 - ②、意向锁又分为：
-    - **意向共享锁**（intention share lock, IS）, 它预示着事务有意向对表中某些行加共享S锁。
-    - **意向排它锁**（intention exclusive lock, IX）,它预示着，事务有意向对表中某些行加排它锁。
+    - **意向共享锁**（Intention share lock, IS）, 它预示着事务有意向对表中某些行加共享S锁。
+    - **意向排它锁**（Intention exclusive lock, IX）,它预示着，事务有意向对表中某些行加排它锁。
     例如：
+    ```mysql
+    select ... lock in share mode // 要设置IS锁；
+    select ... for update // 要设置IX锁
     ```
-    select ... lock in share mode,要设置IS锁；
-    select ... for update, 要设置IX锁
-    ```
+    
 - 意向锁协议
     - 事务要获得某些行的S锁，必须获得表的IS锁；
     - 事务要获得某些行的X锁，必须获得表的IX锁；
 
-- ==由于意向锁仅仅表明意向，它其实是比较弱的锁，意向锁之间并不相互互斥，而是**可以并行**==。
-- ==但是意向锁会和共享锁/排他锁互斥==， 其兼容互斥表如下：
-    |      | S    | X    |
-    | ---- | ---- | ---- |
-    | IS   | 兼容 | 互斥 |
-    | IX   | 互斥 | 互斥 |
+- `由于意向锁仅仅表明意向，它其实是比较弱的锁，意向锁之间并不相互互斥，而是可以并行`。
+
+- `但是意向锁会和共享锁/排他锁互斥`， 其兼容互斥表如下：
+  
+    |      | IS   | IX   | S    | X    |
+    | ---- | ---- | ---- | ---- | ---- |
+    | IS   | 兼容 | 兼容 | 兼容 | 互斥 |
+    | IX   | 兼容 | 兼容 | 互斥 | 互斥 |
+    | S    | 兼容 | 互斥 | 兼容 | 互斥 |
+    | X    | 互斥 | 互斥 | 互斥 | 互斥 |
+
+
 
 ##### 3.4 插入意向锁（Insert Intention Locks）
+
 插入意向锁是间隙锁（Gap Locks）的一种（实施在索引上的），他是专门针对insert操作的。
 
 特点：
@@ -252,13 +284,70 @@ PK上潜在的临键锁为：
 ```
 临键锁的目的，也是为了避免幻读，如果把事务的隔离级别降为RC，临键锁则也会失效。
 
+
+
+#### 4 InnoDB一致性读
+
+InnoDB提供了两种一致性读，分别是：
+
+- 一致性非锁定读（Consistent nonlocking read）
+- 一致性锁定读（Consistent locking read）
+
+
+
+##### 4.1 一致性非锁定读
+
+一致性非锁定读是指InnoDB存储引擎通过多版本控制的方式来读取当前执行时间数据库中的行数据．若读取的行正在执行DELETE或UPDATE操作，这时`读取操作不会因此去等待行上的锁释放．而是去读取行的一个快照`．
+
+如下图所示：
+
+<img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/InnoDB存储引擎非锁定的一致性读.png" alt="InnoDB存储引擎非锁定的一致性读" style="zoom:80%;" />  
+
+
+
+`什么是快照数据呢？`
+
+快照数据是指行的之前版本的数据，该实现是通过ｕｎｄｏ段来完成的．而ｕｎｄｏ段用来在事务中回滚数据，因此，快照数据本身是没有任何开销的．此外，读快照数据是不需要上锁的．
+
+
+
+需要注意的是，并不是所有的隔离级别都是采用一致性非锁定读．实际上`只有在READ COMMITTED和REPEATABLE READ（默认隔离级别）隔离级别下，ＩnnoDB采用一致性非锁定读`．但是他们的快照数据定义却不相同．
+
+- READ COMMITTED下：总是读取最新的一份快照数据．
+- REPEATABLE READ下：总是读取最老的（事务最开始的那份）一份快照数据．
+
+
+
+##### 4.2 一致性锁定读
+
+对于默认的隔离级别REPEATABLE READ模式下，如果想要显示的通过加锁的方式保证数据的一致性，InnoDB提供了一种加锁操作．如下：
+
+```mysql
+select ... for update // 对读取行记录加一个Ｘ（排他）锁
+select ... lock in share mode　// 对读取行记录加一个Ｓ（共享）锁
+```
+
+注：使用以上两种方式显示加锁，需要加上begin, start transaction或set autocommit=0的操作．
+
+
+
+对于一致性非锁定读，使用`select ... for update`方式无效．仍然以快照读的方式运行．
+
+
+
 ---
 
+### 参考文档：  
 
+ [InnoDB，select为啥会阻塞insert？](https://mp.weixin.qq.com/s/y_f2qrZvZe_F4_HPnwVjOw) 
 
-参考文档：  
-1 [InnoDB，select为啥会阻塞insert？](https://mp.weixin.qq.com/s/y_f2qrZvZe_F4_HPnwVjOw) 
-2 [InnoDB并发插入，居然使用意向锁？](https://mp.weixin.qq.com/s/iViStnwUyypwTkQHWDIR_w) 
-3 [插入InnoDB自增列，居然是表锁？](https://mp.weixin.qq.com/s/kOMSD_Satu9v9ciZVvNw8Q)  
+ [InnoDB并发插入，居然使用意向锁？](https://mp.weixin.qq.com/s/iViStnwUyypwTkQHWDIR_w) 
 
-4 [InnoDB并发如此高，原因竟然在这？](https://mp.weixin.qq.com/s/R3yuitWpHHGWxsUcE0qIRQ)  
+ [插入InnoDB自增列，居然是表锁？](https://mp.weixin.qq.com/s/kOMSD_Satu9v9ciZVvNw8Q) 
+
+ [InnoDB并发如此高，原因竟然在这？](https://mp.weixin.qq.com/s/R3yuitWpHHGWxsUcE0qIRQ)  
+
+MySQL技术内幕+InnoDB存储引擎
+
+高性能ＭySQL 第三版
+

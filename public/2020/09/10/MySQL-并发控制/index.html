@@ -22,22 +22,26 @@
     var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用锁的方式来防止数据不一致．">
+  <meta name="description" content="无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用锁的方式来防止数据不一致． 锁是数据库系统区别于文件系统的一个关键特性．锁机制用于管理对共享资源（临界资源）的并发访问．">
 <meta property="og:type" content="article">
-<meta property="og:title" content="高性能MySQL-并发控制">
-<meta property="og:url" content="https://jovry-lee.github.io/2020/09/10/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/index.html">
+<meta property="og:title" content="MySQL-并发控制">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/10/MySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/index.html">
 <meta property="og:site_name" content="Jovry&#39;s blog">
-<meta property="og:description" content="无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用锁的方式来防止数据不一致．">
+<meta property="og:description" content="无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用锁的方式来防止数据不一致． 锁是数据库系统区别于文件系统的一个关键特性．锁机制用于管理对共享资源（临界资源）的并发访问．">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/InnoDB存储引擎非锁定的一致性读.png">
 <meta property="article:published_time" content="2020-09-10T08:54:48.000Z">
-<meta property="article:modified_time" content="2020-09-10T10:30:04.740Z">
+<meta property="article:modified_time" content="2020-09-11T10:32:34.397Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Note">
+<meta property="article:tag" content="锁">
+<meta property="article:tag" content="高性能MySQL">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/InnoDB存储引擎非锁定的一致性读.png">
 
 
-<link rel="canonical" href="https://jovry-lee.github.io/2020/09/10/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/10/MySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">
 
 
 <script class="page-configurations">
@@ -50,7 +54,7 @@
   };
 </script>
 
-  <title>高性能MySQL-并发控制 | Jovry's blog</title>
+  <title>MySQL-并发控制 | Jovry's blog</title>
   
 
 
@@ -182,7 +186,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E8%AF%BB%E5%86%99%E9%94%81"><span class="nav-text">1、读写锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E9%94%81%E7%B2%92%E5%BA%A6"><span class="nav-text">2、锁粒度</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1%E3%80%81%E8%A1%A8%E9%94%81%EF%BC%88table-lock%EF%BC%89"><span class="nav-text">2.1、表锁（table lock）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2%E3%80%81%E8%A1%8C%E7%BA%A7%E9%94%81%EF%BC%88row-lock%EF%BC%89"><span class="nav-text">2.2、行级锁（row lock）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%E3%80%81InnoDB%E7%9A%84%E9%94%81%E7%B1%BB%E5%9E%8B"><span class="nav-text">3、InnoDB的锁类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-%E5%85%B1%E4%BA%AB%E9%94%81-%E6%8E%92%E5%AE%83%E9%94%81%EF%BC%88Shared-and-Exclusive-Locks%EF%BC%89"><span class="nav-text">3.1 共享锁&#x2F;排它锁（Shared and Exclusive Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-%E8%87%AA%E5%A2%9E%E9%94%81%EF%BC%88Auto-inc-Locks%EF%BC%89"><span class="nav-text">3.2 自增锁（Auto-inc Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-%E6%84%8F%E5%90%91%E9%94%81%EF%BC%88Intention-Locks%EF%BC%89"><span class="nav-text">3.3 意向锁（Intention Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-4-%E6%8F%92%E5%85%A5%E6%84%8F%E5%90%91%E9%94%81%EF%BC%88Insert-Intention-Locks%EF%BC%89"><span class="nav-text">3.4 插入意向锁（Insert Intention Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-5-%E8%AE%B0%E5%BD%95%E9%94%81%EF%BC%88Record-Locks%EF%BC%89"><span class="nav-text">3.5 记录锁（Record Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-6-%E9%97%B4%E9%9A%99%E9%94%81%EF%BC%88Gap-Locks%EF%BC%89"><span class="nav-text">3.6 间隙锁（Gap Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-7-%E4%B8%B4%E9%94%AE%E9%94%81%EF%BC%88Next-Key-Locks%EF%BC%89"><span class="nav-text">3.7 临键锁（Next-Key Locks）</span></a></li></ol></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E8%AF%BB%E5%86%99%E9%94%81"><span class="nav-text">1、读写锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E9%94%81%E7%B2%92%E5%BA%A6"><span class="nav-text">2、锁粒度</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1%E3%80%81%E8%A1%A8%E9%94%81%EF%BC%88table-lock%EF%BC%89"><span class="nav-text">2.1、表锁（table lock）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2%E3%80%81%E8%A1%8C%E7%BA%A7%E9%94%81%EF%BC%88row-lock%EF%BC%89"><span class="nav-text">2.2、行级锁（row lock）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%E3%80%81InnoDB%E7%9A%84%E9%94%81%E7%B1%BB%E5%9E%8B"><span class="nav-text">3、InnoDB的锁类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-%E5%85%B1%E4%BA%AB%E9%94%81-%E6%8E%92%E5%AE%83%E9%94%81%EF%BC%88Shared-and-Exclusive-Locks%EF%BC%89"><span class="nav-text">3.1 共享锁&#x2F;排它锁（Shared and Exclusive Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-%E8%87%AA%E5%A2%9E%E9%94%81%EF%BC%88Auto-inc-Locks%EF%BC%89"><span class="nav-text">3.2 自增锁（Auto-inc Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-%E6%84%8F%E5%90%91%E9%94%81%EF%BC%88Intention-Locks%EF%BC%89"><span class="nav-text">3.3 意向锁（Intention Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-4-%E6%8F%92%E5%85%A5%E6%84%8F%E5%90%91%E9%94%81%EF%BC%88Insert-Intention-Locks%EF%BC%89"><span class="nav-text">3.4 插入意向锁（Insert Intention Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-5-%E8%AE%B0%E5%BD%95%E9%94%81%EF%BC%88Record-Locks%EF%BC%89"><span class="nav-text">3.5 记录锁（Record Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-6-%E9%97%B4%E9%9A%99%E9%94%81%EF%BC%88Gap-Locks%EF%BC%89"><span class="nav-text">3.6 间隙锁（Gap Locks）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-7-%E4%B8%B4%E9%94%AE%E9%94%81%EF%BC%88Next-Key-Locks%EF%BC%89"><span class="nav-text">3.7 临键锁（Next-Key Locks）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-InnoDB%E4%B8%80%E8%87%B4%E6%80%A7%E8%AF%BB"><span class="nav-text">4 InnoDB一致性读</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-%E4%B8%80%E8%87%B4%E6%80%A7%E9%9D%9E%E9%94%81%E5%AE%9A%E8%AF%BB"><span class="nav-text">4.1 一致性非锁定读</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-%E4%B8%80%E8%87%B4%E6%80%A7%E9%94%81%E5%AE%9A%E8%AF%BB"><span class="nav-text">4.2 一致性锁定读</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3%EF%BC%9A"><span class="nav-text">参考文档：</span></a></div>
       </section>
       <!--/noindex-->
 
@@ -198,20 +202,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -247,7 +251,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/10/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/10/MySQL-%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/princess.jpg">
@@ -263,7 +267,7 @@
     
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          高性能MySQL-并发控制
+          MySQL-并发控制
         </h1>
 
         <div class="post-meta-container">
@@ -273,10 +277,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2020-09-10 16:54:48 / Modified: 18:30:04" itemprop="dateCreated datePublished" datetime="2020-09-10T16:54:48+08:00">2020-09-10</time>
+      <time title="Created: 2020-09-10 16:54:48" itemprop="dateCreated datePublished" datetime="2020-09-10T16:54:48+08:00">2020-09-10</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-11 18:32:34" itemprop="dateModified" datetime="2020-09-11T18:32:34+08:00">2020-09-11</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -287,11 +297,7 @@
         </span>
           , 
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/MySQL/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
-        </span>
-          , 
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/MySQL/Note/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/" itemprop="url" rel="index"><span itemprop="name">高性能MySQL</span></a>
+          <a href="/categories/MySQL/%E9%94%81/" itemprop="url" rel="index"><span itemprop="name">锁</span></a>
         </span>
     </span>
 
@@ -313,6 +319,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用<code>锁的方式</code>来防止数据不一致．</p>
+<p>锁是数据库系统区别于文件系统的一个关键特性．<code>锁机制用于管理对共享资源（临界资源）的并发访问</code>．</p>
 <a id="more"></a>
 
 <h4 id="1、读写锁"><a href="#1、读写锁" class="headerlink" title="1、读写锁"></a>1、读写锁</h4><p>在处理并发读和并发写时，可以通过实现一个由两种类型的锁组成的锁系统来解决，分别是：  </p>
@@ -322,6 +329,12 @@
 </ul>
 <h4 id="2、锁粒度"><a href="#2、锁粒度" class="headerlink" title="2、锁粒度"></a>2、锁粒度</h4><p>一种提高共享资源并发性的方式就是让锁定对象更具有选择性．尽量只锁定需要修改的部分数据，而不是所有的资源．更理想的方式是只对对修改的数据片进行精确锁定．<code>任何时候，在给定的资源上，锁定的数据量越少，并发度越高．</code></p>
 <p>问题是，加锁需要消耗资源．因此需要寻求一种策略，<code>在锁的开销和数据安全性之间做平衡，这就是锁策略</code>．</p>
+<p>每种数据库及相同数据库下不同引擎的锁策略都不同，例如：</p>
+<ul>
+<li>MySQL的MyISAM存储引擎，其锁是表锁设计．在并发情况下的读没有问题，但是并发写时性能就会差一些．</li>
+<li>对于Microsoft SQL Server数据库，2005版本之前是采用的页锁，相对于MyISAM引擎来说，并发性有所提高，但是对于热点数据页的并发问题，仍然无能为力．2005版本之后，通过支持乐观并发和悲观并发，在乐观并发下开始支持行级锁（其实现方式与InnoDB存储引擎完全不同）．</li>
+<li>InnoDB引擎锁的实现与Oracle数据库类似，提供一致性非锁定读，行级锁支持．</li>
+</ul>
 <p>Mysql提供了多钟锁策略，每种Mysql<code>存储引擎都可以实现自己的锁策略和锁粒度</code>。<br>锁定的资源越少，系统并发程度越高，但加锁消耗的资源越大（获得锁，检查锁，释放锁等操作）。</p>
 <h5 id="2-1、表锁（table-lock）"><a href="#2-1、表锁（table-lock）" class="headerlink" title="2.1、表锁（table lock）"></a>2.1、表锁（table lock）</h5><p>表锁是Mysql中最基本的锁策略，并且是开销最小的锁策略。它将会锁定整张表。其写锁比读锁有更高的优先级，因此一个写锁请求可能会被插入到读锁请求队列的前面．</p>
 <p>某些情况下，Mysql自身会使用表锁实现目的，并忽略存储引擎的锁机制，例如，ALTER TABLE之类的语句使用的表锁。</p>
@@ -337,7 +350,7 @@
 <li>⑥、<code>插入意向锁（Insert Intention Locks）</code></li>
 <li>⑦、<code>自增锁（Auto-inc Locks）</code></li>
 </ul>
-<h5 id="3-1-共享锁-排它锁（Shared-and-Exclusive-Locks）"><a href="#3-1-共享锁-排它锁（Shared-and-Exclusive-Locks）" class="headerlink" title="3.1 共享锁/排它锁（Shared and Exclusive Locks）"></a>3.1 共享锁/排它锁（Shared and Exclusive Locks）</h5><p>在InnoDB里实现了标准的行级锁(row-level locking)，共享/排它锁：<br> (1)事务拿到某一行记录的共享S锁，才可以读取这一行；<br> (2)事务拿到某一行记录的排它X锁，才可以修改或者删除这一行；</p>
+<h5 id="3-1-共享锁-排它锁（Shared-and-Exclusive-Locks）"><a href="#3-1-共享锁-排它锁（Shared-and-Exclusive-Locks）" class="headerlink" title="3.1 共享锁/排它锁（Shared and Exclusive Locks）"></a>3.1 共享锁/排它锁（Shared and Exclusive Locks）</h5><p>在InnoDB里实现了<code>标准的行级锁(row-level locking)</code>，共享/排它锁：<br> (1)事务拿到某一行记录的共享S锁，才可以读取这一行；<br> (2)事务拿到某一行记录的排它X锁，才可以修改或者删除这一行；</p>
 <p>其兼容互斥表如下：</p>
 <table>
 <thead>
@@ -384,18 +397,20 @@
 
 
 <p>示例：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">MySQL，InnoDB，默认的隔离级别(RR)，假设有数据表：</span><br><span class="line">t(id AUTO_INCREMENT, name);</span><br><span class="line"> </span><br><span class="line">数据表中有数据：</span><br><span class="line">1, shenjian</span><br><span class="line">2, zhangsan</span><br><span class="line">3, lisi</span><br><span class="line"></span><br><span class="line">按以下顺序执行，对于事务Ｂ会阻塞吗？</span><br><span class="line"></span><br><span class="line">A:set autocommit &#x3D; 0;</span><br><span class="line">A:start transaction;</span><br><span class="line">A:insert into t_id_incr(name) values(&#39;ooo&#39;);</span><br><span class="line">	B:set autocommit &#x3D; 0;</span><br><span class="line">	B:start transaction;</span><br><span class="line">	B:insert into t_id_incr(name) values(&#39;xxx&#39;);</span><br><span class="line">A:insert into t_id_incr(name) values(&#39;xoo&#39;);</span><br><span class="line">A:select * from t_id_incr;</span><br></pre></td></tr></table></figure>
-<p>该示例，将innodb_autoinc_lock_mode修改为0后，事务B依旧没有阻塞</p>
-<h5 id="3-3-意向锁（Intention-Locks）"><a href="#3-3-意向锁（Intention-Locks）" class="headerlink" title="3.3 意向锁（Intention Locks）"></a>3.3 意向锁（Intention Locks）</h5><p>InnoDB支持多粒度锁(multiple granularity locking)，它允许行级锁与表级锁共存，实际应用中，InnoDB使用的是意向锁。 </p>
-<p>意向锁指的是：未来的某个时刻，事务可能要加共享/排他锁了，先提前声明一个意向。</p>
-<p>意向锁的特点：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">MySQL，InnoDB，默认的隔离级别(RR)，假设有数据表：</span><br><span class="line">t_id_incr(id AUTO_INCREMENT, name);</span><br><span class="line"> </span><br><span class="line">数据表中有数据：</span><br><span class="line">1, shenjian</span><br><span class="line">2, zhangsan</span><br><span class="line">3, lisi</span><br><span class="line"></span><br><span class="line">按以下顺序执行，对于事务Ｂ会阻塞吗？</span><br><span class="line"></span><br><span class="line">A:set autocommit &#x3D; 0;</span><br><span class="line">A:start transaction;</span><br><span class="line">A:insert into t_id_incr(name) values(&#39;ooo&#39;);</span><br><span class="line">	B:set autocommit &#x3D; 0;</span><br><span class="line">	B:start transaction;</span><br><span class="line">	B:insert into t_id_incr(name) values(&#39;xxx&#39;);</span><br><span class="line">A:insert into t_id_incr(name) values(&#39;xoo&#39;);</span><br><span class="line">A:select * from t_id_incr;</span><br></pre></td></tr></table></figure>
+<p><u>该示例，将innodb_autoinc_lock_mode修改为0,1,2任何一个值，事务B依旧均没有阻塞？？？？这是正常的吗？？？？</u></p>
+<h5 id="3-3-意向锁（Intention-Locks）"><a href="#3-3-意向锁（Intention-Locks）" class="headerlink" title="3.3 意向锁（Intention Locks）"></a>3.3 意向锁（Intention Locks）</h5><p>InnoDB支持多粒度锁(multiple granularity locking)，它允许行级锁与表级锁共存．因此InnoDB支持一个额外的锁方式，即意向锁（Intention Lock）．</p>
+<p>意向锁是将锁定的对象分为多个层次，意味着事务希望在更细的粒度上进行加锁．例如：<code>需要对页上的记录ｒ进行上Ｘ锁，那么分别需要对数据库Ａ，表，页上意向锁IX，最后低记录ｒ上Ｘ锁．所起中任何一个部分导致等待，那么该操作需要等待粗粒度锁的完成．</code></p>
+<p>实际上，InnoDB支持的意向锁设计简练，即为表锁．是为了在一个事务中揭示下一行将被请求的锁类型． </p>
+<p>InnoDB意向锁的特点：</p>
 <ul>
 <li><p>①、意向锁是一个表级别的锁（table-level locking）;</p>
 </li>
 <li><p>②、意向锁又分为：</p>
 <ul>
-<li><strong>意向共享锁</strong>（intention share lock, IS）, 它预示着事务有意向对表中某些行加共享S锁。</li>
-<li><strong>意向排它锁</strong>（intention exclusive lock, IX）,它预示着，事务有意向对表中某些行加排它锁。<br>例如：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select ... lock in share mode,要设置IS锁；</span><br><span class="line">select ... for update, 要设置IX锁</span><br></pre></td></tr></table></figure></li>
+<li><strong>意向共享锁</strong>（Intention share lock, IS）, 它预示着事务有意向对表中某些行加共享S锁。</li>
+<li><strong>意向排它锁</strong>（Intention exclusive lock, IX）,它预示着，事务有意向对表中某些行加排它锁。<br>例如：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select ... lock in share mode &#x2F;&#x2F; 要设置IS锁；</span><br><span class="line">select ... for update &#x2F;&#x2F; 要设置IX锁</span><br></pre></td></tr></table></figure>
+</li>
 </ul>
 </li>
 <li><p>意向锁协议</p>
@@ -404,13 +419,15 @@
 <li>事务要获得某些行的X锁，必须获得表的IX锁；</li>
 </ul>
 </li>
-<li><p>==由于意向锁仅仅表明意向，它其实是比较弱的锁，意向锁之间并不相互互斥，而是<strong>可以并行</strong>==。</p>
+<li><p><code>由于意向锁仅仅表明意向，它其实是比较弱的锁，意向锁之间并不相互互斥，而是可以并行</code>。</p>
 </li>
-<li><p>==但是意向锁会和共享锁/排他锁互斥==， 其兼容互斥表如下：</p>
+<li><p><code>但是意向锁会和共享锁/排他锁互斥</code>， 其兼容互斥表如下：</p>
 <table>
 <thead>
 <tr>
 <th></th>
+<th>IS</th>
+<th>IX</th>
 <th>S</th>
 <th>X</th>
 </tr>
@@ -418,10 +435,28 @@
 <tbody><tr>
 <td>IS</td>
 <td>兼容</td>
+<td>兼容</td>
+<td>兼容</td>
 <td>互斥</td>
 </tr>
 <tr>
 <td>IX</td>
+<td>兼容</td>
+<td>兼容</td>
+<td>互斥</td>
+<td>互斥</td>
+</tr>
+<tr>
+<td>S</td>
+<td>兼容</td>
+<td>互斥</td>
+<td>兼容</td>
+<td>互斥</td>
+</tr>
+<tr>
+<td>X</td>
+<td>互斥</td>
+<td>互斥</td>
 <td>互斥</td>
 <td>互斥</td>
 </tr>
@@ -452,9 +487,36 @@
 <p>如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。<br>（官方文档原文：If one session has a shared or exclusive lock on record R in an index, another session cannot insert a new index record in the gap immediately before R in the index order.）</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">例子：InnoDB，RR：</span><br><span class="line">t(id PK, name KEY, sex, flag);</span><br><span class="line"> </span><br><span class="line">表中有四条记录：</span><br><span class="line">1, shenjian, m, A</span><br><span class="line">3, zhangsan, m, A</span><br><span class="line">5, lisi, m, A</span><br><span class="line">9, wangwu, f, B</span><br><span class="line"> </span><br><span class="line">PK上潜在的临键锁为：</span><br><span class="line">(-infinity, 1]</span><br><span class="line">(1, 3]</span><br><span class="line">(3, 5]</span><br><span class="line">(5, 9]</span><br><span class="line">(9, +infinity]</span><br></pre></td></tr></table></figure>
 <p>临键锁的目的，也是为了避免幻读，如果把事务的隔离级别降为RC，临键锁则也会失效。</p>
+<h4 id="4-InnoDB一致性读"><a href="#4-InnoDB一致性读" class="headerlink" title="4 InnoDB一致性读"></a>4 InnoDB一致性读</h4><p>InnoDB提供了两种一致性读，分别是：</p>
+<ul>
+<li>一致性非锁定读（Consistent nonlocking read）</li>
+<li>一致性锁定读（Consistent locking read）</li>
+</ul>
+<h5 id="4-1-一致性非锁定读"><a href="#4-1-一致性非锁定读" class="headerlink" title="4.1 一致性非锁定读"></a>4.1 一致性非锁定读</h5><p>一致性非锁定读是指InnoDB存储引擎通过多版本控制的方式来读取当前执行时间数据库中的行数据．若读取的行正在执行DELETE或UPDATE操作，这时<code>读取操作不会因此去等待行上的锁释放．而是去读取行的一个快照</code>．</p>
+<p>如下图所示：</p>
+<img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/InnoDB存储引擎非锁定的一致性读.png" alt="InnoDB存储引擎非锁定的一致性读" style="zoom:80%;" />  
+
+
+
+<p><code>什么是快照数据呢？</code></p>
+<p>快照数据是指行的之前版本的数据，该实现是通过ｕｎｄｏ段来完成的．而ｕｎｄｏ段用来在事务中回滚数据，因此，快照数据本身是没有任何开销的．此外，读快照数据是不需要上锁的．</p>
+<p>需要注意的是，并不是所有的隔离级别都是采用一致性非锁定读．实际上<code>只有在READ COMMITTED和REPEATABLE READ（默认隔离级别）隔离级别下，ＩnnoDB采用一致性非锁定读</code>．但是他们的快照数据定义却不相同．</p>
+<ul>
+<li>READ COMMITTED下：总是读取最新的一份快照数据．</li>
+<li>REPEATABLE READ下：总是读取最老的（事务最开始的那份）一份快照数据．</li>
+</ul>
+<h5 id="4-2-一致性锁定读"><a href="#4-2-一致性锁定读" class="headerlink" title="4.2 一致性锁定读"></a>4.2 一致性锁定读</h5><p>对于默认的隔离级别REPEATABLE READ模式下，如果想要显示的通过加锁的方式保证数据的一致性，InnoDB提供了一种加锁操作．如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select ... for update &#x2F;&#x2F; 对读取行记录加一个Ｘ（排他）锁</span><br><span class="line">select ... lock in share mode　&#x2F;&#x2F; 对读取行记录加一个Ｓ（共享）锁</span><br></pre></td></tr></table></figure>
+
+<p>注：使用以上两种方式显示加锁，需要加上begin, start transaction或set autocommit=0的操作．</p>
+<p>对于一致性非锁定读，使用<code>select ... for update</code>方式无效．仍然以快照读的方式运行．</p>
 <hr>
-<p>参考文档：<br>1 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/y_f2qrZvZe_F4_HPnwVjOw">InnoDB，select为啥会阻塞insert？</a><br>2 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/iViStnwUyypwTkQHWDIR_w">InnoDB并发插入，居然使用意向锁？</a><br>3 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/kOMSD_Satu9v9ciZVvNw8Q">插入InnoDB自增列，居然是表锁？</a>  </p>
-<p>4 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/R3yuitWpHHGWxsUcE0qIRQ">InnoDB并发如此高，原因竟然在这？</a>  </p>
+<h3 id="参考文档："><a href="#参考文档：" class="headerlink" title="参考文档："></a>参考文档：</h3><p> <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/y_f2qrZvZe_F4_HPnwVjOw">InnoDB，select为啥会阻塞insert？</a> </p>
+<p> <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/iViStnwUyypwTkQHWDIR_w">InnoDB并发插入，居然使用意向锁？</a> </p>
+<p> <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/kOMSD_Satu9v9ciZVvNw8Q">插入InnoDB自增列，居然是表锁？</a> </p>
+<p> <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/R3yuitWpHHGWxsUcE0qIRQ">InnoDB并发如此高，原因竟然在这？</a>  </p>
+<p>MySQL技术内幕+InnoDB存储引擎</p>
+<p>高性能ＭySQL 第三版</p>
 
     </div>
 
@@ -466,6 +528,8 @@
           <div class="post-tags">
               <a href="/tags/MySQL/" rel="tag"># MySQL</a>
               <a href="/tags/Note/" rel="tag"># Note</a>
+              <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
+              <a href="/tags/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/" rel="tag"># 高性能MySQL</a>
           </div>
 
         
@@ -477,6 +541,9 @@
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2020/09/11/MySQL-%E5%91%BD%E4%BB%A4%E5%8F%8A%E6%96%B9%E6%B3%95%E5%A4%87%E5%BF%98%E5%BD%95/" rel="next" title="MySQL-命令/方法备忘录">
+                  MySQL-命令/方法备忘录 <i class="fa fa-chevron-right"></i>
+                </a>
             </div>
           </div>
     </footer>
@@ -599,7 +666,7 @@ NexT.utils.loadComments('#gitalk-container', () => {
       repo        : 'gitalk-comments',
       owner       : 'Jovry-Lee',
       admin       : ['Jovry-Lee'],
-      id          : '91cb2dc2c35d9210fb158ab6045e3899',
+      id          : 'bc96600f2d9ccafcaef0cdbf25ada01b',
         language: 'en',
       distractionFreeMode: true
     });
