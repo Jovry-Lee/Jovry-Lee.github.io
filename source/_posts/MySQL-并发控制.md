@@ -87,7 +87,21 @@ InnoDB共有七种类型的锁：
 
 ##### 3.2 自增锁（Auto-inc Locks）
 
-自增锁是一种特殊的表级别锁（table-level lock），专门针对事务插入`AUTO_INCREMENT`类型的列。最简单的情况，如果一个事务正在往表中插入记录，所有其他事务的插入必须等待，以便第一个事务插入的行，是连续的主键值。
+在InnoDB存储引擎的内存结构中，对每个含有自增长值的表都有一个自增长计数器（auto-increment counter）。对含有自增长的计数器的表进行插入操作时，这个计数器会被初始化。插入操作会依据这个自增长的计数器值加1赋予自增长列。这个实现的方式称为AUTO-INC locking。
+
+通过以下命令查看表的自增长计数器的值：
+
+```mysql
+select max(auto_inc_col) from <table_name> for update
+```
+
+
+
+`自增锁是一种特殊的表级别锁（table-level lock）`，专门针对事务插入`AUTO_INCREMENT`类型的列。最简单的情况，如果一个事务正在往表中插入记录，所有其他事务的插入必须等待，以便第一个事务插入的行，是连续的主键值。（**注：自增锁不是在一个事务完成后才释放，而是在完成对自增长值插入的SQL语句后立即释放**）
+
+*在InnoDB存储引擎中，自增长值的列必须是索引，同时必须是索引的第一个列。*
+
+
 
 InnoDB提供了`innodb_autoinc_lock_mode`配置，可以调节与改变该锁的模式与行为。
 一共提供了三种模式可供选择：  
@@ -220,7 +234,10 @@ insert into t values(12, ooo);
 - 使用的是插入意向锁
 - 并不会阻塞事务B
 
+
+
 ##### 3.5 记录锁（Record Locks）
+
 记录锁，它封锁索引记录。  
 例如：
 
@@ -234,8 +251,11 @@ select * from t where id=1 for update;
 select * from t where id=1;
 ```
 
+
+
 ##### 3.6 间隙锁（Gap Locks）
-间隙锁，它封锁索引记录中的间隔，或者第一条索引记录之前的范围，又或者最后一条索引记录之后的范围。
+
+间隙锁，它封锁索引记录中的间隔（*不包含记录本身*），或者第一条索引记录之前的范围，又或者最后一条索引记录之后的范围。
 
 ```
 例子，InnoDB，RR隔离级别下：
@@ -258,9 +278,12 @@ select * from t
 
 若将事务的隔离级别降为RC，间隙锁则自动失效。
 
+
+
 ##### 3.7 临键锁（Next-Key Locks）
+
 临键锁，是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。
-（临键锁会封锁索引记录本省，以及索引记录之前的区间）。
+（临键锁会封锁索引记录本身，以及索引记录之前的区间）。
 
 如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。
 （官方文档原文：If one session has a shared or exclusive lock on record R in an index, another session cannot insert a new index record in the gap immediately before R in the index order.）
@@ -327,27 +350,22 @@ select ... for update // 对读取行记录加一个Ｘ（排他）锁
 select ... lock in share mode　// 对读取行记录加一个Ｓ（共享）锁
 ```
 
-注：使用以上两种方式显示加锁，需要加上begin, start transaction或set autocommit=0的操作．
+注：使用以上两种方式显示加锁，需要加上`begin`, `start transaction`或`set autocommit=0`的操作．
 
 
 
-对于一致性非锁定读，使用`select ... for update`方式无效．仍然以快照读的方式运行．
+<u>对于一致性非锁定读，使用`select ... for update`方式无效．仍然以快照读的方式运行．</u>
 
 
 
 ---
 
-### 参考文档：  
+#### 参考文档
 
- [InnoDB，select为啥会阻塞insert？](https://mp.weixin.qq.com/s/y_f2qrZvZe_F4_HPnwVjOw) 
-
- [InnoDB并发插入，居然使用意向锁？](https://mp.weixin.qq.com/s/iViStnwUyypwTkQHWDIR_w) 
-
- [插入InnoDB自增列，居然是表锁？](https://mp.weixin.qq.com/s/kOMSD_Satu9v9ciZVvNw8Q) 
-
- [InnoDB并发如此高，原因竟然在这？](https://mp.weixin.qq.com/s/R3yuitWpHHGWxsUcE0qIRQ)  
-
-MySQL技术内幕+InnoDB存储引擎
-
-高性能ＭySQL 第三版
+①、[InnoDB，select为啥会阻塞insert？](https://mp.weixin.qq.com/s/y_f2qrZvZe_F4_HPnwVjOw) 
+②、[InnoDB并发插入，居然使用意向锁？](https://mp.weixin.qq.com/s/iViStnwUyypwTkQHWDIR_w) 
+③、[插入InnoDB自增列，居然是表锁？](https://mp.weixin.qq.com/s/kOMSD_Satu9v9ciZVvNw8Q) 
+④、[InnoDB并发如此高，原因竟然在这？](https://mp.weixin.qq.com/s/R3yuitWpHHGWxsUcE0qIRQ)  
+⑤、MySQL技术内幕+InnoDB存储引擎
+⑥、高性能ＭySQL 第三版
 

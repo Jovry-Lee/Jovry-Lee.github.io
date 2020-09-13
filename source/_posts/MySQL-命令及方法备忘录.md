@@ -313,7 +313,11 @@ mysql>  show processlist;
 
 
 
-5 查看表自增长计数器
+#### 5 查看表自增长计数器
+
+在InnoDB存储引擎的内存结构中，对每个含有自增长值的表都有一个自增长计数器（auto-increment counter）。对含有自增长的计数器的表进行插入操作时，这个计数器会被初始化。
+
+通过以下命令查看表的自增长计数器的值：
 
 ```mysql
 select max(auto_inc_col) from <table_name> for update
