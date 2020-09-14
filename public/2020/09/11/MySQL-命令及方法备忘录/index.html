@@ -30,7 +30,7 @@
 <meta property="og:description" content="记录一些常用或者不常用的命令或方法，方便后续直接查看．．．">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-11T03:52:09.000Z">
-<meta property="article:modified_time" content="2020-09-13T04:02:59.760Z">
+<meta property="article:modified_time" content="2020-09-14T08:10:01.050Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="InnoDB">
@@ -182,7 +182,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E5%8D%95%E7%9B%91%E6%8E%A7%E5%BD%93%E5%89%8D%E4%BA%8B%E5%8A%A1%E5%8F%8A%E5%88%86%E6%9E%90%E9%94%81%E9%97%AE%E9%A2%98"><span class="nav-text">1 简单监控当前事务及分析锁问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-INNODB-TRX%E8%A1%A8"><span class="nav-text">1.1 INNODB_TRX表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-INNODB-LOCKS%E8%A1%A8"><span class="nav-text">1.2 INNODB_LOCKS表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-INNODB-LOCK-WAITS%E8%A1%A8"><span class="nav-text">1.3 INNODB_LOCK_WAITS表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#INNODB-LOCK-WAITS"><span class="nav-text">INNODB_LOCK_WAITS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">2 隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E6%9F%A5%E7%9C%8B%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E6%96%B9%E6%B3%95"><span class="nav-text">2.1 查看隔离级别方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E8%AE%BE%E7%BD%AE%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">2.2 设置隔离级别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4"><span class="nav-text">3 事务自动提交</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E6%9F%A5%E7%9C%8B%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E6%A8%A1%E5%BC%8F"><span class="nav-text">3.1 查看事务自动提交模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E8%AE%BE%E7%BD%AE%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E6%A8%A1%E5%BC%8F"><span class="nav-text">3.2 设置事务自动提交模式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BA%BF%E7%A8%8B"><span class="nav-text">4 数据库线程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E6%9F%A5%E7%9C%8B%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BA%BF%E7%A8%8B%E4%BD%BF%E7%94%A8%E6%83%85%E5%86%B5"><span class="nav-text">4.1 查看数据库线程使用情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E6%9D%80%E6%8E%89%E7%BA%BF%E7%A8%8B"><span class="nav-text">4.2 杀掉线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-%E6%9F%A5%E7%9C%8B%E8%A1%A8%E8%87%AA%E5%A2%9E%E9%95%BF%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="nav-text">5 查看表自增长计数器</span></a></li></ol></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E5%8D%95%E7%9B%91%E6%8E%A7%E5%BD%93%E5%89%8D%E4%BA%8B%E5%8A%A1%E5%8F%8A%E5%88%86%E6%9E%90%E9%94%81%E9%97%AE%E9%A2%98"><span class="nav-text">1 简单监控当前事务及分析锁问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-INNODB-TRX%E8%A1%A8"><span class="nav-text">1.1 INNODB_TRX表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-INNODB-LOCKS%E8%A1%A8"><span class="nav-text">1.2 INNODB_LOCKS表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-INNODB-LOCK-WAITS%E8%A1%A8"><span class="nav-text">1.3 INNODB_LOCK_WAITS表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#INNODB-LOCK-WAITS"><span class="nav-text">INNODB_LOCK_WAITS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">2 隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E6%9F%A5%E7%9C%8B%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E6%96%B9%E6%B3%95"><span class="nav-text">2.1 查看隔离级别方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E8%AE%BE%E7%BD%AE%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">2.2 设置隔离级别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4"><span class="nav-text">3 事务自动提交</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E6%9F%A5%E7%9C%8B%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E6%A8%A1%E5%BC%8F"><span class="nav-text">3.1 查看事务自动提交模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E8%AE%BE%E7%BD%AE%E4%BA%8B%E5%8A%A1%E8%87%AA%E5%8A%A8%E6%8F%90%E4%BA%A4%E6%A8%A1%E5%BC%8F"><span class="nav-text">3.2 设置事务自动提交模式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BA%BF%E7%A8%8B"><span class="nav-text">4 数据库线程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E6%9F%A5%E7%9C%8B%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BA%BF%E7%A8%8B%E4%BD%BF%E7%94%A8%E6%83%85%E5%86%B5"><span class="nav-text">4.1 查看数据库线程使用情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E6%9D%80%E6%8E%89%E7%BA%BF%E7%A8%8B"><span class="nav-text">4.2 杀掉线程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%9F%A5%E7%9C%8B%E8%A1%A8%E8%87%AA%E5%A2%9E%E9%95%BF%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="nav-text">5 查看表自增长计数器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E6%98%BE%E5%BC%8F%E5%85%B3%E9%97%AD%E9%97%B4%E9%9A%99%E9%94%81%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">6 显式关闭间隙锁的方法</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -198,20 +198,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">26</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -281,7 +281,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-09-13 12:02:59" itemprop="dateModified" datetime="2020-09-13T12:02:59+08:00">2020-09-13</time>
+        <time title="Modified: 2020-09-14 16:10:01" itemprop="dateModified" datetime="2020-09-14T16:10:01+08:00">2020-09-14</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -418,10 +418,17 @@
 
 
 
-<h4 id="5-查看表自增长计数器"><a href="#5-查看表自增长计数器" class="headerlink" title="5 查看表自增长计数器"></a>5 查看表自增长计数器</h4><p>在InnoDB存储引擎的内存结构中，对每个含有自增长值的表都有一个自增长计数器（auto-increment counter）。对含有自增长的计数器的表进行插入操作时，这个计数器会被初始化。</p>
+<h3 id="5-查看表自增长计数器"><a href="#5-查看表自增长计数器" class="headerlink" title="5 查看表自增长计数器"></a>5 查看表自增长计数器</h3><p>在InnoDB存储引擎的内存结构中，对每个含有自增长值的表都有一个自增长计数器（auto-increment counter）。对含有自增长的计数器的表进行插入操作时，这个计数器会被初始化。</p>
 <p>通过以下命令查看表的自增长计数器的值：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select max(auto_inc_col) from &lt;table_name&gt; for update</span><br></pre></td></tr></table></figure>
 
+
+
+<h3 id="6-显式关闭间隙锁的方法"><a href="#6-显式关闭间隙锁的方法" class="headerlink" title="6 显式关闭间隙锁的方法"></a>6 显式关闭间隙锁的方法</h3><p>显式关闭间隙锁的方法：</p>
+<ul>
+<li>将事务的隔离级别设置为READ COMMITTED.</li>
+<li>将参数innodb_locks_unsafe_for_binlog设置为１．</li>
+</ul>
 
     </div>
 
@@ -444,6 +451,9 @@
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2020/09/14/MySQL-%E8%84%8F%E8%AF%BB-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB-%E5%B9%BB%E8%AF%BB/" rel="next" title="MySQL-脏读,不可重复读,幻读">
+                  MySQL-脏读,不可重复读,幻读 <i class="fa fa-chevron-right"></i>
+                </a>
             </div>
           </div>
     </footer>

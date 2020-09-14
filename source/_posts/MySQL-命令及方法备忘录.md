@@ -313,7 +313,7 @@ mysql>  show processlist;
 
 
 
-#### 5 查看表自增长计数器
+### 5 查看表自增长计数器
 
 在InnoDB存储引擎的内存结构中，对每个含有自增长值的表都有一个自增长计数器（auto-increment counter）。对含有自增长的计数器的表进行插入操作时，这个计数器会被初始化。
 
@@ -322,4 +322,13 @@ mysql>  show processlist;
 ```mysql
 select max(auto_inc_col) from <table_name> for update
 ```
+
+
+
+### 6 显式关闭间隙锁的方法
+
+显式关闭间隙锁的方法：
+
+- 将事务的隔离级别设置为READ COMMITTED.
+- 将参数innodb_locks_unsafe_for_binlog设置为１．
 

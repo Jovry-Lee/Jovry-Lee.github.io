@@ -30,7 +30,7 @@
 <meta property="og:description" content="1、简介事务是一组原子性的SQL查询，或者说一个独立的工作单元。事务将数据库从一种一致状态转换为另一种一致状态,事务内的语句，要么全部执行成功，要么全部执行失败。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-09T07:05:02.000Z">
-<meta property="article:modified_time" content="2020-09-09T10:20:00.093Z">
+<meta property="article:modified_time" content="2020-09-14T09:06:08.831Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Note">
@@ -198,20 +198,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">26</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -273,10 +273,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2020-09-09 15:05:02 / Modified: 18:20:00" itemprop="dateCreated datePublished" datetime="2020-09-09T15:05:02+08:00">2020-09-09</time>
+      <time title="Created: 2020-09-09 15:05:02" itemprop="dateCreated datePublished" datetime="2020-09-09T15:05:02+08:00">2020-09-09</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-14 17:06:08" itemprop="dateModified" datetime="2020-09-14T17:06:08+08:00">2020-09-14</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -366,8 +372,20 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">假设有InnoDB表：</span><br><span class="line">t(id PK, name);</span><br><span class="line"> </span><br><span class="line">表中有三条记录：</span><br><span class="line">1, shenjian</span><br><span class="line">2, zhangsan</span><br><span class="line">3, lisi</span><br></pre></td></tr></table></figure>
 
 <ul>
-<li>脏读<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行，处于未提交的状态：</span><br><span class="line">insert into t values(4, wangwu);</span><br><span class="line"> </span><br><span class="line">事务B，后执行，也未提交：</span><br><span class="line">select * from t;</span><br><span class="line"> </span><br><span class="line">如果事务B能够读取到(4, wangwu)这条记录，事务A就对事务B产生了影响，这个影响叫做“读脏”，读到了未提交事务操作的记录。</span><br></pre></td></tr></table></figure></li>
-<li>不可重复读  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行：</span><br><span class="line">select * from t where id&#x3D;1;</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">1, shenjian</span><br><span class="line"> </span><br><span class="line">事务B，后执行，并且提交：</span><br><span class="line">update t set name&#x3D;xxoo where id&#x3D;1;</span><br><span class="line">commit;</span><br><span class="line"> </span><br><span class="line">事务A，再次执行相同的查询：</span><br><span class="line">select * from t where id&#x3D;1;</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">1, xxoo</span><br><span class="line"> </span><br><span class="line">这次是已提交事务B对事务A产生的影响，这个影响叫做“不可重复读”，一个事务内相同的查询，得到了不同的结果。</span><br></pre></td></tr></table></figure></li>
+<li><p>脏读</p>
+<p>脏读指的是在不同事务下，当前事务可以读到另外事务未提交的数据．</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行，处于未提交的状态：</span><br><span class="line">insert into t values(4, wangwu);</span><br><span class="line"> </span><br><span class="line">事务B，后执行，也未提交：</span><br><span class="line">select * from t;</span><br><span class="line">   </span><br><span class="line">如果事务B能够读取到(4, wangwu)这条记录，事务A就对事务B产生了影响，这个影响叫做“读脏”，读到了未提交事务操作的记录。</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>不可重复读</p>
+<p>  不可重复读是指在一个事务中多次读取同一数据集合，在这个事务还没结束时，另一个事务也访问了该数据集合，并做了DML操作．导致第一个事务多次读取到的数据不一样．</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">    事务A，先执行：</span><br><span class="line">    select * from t where id&#x3D;1;</span><br><span class="line"> </span><br><span class="line">    结果集为：</span><br><span class="line">    1, shenjian</span><br><span class="line">     </span><br><span class="line">事务B，后执行，并且提交：</span><br><span class="line">    update t set name&#x3D;xxoo where id&#x3D;1;</span><br><span class="line">    commit;</span><br><span class="line"> </span><br><span class="line">    事务A，再次执行相同的查询：</span><br><span class="line">    select * from t where id&#x3D;1;</span><br><span class="line"> </span><br><span class="line">    结果集为：</span><br><span class="line">    1, xxoo</span><br><span class="line">     </span><br><span class="line">    这次是已提交事务B对事务A产生的影响，这个影响叫做“不可重复读”，一个事务内相同的查询，得到了不同的结果。</span><br></pre></td></tr></table></figure>
+
+<ul>
 <li>幻读  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">事务A，先执行：</span><br><span class="line">select * from t where id&gt;3;</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">NULL</span><br><span class="line">    </span><br><span class="line">事务B，后执行，并且提交：</span><br><span class="line">insert into t values(4, wangwu);</span><br><span class="line">commit;</span><br><span class="line"> </span><br><span class="line">事务A，首次查询了id&gt;3的结果为NULL，于是想插入一条为4的记录：</span><br><span class="line">insert into t values(4, xxoo);</span><br><span class="line"> </span><br><span class="line">结果集为：</span><br><span class="line">Error : duplicate key!</span><br><span class="line"> </span><br><span class="line">事务A的内心OS是：你TM在逗我，查了id&gt;3为空集，insert id&#x3D;4告诉我PK冲突？</span><br><span class="line"> </span><br><span class="line">这次是已提交事务B对事务A产生的影响，这个影响叫做“幻读”。</span><br></pre></td></tr></table></figure>
 
 

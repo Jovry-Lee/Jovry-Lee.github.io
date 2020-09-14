@@ -274,38 +274,119 @@ select * from t
 会封锁区间，以阻止其他事务id=10的记录插入
 ```
 
-间隙锁的目的，是为了防止其他事务在间隔中插入数据，以导致“不可重复读”。
+<u>间隙锁的作用是为了阻止多个事务将记录插入到同一个范围内，而这会导致Phantom Problem（幻读）问题的产生．</u>
 
-若将事务的隔离级别降为RC，间隙锁则自动失效。
+`显式关闭间隙锁的方法`：
+
+- 将事务的隔离级别设置为READ COMMITTED.
+- 将参数innodb_locks_unsafe_for_binlog设置为１．
 
 
 
 ##### 3.7 临键锁（Next-Key Locks）
 
-临键锁，是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。
+临键锁，`是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。`<u>InnoDB对于行的查询都是采用临键锁的算法．</u>
 （临键锁会封锁索引记录本身，以及索引记录之前的区间）。
 
-如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。
+`如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。`
 （官方文档原文：If one session has a shared or exclusive lock on record R in an index, another session cannot insert a new index record in the gap immediately before R in the index order.）
 
+
+
+例如：一个索引有10, 11, 13, 20这四个值，那么该索引可能被Next-Key Locking的区间为：
+
 ```
-例子：InnoDB，RR：
-t(id PK, name KEY, sex, flag);
- 
-表中有四条记录：
-1, shenjian, m, A
-3, zhangsan, m, A
-5, lisi, m, A
-9, wangwu, f, B
- 
-PK上潜在的临键锁为：
-(-infinity, 1]
-(1, 3]
-(3, 5]
-(5, 9]
-(9, +infinity]
+(-infinity, 10]
+(10, 11]
+(11, 13]
+(13, 20]
+(20, +infinity]
 ```
+
+
+
+其实除了Next-Key Locking外，还有一种`Previous-key Locking`技术，那么可锁定的区间是：
+
+```
+(-infinity, 10)
+[10, 11)
+[11, 13)
+[13, 20)
+[20, +infinity)
+```
+
+
+
+- 当查询的索引含有唯一属性时
+
+  - 等值查询的情况：InnoDB存储引擎会对Next-Key Lock进行优化，将其降级为Record Lock，即仅锁住索引本身．
+  - 范围查询的情况：InnoDB存储引擎会使用Next-Key Lock．
+
+  
+
+  示例：
+
+```mysql
+１．创建测试表
+create table t (a int primary key);
+
+２．写入测试数据
+insert into t select 1;
+insert into t select 2;
+insert into t select 5;
+
+３．等值查询的情况．
+A: set autocommit=0;
+A: begin;
+A: select * from t where a=5 for update;
+	B: set autocommit=0;
+	B: insert into t select 4; // 成功，执行时并未发生阻塞．
+A: commit;
+	B: commit;
+
+４．进行范围查询的情况．
+A: set autocommit=0;
+A: begin;
+A: select * from t where a>2 for update; // 范围查询时，对(2,+infinity)范围添加了Ｘ锁．
+	B: set autocommit=0;
+	B: insert into t select 4; // 失败，执行是发生阻塞．
+A: commit;
+	B: commit;
+
+```
+
+- `当查询的索引为辅助索引，InnoDB存储引擎将会对辅助索引使用Next-Key Locking技术加锁，并且对辅助索引的下一个键值加上Gap Locks，同时对聚集索引，添加Record Locking．`
+
+```mysql
+１．创建测试表
+create table z (a int, b int, primary key(a), key(b));
+
+２．写入测试数据
+insert into z select 1, 1;
+insert into z select 3, 1;
+insert into z select 5, 3;
+insert into z select 7, 6;
+insert into z select 10, 8;
+
+３．两个事务按以下顺序执行：
+A: set autocommit=0;
+A: begin;
+A: select * from z where b = 3 for update; // 对于辅助索引：(1,3]添加临键锁；(3,6)添加间隙锁；对于聚簇索引a=5添加记录锁．
+	B: set autocommit=0;
+	B: select * from z where a = 5 lock in share mode; // 阻塞．
+	B: insert into z select 4, 2;　// 阻塞，ａ=4没问题，但是b=2被临键锁锁定．
+	B: insert into z select 6, 5;　// 阻塞，a=6没问题，但是ｂ=5被间隙锁锁定．
+```
+
 临键锁的目的，也是为了避免幻读，如果把事务的隔离级别降为RC，临键锁则也会失效。
+
+
+
+3.7.1 Phantom Problem(幻读)
+
+`Phantom Problem(幻读)是指在同一事务下，连续执行来嗯此同样的SQL语句可能导致不同的结果，第二次的SQL语句可能会返回之前不存在的行．`
+
+在默认的事务隔离级别（ＲＲ）下，InnoDB采用`Next-Key Locking机制`来避免Phantom Problem.
 
 
 

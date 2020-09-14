@@ -31,7 +31,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/InnoDB存储引擎非锁定的一致性读.png">
 <meta property="article:published_time" content="2020-09-10T08:54:48.000Z">
-<meta property="article:modified_time" content="2020-09-13T13:49:01.161Z">
+<meta property="article:modified_time" content="2020-09-14T08:58:42.046Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Note">
@@ -202,20 +202,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-count">26</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -285,7 +285,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-09-13 21:49:01" itemprop="dateModified" datetime="2020-09-13T21:49:01+08:00">2020-09-13</time>
+        <time title="Modified: 2020-09-14 16:58:42" itemprop="dateModified" datetime="2020-09-14T16:58:42+08:00">2020-09-14</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -490,12 +490,44 @@
 <h5 id="3-6-间隙锁（Gap-Locks）"><a href="#3-6-间隙锁（Gap-Locks）" class="headerlink" title="3.6 间隙锁（Gap Locks）"></a>3.6 间隙锁（Gap Locks）</h5><p>间隙锁，它封锁索引记录中的间隔（<em>不包含记录本身</em>），或者第一条索引记录之前的范围，又或者最后一条索引记录之后的范围。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">例子，InnoDB，RR隔离级别下：</span><br><span class="line">t(id PK, name KEY, sex, flag);</span><br><span class="line"> </span><br><span class="line">表中有四条记录：</span><br><span class="line">1, shenjian, m, A</span><br><span class="line">3, zhangsan, m, A</span><br><span class="line">5, lisi, m, A</span><br><span class="line">9, wangwu, f, B</span><br><span class="line"> </span><br><span class="line">这个SQL语句</span><br><span class="line">select * from t </span><br><span class="line">    where id between 8 and 15 </span><br><span class="line">    for update;</span><br><span class="line">会封锁区间，以阻止其他事务id&#x3D;10的记录插入</span><br></pre></td></tr></table></figure>
 
-<p>间隙锁的目的，是为了防止其他事务在间隔中插入数据，以导致“不可重复读”。</p>
-<p>若将事务的隔离级别降为RC，间隙锁则自动失效。</p>
-<h5 id="3-7-临键锁（Next-Key-Locks）"><a href="#3-7-临键锁（Next-Key-Locks）" class="headerlink" title="3.7 临键锁（Next-Key Locks）"></a>3.7 临键锁（Next-Key Locks）</h5><p>临键锁，是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。<br>（临键锁会封锁索引记录本身，以及索引记录之前的区间）。</p>
-<p>如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。<br>（官方文档原文：If one session has a shared or exclusive lock on record R in an index, another session cannot insert a new index record in the gap immediately before R in the index order.）</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">例子：InnoDB，RR：</span><br><span class="line">t(id PK, name KEY, sex, flag);</span><br><span class="line"> </span><br><span class="line">表中有四条记录：</span><br><span class="line">1, shenjian, m, A</span><br><span class="line">3, zhangsan, m, A</span><br><span class="line">5, lisi, m, A</span><br><span class="line">9, wangwu, f, B</span><br><span class="line"> </span><br><span class="line">PK上潜在的临键锁为：</span><br><span class="line">(-infinity, 1]</span><br><span class="line">(1, 3]</span><br><span class="line">(3, 5]</span><br><span class="line">(5, 9]</span><br><span class="line">(9, +infinity]</span><br></pre></td></tr></table></figure>
+<p><u>间隙锁的作用是为了阻止多个事务将记录插入到同一个范围内，而这会导致Phantom Problem（幻读）问题的产生．</u></p>
+<p><code>显式关闭间隙锁的方法</code>：</p>
+<ul>
+<li>将事务的隔离级别设置为READ COMMITTED.</li>
+<li>将参数innodb_locks_unsafe_for_binlog设置为１．</li>
+</ul>
+<h5 id="3-7-临键锁（Next-Key-Locks）"><a href="#3-7-临键锁（Next-Key-Locks）" class="headerlink" title="3.7 临键锁（Next-Key Locks）"></a>3.7 临键锁（Next-Key Locks）</h5><p>临键锁，<code>是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。</code><u>InnoDB对于行的查询都是采用临键锁的算法．</u><br>（临键锁会封锁索引记录本身，以及索引记录之前的区间）。</p>
+<p><code>如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。</code><br>（官方文档原文：If one session has a shared or exclusive lock on record R in an index, another session cannot insert a new index record in the gap immediately before R in the index order.）</p>
+<p>例如：一个索引有10, 11, 13, 20这四个值，那么该索引可能被Next-Key Locking的区间为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(-infinity, 10]</span><br><span class="line">(10, 11]</span><br><span class="line">(11, 13]</span><br><span class="line">(13, 20]</span><br><span class="line">(20, +infinity]</span><br></pre></td></tr></table></figure>
+
+
+
+<p>其实除了Next-Key Locking外，还有一种<code>Previous-key Locking</code>技术，那么可锁定的区间是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(-infinity, 10)</span><br><span class="line">[10, 11)</span><br><span class="line">[11, 13)</span><br><span class="line">[13, 20)</span><br><span class="line">[20, +infinity)</span><br></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><p>当查询的索引含有唯一属性时</p>
+<ul>
+<li>等值查询的情况：InnoDB存储引擎会对Next-Key Lock进行优化，将其降级为Record Lock，即仅锁住索引本身．</li>
+<li>范围查询的情况：InnoDB存储引擎会使用Next-Key Lock．</li>
+</ul>
+</li>
+</ul>
+<p>  示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">１．创建测试表</span><br><span class="line">create table t (a int primary key);</span><br><span class="line"></span><br><span class="line">２．写入测试数据</span><br><span class="line">insert into t select 1;</span><br><span class="line">insert into t select 2;</span><br><span class="line">insert into t select 5;</span><br><span class="line"></span><br><span class="line">３．等值查询的情况．</span><br><span class="line">A: set autocommit&#x3D;0;</span><br><span class="line">A: begin;</span><br><span class="line">A: select * from t where a&#x3D;5 for update;</span><br><span class="line">	B: set autocommit&#x3D;0;</span><br><span class="line">	B: insert into t select 4; &#x2F;&#x2F; 成功，执行时并未发生阻塞．</span><br><span class="line">A: commit;</span><br><span class="line">	B: commit;</span><br><span class="line"></span><br><span class="line">４．进行范围查询的情况．</span><br><span class="line">A: set autocommit&#x3D;0;</span><br><span class="line">A: begin;</span><br><span class="line">A: select * from t where a&gt;2 for update; &#x2F;&#x2F; 范围查询时，对(2,+infinity)范围添加了Ｘ锁．</span><br><span class="line">	B: set autocommit&#x3D;0;</span><br><span class="line">	B: insert into t select 4; &#x2F;&#x2F; 失败，执行是发生阻塞．</span><br><span class="line">A: commit;</span><br><span class="line">	B: commit;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>当查询的索引为辅助索引，InnoDB存储引擎将会对辅助索引使用Next-Key Locking技术加锁，并且对辅助索引的下一个键值加上Gap Locks，同时对聚集索引，添加Record Locking．</code></li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">１．创建测试表</span><br><span class="line">create table z (a int, b int, primary key(a), key(b));</span><br><span class="line"></span><br><span class="line">２．写入测试数据</span><br><span class="line">insert into z select 1, 1;</span><br><span class="line">insert into z select 3, 1;</span><br><span class="line">insert into z select 5, 3;</span><br><span class="line">insert into z select 7, 6;</span><br><span class="line">insert into z select 10, 8;</span><br><span class="line"></span><br><span class="line">３．两个事务按以下顺序执行：</span><br><span class="line">A: set autocommit&#x3D;0;</span><br><span class="line">A: begin;</span><br><span class="line">A: select * from z where b &#x3D; 3 for update; &#x2F;&#x2F; 对于辅助索引：(1,3]添加临键锁；(3,6)添加间隙锁；对于聚簇索引a&#x3D;5添加记录锁．</span><br><span class="line">	B: set autocommit&#x3D;0;</span><br><span class="line">	B: select * from z where a &#x3D; 5 lock in share mode; &#x2F;&#x2F; 阻塞．</span><br><span class="line">	B: insert into z select 4, 2;　&#x2F;&#x2F; 阻塞，ａ&#x3D;4没问题，但是b&#x3D;2被临键锁锁定．</span><br><span class="line">	B: insert into z select 6, 5;　&#x2F;&#x2F; 阻塞，a&#x3D;6没问题，但是ｂ&#x3D;5被间隙锁锁定．</span><br></pre></td></tr></table></figure>
+
 <p>临键锁的目的，也是为了避免幻读，如果把事务的隔离级别降为RC，临键锁则也会失效。</p>
+<p>3.7.1 Phantom Problem(幻读)</p>
+<p><code>Phantom Problem(幻读)是指在同一事务下，连续执行来嗯此同样的SQL语句可能导致不同的结果，第二次的SQL语句可能会返回之前不存在的行．</code></p>
+<p>在默认的事务隔离级别（ＲＲ）下，InnoDB采用<code>Next-Key Locking机制</code>来避免Phantom Problem.</p>
 <h4 id="4-InnoDB一致性读"><a href="#4-InnoDB一致性读" class="headerlink" title="4 InnoDB一致性读"></a>4 InnoDB一致性读</h4><p>InnoDB提供了两种一致性读，分别是：</p>
 <ul>
 <li>一致性非锁定读（Consistent nonlocking read）</li>
