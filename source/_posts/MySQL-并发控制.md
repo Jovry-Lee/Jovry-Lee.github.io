@@ -1,8 +1,8 @@
 ---
 title: MySQL-并发控制
 date: 2020-09-10 16:54:48
-tags: ["MySQL","锁","Note","高性能MySQL"]
-categories: ["MySQL", "锁",]
+tags: ["MySQL","锁","高性能MySQL","死锁","一致性非锁定读"]
+categories: ["MySQL", "锁"]
 ---
 
 无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题．通常并发控制是采用`锁的方式`来防止数据不一致．
@@ -29,22 +29,30 @@ categories: ["MySQL", "锁",]
 
 每种数据库及相同数据库下不同引擎的锁策略都不同，例如：
 
-- MySQL的MyISAM存储引擎，其锁是表锁设计．在并发情况下的读没有问题，但是并发写时性能就会差一些．
+- MySQL的`MyISAM存储引擎，其锁是表锁设计`．在并发情况下的读没有问题，但是并发写时性能就会差一些．
 - 对于Microsoft SQL Server数据库，2005版本之前是采用的页锁，相对于MyISAM引擎来说，并发性有所提高，但是对于热点数据页的并发问题，仍然无能为力．2005版本之后，通过支持乐观并发和悲观并发，在乐观并发下开始支持行级锁（其实现方式与InnoDB存储引擎完全不同）．
-- InnoDB引擎锁的实现与Oracle数据库类似，提供一致性非锁定读，行级锁支持．
+- InnoDB引擎锁的实现与Oracle数据库类似，提供`一致性非锁定读，行级锁支持`．
 
 
 
 Mysql提供了多钟锁策略，每种Mysql`存储引擎都可以实现自己的锁策略和锁粒度`。
 锁定的资源越少，系统并发程度越高，但加锁消耗的资源越大（获得锁，检查锁，释放锁等操作）。
 
+
+
 ##### 2.1、表锁（table lock）
+
 表锁是Mysql中最基本的锁策略，并且是开销最小的锁策略。它将会锁定整张表。其写锁比读锁有更高的优先级，因此一个写锁请求可能会被插入到读锁请求队列的前面．
 
-某些情况下，Mysql自身会使用表锁实现目的，并忽略存储引擎的锁机制，例如，ALTER TABLE之类的语句使用的表锁。
+某些情况下，Mysql自身会使用表锁实现目的，并忽略存储引擎的锁机制．例如，ALTER TABLE之类的语句使用的表锁。
+
+
 
 ##### 2.2、行级锁（row lock）
-行级锁可以最大程度地支持并发处理，但同时也带来了最大锁开销。行级锁在存储引擎层实现的。
+
+行级锁可以最大程度地支持并发处理，但同时也带来了最大锁开销。`行级锁在存储引擎层实现的`。
+
+
 
 #### 3、InnoDB的锁类型
 
@@ -274,7 +282,7 @@ select * from t
 会封锁区间，以阻止其他事务id=10的记录插入
 ```
 
-<u>间隙锁的作用是为了阻止多个事务将记录插入到同一个范围内，而这会导致Phantom Problem（幻读）问题的产生．</u>
+<u>间隙锁的作用是为了阻止多个事务将记录插入到同一个范围内，而这会导致Phantom Problem（幻象问题，MySQL定义的是不可重复读）问题的产生．</u>
 
 `显式关闭间隙锁的方法`：
 
@@ -283,9 +291,13 @@ select * from t
 
 
 
+`删除不存在的记录，获取到的是共享间隙锁．`
+
+
+
 ##### 3.7 临键锁（Next-Key Locks）
 
-临键锁，`是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。`<u>InnoDB对于行的查询都是采用临键锁的算法．</u>
+临键锁，`是记录锁与间隙锁的组合，它的封锁范围，既包含索引记录，又包含索引区间。`InnoDB存储引擎默认**对于行的查询都是采用临键锁的算法**．
 （临键锁会封锁索引记录本身，以及索引记录之前的区间）。
 
 `如果一个Session（会话）占有了索引记录R的共享/排他锁，其他会话不能立刻在R之前的区间插入新的索引记录。`
@@ -382,11 +394,15 @@ A: select * from z where b = 3 for update; // 对于辅助索引：(1,3]添加�
 
 
 
-3.7.1 Phantom Problem(幻读)
+3.7.1 Phantom Problem(幻象问题，不可重复读)
 
-`Phantom Problem(幻读)是指在同一事务下，连续执行来嗯此同样的SQL语句可能导致不同的结果，第二次的SQL语句可能会返回之前不存在的行．`
+`Phantom Problem(幻读)是指在同一事务下，连续执行两次同样的SQL语句可能导致不同的结果，第二次的SQL语句可能会返回之前不存在的行．`
 
-在默认的事务隔离级别（ＲＲ）下，InnoDB采用`Next-Key Locking机制`来避免Phantom Problem.
+在默认的事务隔离级别（READ REPEATABLE）下，InnoDB采用`Next-Key Locking机制`来避免Phantom Problem.
+
+
+
+注意：<u>MySQL官方文档中，将`不可重复读`的问题定义为Phantom Problem，即幻象问题．</u>
 
 
 
@@ -411,14 +427,14 @@ InnoDB提供了两种一致性读，分别是：
 
 `什么是快照数据呢？`
 
-快照数据是指行的之前版本的数据，该实现是通过ｕｎｄｏ段来完成的．而ｕｎｄｏ段用来在事务中回滚数据，因此，快照数据本身是没有任何开销的．此外，读快照数据是不需要上锁的．
+快照数据是指行的之前版本的数据，该`实现是通过undo段来完成的`．而undo段用来在事务中回滚数据，因此，快照数据本身是没有任何开销的．此外，读快照数据是不需要上锁的．
 
 
 
 需要注意的是，并不是所有的隔离级别都是采用一致性非锁定读．实际上`只有在READ COMMITTED和REPEATABLE READ（默认隔离级别）隔离级别下，ＩnnoDB采用一致性非锁定读`．但是他们的快照数据定义却不相同．
 
-- READ COMMITTED下：总是读取最新的一份快照数据．
-- REPEATABLE READ下：总是读取最老的（事务最开始的那份）一份快照数据．
+- READ COMMITTED：总是读取最新的一份快照数据．
+- REPEATABLE READ：总是读取最老的（事务最开始的那份）一份快照数据．
 
 
 
@@ -436,6 +452,146 @@ select ... lock in share mode　// 对读取行记录加一个Ｓ（共享）锁
 
 
 <u>对于一致性非锁定读，使用`select ... for update`方式无效．仍然以快照读的方式运行．</u>
+
+
+
+#### 5 死锁
+
+##### 5.1 死锁的概念
+
+死锁是`指来两个或者两个以上的事务在执行过程中，因争夺锁资源而造成的一种互相等待的现象．`
+
+
+
+`解决死锁的办法`：
+
+- 超时：该方法是最简单的方法，即当两个事务相互等待时，当其中一个等待时间超过设置的某一阈值，将其中一个事务进行回滚，另一个等待的事务继续进行．
+  - 问题：仅通过超时回滚的方式，若超时的事务权重占比较大（如事务操作更新了很多行，占用较多的undo log），回滚该事务可能相对另一个事务占用的时间更多．
+- 死锁检测：当前数据库普遍采用`Wait-For Gragh（等待图）的方式来进行死锁检测`．InnoDB即采用该方式．
+
+
+
+###### 5.1.1 Wait-For Gragh（等待图）
+
+Wait-For Gragh要求数据库通过使用以下两种信息链表构造出一张图，若图中存在回路，就表示存在死锁，因此资源间相互发生等待．
+
+- `锁的信息链表`
+- `事务等待链表`
+
+*注：Wait-For Gragh中箭头（T1->T2）指向表示事务T1等待事务T2所占用的资源．*
+
+
+
+Wait-For Gragh是一种较为主动的死锁检测机制，在每个事务请求锁并发生等待时会判断是否存在回路，若存在死锁，通常来说InnoDB存储引擎选择回滚undo量最小的事务．
+
+
+
+`示例`：当前事务和锁的状态如下图所示．
+
+<img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/事务和锁等待信息.png" alt="事务和锁等待信息" style="zoom:80%;" />
+
+其wait-for gragh如下，可见（t1, t2）存在回路，因此存在死锁．
+
+<img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-并发控制/wait-for-gragh.png" alt="wait-for-gragh" style="zoom:67%;" />
+
+
+
+##### 5.2 死锁的示例
+
+后续示例均在以下表中操作
+
+```mysql
+# 1. 建表
+CREATE TABLE `t` (
+  `a` int(11) NOT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+
+# 2. 构建测试数据
++-----+
+|  a  |
++-----+
+|  1  |
+|  2  |
+|  4  |
+|  5  |
+|  11 |
++-----+
+```
+
+
+
+###### 5.2.1 AB-BA情况
+
+AB-BA情况，是最经典的死锁情况，即Ａ等待Ｂ，Ｂ在等待Ａ．
+
+```mysql
+A: begin;
+A: sselect * from t where a=1 for update;
+	B: begin;
+	B: select * from t where a=2 for update;
+A: select * from t where a=2 for update; # 阻塞
+	B: select * from t where a=1 for update; # 发生死锁.
+	ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
+A: 获取锁，返回结果．
+```
+
+发现死锁后，InnoDB存储引擎会马上回滚一个事务，另一个阻塞事务将继续进行．
+
+
+
+###### 5.2.2 共享锁/排他锁死锁
+
+当前事务持有待插入记录的下一个记录的Ｘ锁，但在等待队列中存在一个Ｓ锁的请求，则可能发生死锁．
+
+```　mysql
+A: begin;
+	B: begin;
+A: select * from t where a=4 for update; # 对ａ=4持有一个排他锁．
+	B: select * from t where a<=4 lock in share mode; # 等待对a<=4的记录获取一个Ｓ锁．
+A: insert into t values(3);　# 发生死锁，回滚undo log记录大的事务．
+ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
+	B: 获得锁，返回结果．
+```
+
+```tex
++-----+     +-----+  
+| a=4 |     | a=3 |
++-----+     +-----+
+| A:X |     | B:S |
+| B:S |
++-----+
+ 
+     Ｂ等待Ａ释放a=4的排他锁
+A<--------------------------B
+ -------------------------->
+ 	 A等待B释放a=3的共享锁
+```
+
+注：以上示例与AB-BA死锁处理方式不同，此处选择回滚undo log记录大的事务．(为什么呢？？？？？？？？)
+
+
+
+###### 5.2.3 并发间隙锁的死锁
+
+```MYSQL
+# 1. 准备测试数据，准备一个大的间隙的数据．
+insert into t values(11);
+
+# 2. 开始测试．
+A: begin;
+A: delete from t where a=7; #　删除一个不存在的记录，获取(5, 11)共享间隙锁．
+	B: begin;
+	B: delete from t where a=8; #　删除一个不存在的记录，获取(5, 11)共享间隙锁．
+A: insert into t values(9); # 插入数据，希望获得（5, 11)的排他间隙锁，于是会阻塞．
+	B: insert into t values(10);　# 插入数据，也希望获得（5, 11)的排他间隙锁，此时出现死锁．
+	ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
+A: 由于事务Ｂ出现死锁，回滚，因此Ａ插入成功．
+```
+
+
+
+通过`show engine innodb status`命令查看死锁情况，可知，该死锁确实是由于locks gap导致的．
 
 
 

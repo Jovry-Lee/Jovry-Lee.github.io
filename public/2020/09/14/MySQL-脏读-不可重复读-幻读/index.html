@@ -30,7 +30,7 @@
 <meta property="og:description" content="1 概述通过锁机制可以实现事务的隔离性要求，使得事务可以并发的工作．锁提高了并发，却会带来潜在问题呢，例如脏读，幻读等．">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-14T09:05:55.000Z">
-<meta property="article:modified_time" content="2020-09-14T10:30:45.254Z">
+<meta property="article:modified_time" content="2020-09-15T03:12:06.149Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="锁">
@@ -212,7 +212,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -274,10 +274,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2020-09-14 17:05:55 / Modified: 18:30:45" itemprop="dateCreated datePublished" datetime="2020-09-14T17:05:55+08:00">2020-09-14</time>
+      <time title="Created: 2020-09-14 17:05:55" itemprop="dateCreated datePublished" datetime="2020-09-14T17:05:55+08:00">2020-09-14</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-15 11:12:06" itemprop="dateModified" datetime="2020-09-15T11:12:06+08:00">2020-09-15</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -332,13 +338,15 @@
 
 
 <h3 id="3-不可重复读"><a href="#3-不可重复读" class="headerlink" title="3 不可重复读"></a>3 不可重复读</h3><p>不可重复读是指在一个事务中多次读取同一数据集合，在这个事务还没结束时，另一个事务也访问了该数据集合，并做了DML操作，导致第一个事务多次读取到的数据不一样．</p>
+<p><code>不可重复读允许发生的隔离级别</code>：READ COMMITTED</p>
 <p>示例：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">A: set session transaction isolation level read committed;</span><br><span class="line">A: begin</span><br><span class="line">A: select * from users where id&gt;11;</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">1 row in set (0.01 sec)</span><br><span class="line">	B: set session transaction isolation level read committed;</span><br><span class="line">	B: begin</span><br><span class="line">	B: insert into users(user_name,age)values(&#39;Jovry-Lee&#39;,18);</span><br><span class="line">	B: commit;</span><br><span class="line">A: select * from users where id &gt; 11; # 此时事务Ａ两次读取到不同的结果，属于不可重复读．</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">| 13 | Jovry-Lee |  18 |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">2 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
 
 
 
 <p><code>脏读与不可重复读的区别</code>：脏读时读到未提交的数据，而不可重复读独到的是已经提交的数据，但时其违反了数据库事务一致性要求．</p>
-<p>一般来说不可重复读的问题是可以接受的，因为其读到的是已经提交的数据，本身并不会带来太大的问题．因此，很多数据库的默认隔离级别是READ UNCOMMITTED，如：Ｏracle, SQL Server.</p>
+<p>一般来说不可重复读的问题是可以接受的，因为其读到的是已经提交的数据，本身并不会带来太大的问题．因此，很多数据库的默认隔离级别是<code>READ COMMITTED</code>，如：Ｏracle, SQL Server.</p>
+<p>MySQL官方文档中<code>将不可重复读的问题定义为Phantom Problem，即幻象问题</code>．InnoDB存储引擎的默认事务隔离级别READ REPEATABLE采用Next-Key Lock算法，避免了不可重复读．</p>
 
     </div>
 

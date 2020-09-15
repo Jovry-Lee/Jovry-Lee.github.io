@@ -332,3 +332,55 @@ select max(auto_inc_col) from <table_name> for update
 - 将事务的隔离级别设置为READ COMMITTED.
 - 将参数innodb_locks_unsafe_for_binlog设置为１．
 
+
+
+### 7 锁等待时间
+
+在InnoDB存储引擎中，参数`innodb_lock_wait_timeout`用来控制等待的时间（默认是50秒）,该参数是动态的，可以在MySQL运行时进行调整．
+
+- 查看锁等待时间．
+
+```mysql
+show variables like 'innodb_lock_wait_timeout';
+```
+
+- 设置锁等待时间,单位秒．
+
+```mysql
+set @@innodb_lock_wait_timeout=<超时时间>;
+```
+
+
+
+### 8 超时回滚
+
+在InnoDB存储引擎中，参数innodb_rollback_on_timeout用来设定是否在等待超时时对进行中的事务进行回滚操作（默认是OFF，代表不回滚）．
+
+- 查看超时回滚．
+
+```mysql
+show variables like 'innodb_rollback_on_timeout';
+```
+
+- 启用超时回滚．
+
+  innodb_rollback_on_timeout参数为只读参数，需要更改配置文件，并重启服务才会生效．
+
+  在mysqld.cnf文件(本机配置文件路径为：`/etc/mysql/mysql.conf.d/mysqld.cnf`)末尾添加以下内容：
+
+  ```tex mysqld.cnf
+  innodb_lock_wait_timeout=on
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
