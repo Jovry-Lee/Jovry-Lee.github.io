@@ -30,7 +30,7 @@
 <meta property="og:description" content="1、简介事务是一组原子性的SQL查询，或者说一个独立的工作单元。事务将数据库从一种一致状态转换为另一种一致状态,事务内的语句，要么全部执行成功，要么全部执行失败。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-09T07:05:02.000Z">
-<meta property="article:modified_time" content="2020-09-14T09:06:08.831Z">
+<meta property="article:modified_time" content="2020-09-14T15:18:38.936Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Note">
@@ -281,7 +281,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-09-14 17:06:08" itemprop="dateModified" datetime="2020-09-14T17:06:08+08:00">2020-09-14</time>
+        <time title="Modified: 2020-09-14 23:18:38" itemprop="dateModified" datetime="2020-09-14T23:18:38+08:00">2020-09-14</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -348,7 +348,7 @@
 <li>普通读是快照读；</li>
 <li>加锁的select，update，delete等语句，除了在外面约束检查以及重复键检查时会封锁区间，其他时刻都只使用记录锁；此时其他事务的插入依旧可以执行，就可能导致幻读。</li>
 </ul>
-<h5 id="3-3-REPEATABLE-READ（可重复读）——Mysql的默认事务隔离级别"><a href="#3-3-REPEATABLE-READ（可重复读）——Mysql的默认事务隔离级别" class="headerlink" title="3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别"></a>3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别</h5><p>该级别解决了脏读的问题，且保证同一个事务中多次读取同样的记录结果是一致的。</p>
+<h5 id="3-3-REPEATABLE-READ（可重复读）——Mysql的默认事务隔离级别"><a href="#3-3-REPEATABLE-READ（可重复读）——Mysql的默认事务隔离级别" class="headerlink" title="3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别"></a>3.3 REPEATABLE READ（可重复读）——Mysql的默认事务隔离级别</h5><p>该级别解决了<code>脏读</code>的问题，且保证同一个事务中多次读取同样的记录结果是一致的。</p>
 <ul>
 <li>缺点：可能会出现幻读，即当某个事务在读取某个范围内的记录时，另外一个事务又在该范围插入了新的记录，就会产生幻行。</li>
 <li>解决： InnoDB和XtraDB通过<code>多版本并发控制（MVCC, Multiversion Concurrency Control）</code>解决了上述缺点。</li>
