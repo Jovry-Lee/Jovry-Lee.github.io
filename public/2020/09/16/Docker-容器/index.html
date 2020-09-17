@@ -22,15 +22,15 @@
     var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="1 概述 容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。 2 启动容器 容器的启动有以下两种情况：  ①、基于镜像新建一个容器并启动 ②、将在终止状态的容器重新启动">
+  <meta name="description" content="1 概述 容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Docker-容器">
 <meta property="og:url" content="https://jovry-lee.github.io/2020/09/16/Docker-%E5%AE%B9%E5%99%A8/index.html">
 <meta property="og:site_name" content="Jovry&#39;s blog">
-<meta property="og:description" content="1 概述 容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。 2 启动容器 容器的启动有以下两种情况：  ①、基于镜像新建一个容器并启动 ②、将在终止状态的容器重新启动">
+<meta property="og:description" content="1 概述 容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-16T09:26:46.000Z">
-<meta property="article:modified_time" content="2020-09-16T09:30:58.892Z">
+<meta property="article:modified_time" content="2020-09-17T02:35:53.411Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary">
@@ -196,7 +196,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-count">31</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -271,10 +271,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2020-09-16 17:26:46 / Modified: 17:30:58" itemprop="dateCreated datePublished" datetime="2020-09-16T17:26:46+08:00">2020-09-16</time>
+      <time title="Created: 2020-09-16 17:26:46" itemprop="dateCreated datePublished" datetime="2020-09-16T17:26:46+08:00">2020-09-16</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-17 10:35:53" itemprop="dateModified" datetime="2020-09-17T10:35:53+08:00">2020-09-17</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -304,12 +310,18 @@
     <div class="post-body" itemprop="articleBody">
         <p>1 概述</p>
 <p>容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。</p>
+<a id="more"></a>
+
 <p>2 启动容器</p>
 <p><code>容器的启动有以下两种情况</code>：</p>
 <ul>
 <li>①、基于镜像新建一个容器并启动</li>
 <li>②、将在终止状态的容器重新启动</li>
 </ul>
+<p>2.1 基于镜像新建容器并启动</p>
+<p>命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+
 
     </div>
 

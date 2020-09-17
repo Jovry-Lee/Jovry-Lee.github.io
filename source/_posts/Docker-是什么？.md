@@ -11,6 +11,8 @@ categories: ["Docker"]
 
 Docker是使用Google推出的Go语言开发的，基于Linux内核的cgroup, namespace,OverlayFS类的Union FS等技术，对进程进行封装隔离的操作系统层面的虚拟化技术．
 
+<!--more-->
+
 由于隔离的进程独立于宿主和其他的隔离程序的进程，因此也称为`容器`．
 
 

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 概述Dockerfile 是一个文本文件，其内包含了一条条的 指令(Instruction)，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker-Dockerfile指令">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/17/Docker-Dockerfile%E6%8C%87%E4%BB%A4/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 概述Dockerfile 是一个文本文件，其内包含了一条条的 指令(Instruction)，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-17T08:18:16.000Z">
+<meta property="article:modified_time" content="2020-09-17T10:29:11.438Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/17/Docker-Dockerfile%E6%8C%87%E4%BB%A4/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Docker-Dockerfile指令 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1 概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Dockerfile%E6%8C%87%E4%BB%A4%E8%A7%A3%E6%9E%90"><span class="nav-text">2 Dockerfile指令解析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-FROM%E6%8C%87%E5%AE%9A%E5%9F%BA%E7%A1%80%E9%95%9C%E5%83%8F"><span class="nav-text">2.1 FROM指定基础镜像</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-RUN%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4"><span class="nav-text">2.2 RUN执行命令</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-3-COPY%E5%A4%8D%E5%88%B6%E6%96%87%E4%BB%B6"><span class="nav-text">2.3 COPY复制文件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-4-ADD%E9%AB%98%E7%BA%A7%E5%A4%8D%E5%88%B6%E6%96%87%E4%BB%B6"><span class="nav-text">2.4 ADD高级复制文件</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#2-4-1-%E4%B8%8D%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8ADD%E5%A4%8D%E5%88%B6%E6%96%87%E4%BB%B6%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-text">2.4.1 不推荐使用ADD复制文件的原因</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-5-CMD%E5%AE%B9%E5%99%A8%E5%90%AF%E5%8A%A8%E5%91%BD%E4%BB%A4"><span class="nav-text">2.5 CMD容器启动命令</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-6-ENTRYPOINT%E5%85%A5%E5%8F%A3%E7%82%B9"><span class="nav-text">2.6 ENTRYPOINT入口点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-7-ENV%E8%AE%BE%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="nav-text">2.7 ENV设置环境变量</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-8-AGR%E6%9E%84%E5%BB%BA%E5%8F%82%E6%95%B0"><span class="nav-text">2.8 AGR构建参数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-9-VOLUME%E5%AE%9A%E4%B9%89%E5%8C%BF%E5%90%8D%E5%8D%B7"><span class="nav-text">2.9 VOLUME定义匿名卷</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/17/Docker-Dockerfile%E6%8C%87%E4%BB%A4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Docker-Dockerfile指令
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2020-09-17 16:18:16 / Modified: 18:29:11" itemprop="dateCreated datePublished" datetime="2020-09-17T16:18:16+08:00">2020-09-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h4 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h4><p>Dockerfile 是一个文本文件，其内包含了一条条的 <code>指令(Instruction)</code>，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。</p>
+<a id="more"></a>
+
+<p>Dockerfile功能很强大，它提供了十多个指令，如FROM, RUN, COPY等等．</p>
+<h4 id="2-Dockerfile指令解析"><a href="#2-Dockerfile指令解析" class="headerlink" title="2 Dockerfile指令解析"></a>2 Dockerfile指令解析</h4><h5 id="2-1-FROM指定基础镜像"><a href="#2-1-FROM指定基础镜像" class="headerlink" title="2.1 FROM指定基础镜像"></a>2.1 FROM指定基础镜像</h5><p><code>FROM</code> 是指定 <strong>基础镜像</strong>，在 <code>Dockerfile</code> 中 <code>FROM</code> 是必备的指令，并且<code>必须是第一条指令</code>。</p>
+<p>Docker中有一个特殊的镜像，名为<code>scratch</code>。这个镜像是虚拟的概念，并不实际存在，他表示一个空白的镜像．若以scratch为基础镜像，以为这不以任何镜像为基础，接下来所写的指令将作为镜像第一层开始存在。</p>
+<h5 id="2-2-RUN执行命令"><a href="#2-2-RUN执行命令" class="headerlink" title="2.2 RUN执行命令"></a>2.2 RUN执行命令</h5><p><code>RUN</code> 指令是用来执行命令行命令的。由于命令行的强大能力，<code>RUN</code> 指令在定制镜像时是最常用的指令之一。其格式有两种：</p>
+<ul>
+<li>shell格式：<code>RUN &lt;命令&gt;</code></li>
+<li>exec格式：<code>RUN [&quot;可执行文件&quot;, &quot;参数1&quot;, &quot;参数2&quot;]</code></li>
+</ul>
+<p>每一个 <code>RUN</code> 的行为，会新建立一层，在其上执行这些命令，执行结束后，<code>commit</code> 这一层的修改，构成新的镜像。因此<code>对于实现同一个目的的多条指令应该使用一个RUN指令，并使用&amp;&amp;将各个所需的命令串联起来</code>．</p>
+<p>Dockerfile支持Shell类的行尾添加 <code>\</code> 的命令换行方式，以及行首 <code>#</code> 进行注释的格式．</p>
+<p>注意：为了避免镜像过于臃肿，需要在每一层构建结束后清理掉无关的文件．</p>
+<h5 id="2-3-COPY复制文件"><a href="#2-3-COPY复制文件" class="headerlink" title="2.3 COPY复制文件"></a>2.3 COPY复制文件</h5><p> <code>COPY</code> 指令将从构建上下文目录中 <code>&lt;源路径&gt;</code> 的文件/目录复制到新的一层的镜像内的 <code>&lt;目标路径&gt;</code> 位置。</p>
+<ul>
+<li><code>&lt;源路径&gt;</code>可以是多个，甚至可以是通配符，其通配符规则要满足 Go 的 <a target="_blank" rel="noopener" href="https://golang.org/pkg/path/filepath/#Match"><code>filepath.Match</code></a> 规则．</li>
+<li><code>&lt;目标路径&gt;</code> 可以是容器内的绝对路径，也可以是相对于工作目录的相对路径（工作目录可以用 <code>WORKDIR</code> 指令来指定）。目标路径不需要事先创建，如果目录不存在会在复制文件前先行创建缺失目录。</li>
+</ul>
+<p>COPY指令格式有两种：</p>
+<ul>
+<li><code>COPY [--chown=&lt;user&gt;:&lt;group&gt;] &lt;源路径&gt;... &lt;目标路径&gt;</code></li>
+<li><code>COPY [--chown=&lt;user&gt;:&lt;group&gt;] [&quot;&lt;源路径1&gt;&quot;,... &quot;&lt;目标路径&gt;&quot;]</code></li>
+</ul>
+<p><em>注：使用 <code>COPY</code> 指令，源文件的各种元数据都会保留。比如读、写、执行权限、文件变更时间等。</em></p>
+<h5 id="2-4-ADD高级复制文件"><a href="#2-4-ADD高级复制文件" class="headerlink" title="2.4 ADD高级复制文件"></a>2.4 ADD高级复制文件</h5><p> <code>ADD</code> 指令和 <code>COPY</code> 的格式和性质基本一致，都是实现复制文件．ADD指令增加了一些功能：</p>
+<ul>
+<li>&lt;源路径&gt; 可以是一个 <code>URL</code>：这种情况下，Docker 引擎会试图去下载这个链接的文件放到 <code>&lt;目标路径&gt;</code> 去。下载后的文件权限自动设置为 <code>600</code>，如果这并不是想要的权限，那么还需要增加额外的一层 <code>RUN</code> 进行权限调整．（<em>若下载的是一个压缩包，需要使用一层RUN指令进行解压</em>）．（<u>此种情况并不推荐，不如直接使用RUN指令，用wget或curl工具下载，处理．</u>）</li>
+<li>&lt;源路径&gt; 为一个 <code>tar</code> 压缩文件<code>：压缩格式为 </code>gzip<code>, </code>bzip2<code>以及</code>xz<code> 的情况下，</code>ADD<code>指令将会自动解压缩这个压缩文件到</code>&lt;目标路径&gt;` 去。</li>
+</ul>
+<p><code>ADD</code> 的最佳用例是将本地 tar 文件自动提取到镜像中，例如 <code>ADD rootfs.tar.xz</code>。</p>
+<h6 id="2-4-1-不推荐使用ADD复制文件的原因"><a href="#2-4-1-不推荐使用ADD复制文件的原因" class="headerlink" title="2.4.1 不推荐使用ADD复制文件的原因"></a>2.4.1 不推荐使用ADD复制文件的原因</h6><ul>
+<li>因为<code>ADD</code> 语义不明。<code>COPY</code> 只支持简单将本地文件拷贝到容器中，而 <code>ADD</code> 有一些并不明显的功能（比如本地 tar 提取和远程 URL 支持）。因此，<code>ADD</code> 的最佳用例是将本地 tar 文件自动提取到镜像中，例如 <code>ADD rootfs.tar.xz</code>。</li>
+<li><code>ADD</code> 指令会令镜像构建缓存失效，从而可能会令镜像构建变得比较缓慢。</li>
+</ul>
+<h5 id="2-5-CMD容器启动命令"><a href="#2-5-CMD容器启动命令" class="headerlink" title="2.5 CMD容器启动命令"></a>2.5 CMD容器启动命令</h5><p> <code>CMD</code> 指令就是用于指定默认的容器主进程的启动命令的。其格式有两种：</p>
+<ul>
+<li>shell格式：<code>CMD &lt;命令&gt;</code></li>
+<li>exec 格式：<code>CMD [&quot;可执行文件&quot;, &quot;参数1&quot;, &quot;参数2&quot;...]</code>（<u>推荐，因为此类格式会被解析JSON数组，因此一定要使用双引号</u>）</li>
+<li>参数列表格式：<code>CMD [&quot;参数1&quot;, &quot;参数2&quot;...]</code>。在指定了 <code>ENTRYPOINT</code> 指令后，用 <code>CMD</code> 指定具体的参数。</li>
+</ul>
+<p>注：在运行时可以指定新的命令来替代镜像设置中的这个默认命令．</p>
+<p><code>示例</code>：Ubuntu镜像默认的CMD是<code>/bin/bash</code>， 如果直接 <code>docker run -it ubuntu</code> 的话，会直接进入 <code>bash</code>。我们也可以在运行时指定运行别的命令，如 <code>docker run -it ubuntu cat /etc/os-release</code>．</p>
+<h5 id="2-6-ENTRYPOINT入口点"><a href="#2-6-ENTRYPOINT入口点" class="headerlink" title="2.6 ENTRYPOINT入口点"></a>2.6 ENTRYPOINT入口点</h5><p>ENTRYPOINT的目的与CMD一样，都是在指定容器启动程序及参数。ENTRYPOINT在运行时也可以替代，不过比CMD要稍微繁琐一些，需要通过docker run的参数<code>--entrypoint</code>来指定。</p>
+<p>当指定了ENTRYPOINT后，CMD的含义就变了，不再是直接的运行其命令，而是<code>将CMD的内容作为参数传给ENTRYPOINT指令</code>，即实际执行时，将变为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;ENTRYPOINT&gt; &quot;&lt;CMD&gt;&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="2-7-ENV设置环境变量"><a href="#2-7-ENV设置环境变量" class="headerlink" title="2.7 ENV设置环境变量"></a>2.7 ENV设置环境变量</h5><p>ENV指令用于设置环境变量，在后续的指令中，可以直接使用跟这里定义的环境变量。支持环境变量展开的指令包括：<code>ADD、COPY、ENV、EXPOSE、FROM、LABEL、USER、WORKDIR、VOLUME、STOPSIGNAL、ONBUILD、RUN。</code></p>
+<p>ENV指令格式有两种：</p>
+<ul>
+<li><code>ENV &lt;key&gt; &lt;value&gt;</code></li>
+<li><code>ENV &lt;key1&gt;=&lt;value1&gt; &lt;key2&gt;=&lt;value2&gt;...</code>．eg：<code>ENV VERSION=1.0 DEBUG=on NAME=&quot;Happy Feet&quot;</code></li>
+</ul>
+<p>注：<em>对于含有空格的值用双引号括起来</em></p>
+<p>后续使用时，使用<code>$符号+key</code>进行使用，eg：$NAME</p>
+<h5 id="2-8-AGR构建参数"><a href="#2-8-AGR构建参数" class="headerlink" title="2.8 AGR构建参数"></a>2.8 AGR构建参数</h5><p>构建参数和ENV指令效果一样，都是设置环境变量。不同的是，A<code>RG所设置的构建环境的环境变量，在将来容器运行时是不会存在这些环境变量的。</code></p>
+<p>注：<em>不要使用ARG保存密码之类的，因为<code>docker history</code>还是可以看到所有值。</em></p>
+<p>指令格式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ARG &lt;参数名&gt;[&#x3D;&lt;默认值&gt;]</span><br></pre></td></tr></table></figure>
+
+
+
+<p>Dockerfile中的ARG指令是定义参数名称及默认值，可以在构建命令<code>docker build</code>中使用以下参数来覆盖。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--build-arg &lt;参数名&gt;&#x3D;&lt;值&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>注：<em>ARG 指令有生效范围，如果在 <code>FROM</code> 指令之前指定，那么只能用于 <code>FROM</code> 指令中。</em></p>
+<h5 id="2-9-VOLUME定义匿名卷"><a href="#2-9-VOLUME定义匿名卷" class="headerlink" title="2.9 VOLUME定义匿名卷"></a>2.9 VOLUME定义匿名卷</h5><p><code>容器运行时应该尽量保持容器存储层不发生写操作，对于数据库类需要保存动态数据的饮用，其数据库文件应该保存于卷中（VOLUME）中。</code></p>
+<p>为了防止运行时用户忘记将动态文件所保存目录挂在为卷，在Dockerfile中，可以事先指定某些目录挂在为匿名卷，这样在运行时如果用户不指定挂载，其应用也可以正常运行，不会向容器存储层写入大量数据。</p>
+<p>指令格式为：</p>
+<ul>
+<li>VOLUME [“&lt;路径1&gt;”, “&lt;路径2&gt;”…]</li>
+<li>VOLUME &lt;路径&gt;</li>
+</ul>
+<p>在运行时可以通过<code>-v</code>覆盖Dockerfile中设置的匿名卷．eg：<code>docker run -d -v mydata:/data xxxx</code>．</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/16/Docker-%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86/" rel="prev" title="Docker-错误处理">
+                  <i class="fa fa-chevron-left"></i> Docker-错误处理
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '5c6215047d1465d93619f6db62c15c84',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
