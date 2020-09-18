@@ -61,3 +61,48 @@ ubuntu              latest              4e5021d210f6        6 months ago        
 $ sudo docker image rm ubuntu:18.04
 ```
 
+
+
+#### 2 拉取镜像错误
+
+##### 2.1 read: connection timed out
+
+`报错信息`：
+
+```bash
+$ sudo docker pull ubuntu:18.04
+18.04: Pulling from library/ubuntu
+5d9821c94847: Downloading  4.173MB/26.7MB
+a610eae58dfc: Download complete 
+a40e0eb9f140: Download complete 
+error pulling image configuration: Get https://production.cloudflare.docker.com/registry-v2/docker/registry/v2/blobs/sha256/c1/c14bccfdea1cc6aee142cd95f4069b6ada6b57e484e7886391816e1eba856950/data?verify=1600417610-ZVyDnSC2hWAtmSPbiNbhg4MHxGM%3D: read tcp 172.20.33.9:58120->104.18.124.25:443: read: connection timed out
+```
+
+`报错原因`：docker默认使用国外官方网站镜像，速度比较慢，甚至无法连接状态。
+
+
+
+`解决方法`：使用国内镜像源．
+
+- docker国内官方镜像地址：`https://registry.docker-cn.com`（貌似已经不能用了）
+- 网易：`https://hub-mirror.c.163.com`
+
+
+
+`配置方法`：
+
+- 修改 `/etc/docker/daemon.json`文件（<u>该文件默认不存在，需要手动编写</u>．但是注意不要与传递给命令行调用的选项冲突）
+
+```json /etc/docker/daemon.json
+{
+"registry-mirrors":["<镜像源地址>"]
+}
+```
+
+- 重启docker生效：
+
+```
+systemctl daemon-reload
+systemctl restart docker
+```
+

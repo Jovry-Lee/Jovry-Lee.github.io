@@ -30,7 +30,7 @@
 <meta property="og:description" content="记录一些遇见的错误，及解决方法．">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-16T09:57:09.000Z">
-<meta property="article:modified_time" content="2020-09-17T03:28:56.319Z">
+<meta property="article:modified_time" content="2020-09-18T08:29:10.019Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary">
@@ -181,7 +181,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%88%A0%E9%99%A4%E9%95%9C%E5%83%8F%E9%94%99%E8%AF%AF"><span class="nav-text">1 删除镜像错误</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-image-is-being-used-by-stopped-container"><span class="nav-text">1.1 image is being used by stopped container </span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-image-is-referenced-in-multiple-repositories"><span class="nav-text">1.2 image is referenced in multiple repositories</span></a></li></ol></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%88%A0%E9%99%A4%E9%95%9C%E5%83%8F%E9%94%99%E8%AF%AF"><span class="nav-text">1 删除镜像错误</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-image-is-being-used-by-stopped-container"><span class="nav-text">1.1 image is being used by stopped container </span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-image-is-referenced-in-multiple-repositories"><span class="nav-text">1.2 image is referenced in multiple repositories</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E6%8B%89%E5%8F%96%E9%95%9C%E5%83%8F%E9%94%99%E8%AF%AF"><span class="nav-text">2 拉取镜像错误</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-read-connection-timed-out"><span class="nav-text">2.1 read: connection timed out</span></a></li></ol></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -280,7 +280,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-09-17 11:28:56" itemprop="dateModified" datetime="2020-09-17T11:28:56+08:00">2020-09-17</time>
+        <time title="Modified: 2020-09-18 16:29:10" itemprop="dateModified" datetime="2020-09-18T16:29:10+08:00">2020-09-18</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -333,6 +333,28 @@
 
 <p><code>解决方法</code>：通过指定<code>仓库名：标签</code>的方式进行删除．</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo docker image rm ubuntu:18.04</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-拉取镜像错误"><a href="#2-拉取镜像错误" class="headerlink" title="2 拉取镜像错误"></a>2 拉取镜像错误</h4><h5 id="2-1-read-connection-timed-out"><a href="#2-1-read-connection-timed-out" class="headerlink" title="2.1 read: connection timed out"></a>2.1 read: connection timed out</h5><p><code>报错信息</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ sudo docker pull ubuntu:18.04</span><br><span class="line">18.04: Pulling from library/ubuntu</span><br><span class="line">5d9821c94847: Downloading  4.173MB/26.7MB</span><br><span class="line">a610eae58dfc: Download complete </span><br><span class="line">a40e0eb9f140: Download complete </span><br><span class="line">error pulling image configuration: Get https://production.cloudflare.docker.com/registry-v2/docker/registry/v2/blobs/sha256/c1/c14bccfdea1cc6aee142cd95f4069b6ada6b57e484e7886391816e1eba856950/data?verify=1600417610-ZVyDnSC2hWAtmSPbiNbhg4MHxGM%3D: <span class="built_in">read</span> tcp 172.20.33.9:58120-&gt;104.18.124.25:443: <span class="built_in">read</span>: connection timed out</span><br></pre></td></tr></table></figure>
+
+<p><code>报错原因</code>：docker默认使用国外官方网站镜像，速度比较慢，甚至无法连接状态。</p>
+<p><code>解决方法</code>：使用国内镜像源．</p>
+<ul>
+<li>docker国内官方镜像地址：<code>https://registry.docker-cn.com</code>（貌似已经不能用了）</li>
+<li>网易：<code>https://hub-mirror.c.163.com</code></li>
+</ul>
+<p><code>配置方法</code>：</p>
+<ul>
+<li>修改 <code>/etc/docker/daemon.json</code>文件（<u>该文件默认不存在，需要手动编写</u>．但是注意不要与传递给命令行调用的选项冲突）</li>
+</ul>
+<figure class="highlight json"><figcaption><span>/etc/docker/daemon.json</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line"><span class="attr">&quot;registry-mirrors&quot;</span>:[<span class="string">&quot;&lt;镜像源地址&gt;&quot;</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>重启docker生效：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure>
 
 
     </div>

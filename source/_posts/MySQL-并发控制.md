@@ -364,7 +364,7 @@ A: select * from t where a>2 for update; // 范围查询时，对(2,+infinity)�
 	B: insert into t select 4; // 失败，执行是发生阻塞．
 A: commit;
 	B: commit;
-
+status
 ```
 
 - `当查询的索引为辅助索引，InnoDB存储引擎将会对辅助索引使用Next-Key Locking技术加锁，并且对辅助索引的下一个键值加上Gap Locks，同时对聚集索引，添加Record Locking．`
