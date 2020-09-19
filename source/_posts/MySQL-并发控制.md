@@ -72,6 +72,10 @@ InnoDB共有七种类型的锁：
 
 
 
+注：InnoDB的行锁是实现在索引上的，而不是物理行记录上，即如果没有命中索引，也无法使用行锁，将要退化为表锁。
+
+
+
 ##### 3.1 共享锁/排它锁（Shared and Exclusive Locks）
 
 在InnoDB里实现了`标准的行级锁(row-level locking)`，共享/排它锁：  
