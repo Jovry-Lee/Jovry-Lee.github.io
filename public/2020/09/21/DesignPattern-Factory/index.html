@@ -22,23 +22,22 @@
     var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="下载 ①、下载安装包 在ubuntu环境下，前往nodejs官网，nodejs官网能自动检测自己的系统版本，推荐出合适的nodejs版本。">
+  <meta name="description" content="1 概述当使用＂new＂实例化一个具体类，将会导致代码更加脆弱，缺乏弹性．例如：当有很多相关的具体类时（如下代码所示），究竟要实例化哪个类，要在运行时由一些条件来决定．一旦有变化扩者扩展，就需要重新对这段代码进行检查和修改．可能造成部分系统维护和更新的困扰，也容易出错．">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Ubuntu16.04-Nodejs安装">
-<meta property="og:url" content="https://jovry-lee.github.io/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/index.html">
+<meta property="og:title" content="DesignPattern-Factory">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/21/DesignPattern-Factory/index.html">
 <meta property="og:site_name" content="Jovry&#39;s blog">
-<meta property="og:description" content="下载 ①、下载安装包 在ubuntu环境下，前往nodejs官网，nodejs官网能自动检测自己的系统版本，推荐出合适的nodejs版本。">
+<meta property="og:description" content="1 概述当使用＂new＂实例化一个具体类，将会导致代码更加脆弱，缺乏弹性．例如：当有很多相关的具体类时（如下代码所示），究竟要实例化哪个类，要在运行时由一些条件来决定．一旦有变化扩者扩展，就需要重新对这段代码进行检查和修改．可能造成部分系统维护和更新的困扰，也容易出错．">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2020-08-21T07:28:42.000Z">
-<meta property="article:modified_time" content="2020-08-30T12:42:36.923Z">
+<meta property="article:published_time" content="2020-09-21T09:54:27.000Z">
+<meta property="article:modified_time" content="2020-09-21T10:31:25.343Z">
 <meta property="article:author" content="Jovry Lee">
-<meta property="article:tag" content="Ubuntu">
-<meta property="article:tag" content="Config">
-<meta property="article:tag" content="Node.js">
+<meta property="article:tag" content="DesignPattern">
+<meta property="article:tag" content="Singleton">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://jovry-lee.github.io/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/">
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/21/DesignPattern-Factory/">
 
 
 <script class="page-configurations">
@@ -51,7 +50,7 @@
   };
 </script>
 
-  <title>Ubuntu16.04-Nodejs安装 | Jovry's blog</title>
+  <title>DesignPattern-Factory | Jovry's blog</title>
   
 
 
@@ -183,7 +182,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD"><span class="nav-text">下载</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE"><span class="nav-text">配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Factory%EF%BC%88%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%EF%BC%89"><span class="nav-text">2 Factory（工厂模式）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E7%AE%80%E5%8D%95%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F"><span class="nav-text">2.1 简单工厂模式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-1-%E5%A5%BD%E5%A4%84"><span class="nav-text">2.1.1 好处</span></a></li></ol></li></ol></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -248,7 +247,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/21/DesignPattern-Factory/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/princess.jpg">
@@ -264,7 +263,7 @@
     
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Ubuntu16.04-Nodejs安装
+          DesignPattern-Factory
         </h1>
 
         <div class="post-meta-container">
@@ -274,27 +273,21 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
+      
 
-      <time title="Created: 2020-08-21 15:28:42" itemprop="dateCreated datePublished" datetime="2020-08-21T15:28:42+08:00">2020-08-21</time>
+      <time title="Created: 2020-09-21 17:54:27 / Modified: 18:31:25" itemprop="dateCreated datePublished" datetime="2020-09-21T17:54:27+08:00">2020-09-21</time>
     </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-08-30 20:42:36" itemprop="dateModified" datetime="2020-08-30T20:42:36+08:00">2020-08-30</time>
-      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
       </span>
       <span class="post-meta-item-text">In</span>
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ubuntu/" itemprop="url" rel="index"><span itemprop="name">Ubuntu</span></a>
+          <a href="/categories/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
         </span>
           , 
         <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Ubuntu/Config/" itemprop="url" rel="index"><span itemprop="name">Config</span></a>
+          <a href="/categories/DesignPattern/Singleton/" itemprop="url" rel="index"><span itemprop="name">Singleton</span></a>
         </span>
     </span>
 
@@ -315,43 +308,31 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h4 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h4><ul>
-<li><p>①、下载安装包</p>
-<p>在ubuntu环境下，前往<a target="_blank" rel="noopener" href="https://nodejs.org/en/">nodejs官网</a>，nodejs官网能自动检测自己的系统版本，推荐出合适的nodejs版本。</p>
+        <h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h3><p>当使用＂<code>new</code>＂实例化一个具体类，将会导致代码更加脆弱，缺乏弹性．例如：当有很多相关的具体类时（如下代码所示），究竟要实例化哪个类，要在运行时由一些条件来决定．一旦有变化扩者扩展，就需要重新对这段代码进行检查和修改．可能造成部分系统维护和更新的困扰，也容易出错．</p>
 <a id="more"></a>
-</li>
-<li><p>②、解压安装包</p>
-</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ tar xvJf node-v12.18.3-linux-x64.tar.xz</span><br></pre></td></tr></table></figure>
 
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Duck duck;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (picnic) &#123;</span><br><span class="line">	duck = <span class="keyword">new</span> MallardDuck();</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (hunting) &#123;</span><br><span class="line">	duck = <span class="keyword">new</span> DecoyDuck();</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span>(inBathTub) &#123;</span><br><span class="line">	duck = <span class="keyword">new</span> RubberDuck();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>那么如何将实例化具体类的代码从应用总抽离，或者封装起来，使他们不会干扰应用的其他部分呢？</p>
 <ul>
-<li>③、拷贝安装文件到指定路径</li>
+<li>识别变化的方面．</li>
+<li>封装创建对象的代码（该对象即为＂Factory，工厂＂）．</li>
 </ul>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo cp -r node-v12.18.3-linux-x64 /usr/<span class="built_in">local</span>/</span><br></pre></td></tr></table></figure>
-
-<h4 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h4><ul>
-<li>修改~/.bashrc文件</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#set Node.js</span><br><span class="line">export NODE_HOME&#x3D;&#x2F;usr&#x2F;local&#x2F;node-v12.18.3-linux-x64</span><br><span class="line">export PATH&#x3D;$NODE_HOME&#x2F;bin:$PATH</span><br></pre></td></tr></table></figure>
-
+<h3 id="2-Factory（工厂模式）"><a href="#2-Factory（工厂模式）" class="headerlink" title="2 Factory（工厂模式）"></a>2 Factory（工厂模式）</h3><p>根据应用场景和复杂度的不同，工厂模式可以分为以下三种：</p>
 <ul>
-<li>执行source命令</li>
+<li>简单工厂模式；</li>
+<li>工厂方法模式；</li>
+<li>抽象工厂模式；</li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ source ~&#x2F;.bashrc</span><br></pre></td></tr></table></figure>
-
+<h4 id="2-1-简单工厂模式"><a href="#2-1-简单工厂模式" class="headerlink" title="2.1 简单工厂模式"></a>2.1 简单工厂模式</h4><p>简单工厂模式，准确点来说，并不算是一种设计模式，反而比较像一种编程习惯．</p>
+<p><code>实现原理</code>：新建一个工厂类，在工厂类内定义一个实例化各种对象的方法，将识别出来变化的部分移植到该方法中．</p>
+<h5 id="2-1-1-好处"><a href="#2-1-1-好处" class="headerlink" title="2.1.1 好处"></a>2.1.1 好处</h5><p>简单工厂模式看似只是把问题搬到一个对象中了，并没有进行实际的解决，这样做的好处是什么？</p>
 <ul>
-<li>3、添加软连接</li>
+<li>将变化部分的代码封装起来，后续有改变时，只需要改动这一个类，避免对其他逻辑的影响．</li>
+<li>可以有多个调用方</li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ln -s &#x2F;usr&#x2F;local&#x2F;node-v12.18.3-linux-x64&#x2F;bin&#x2F;node &#x2F;usr&#x2F;bin&#x2F;node</span><br><span class="line">ln -s &#x2F;usr&#x2F;local&#x2F;node-v12.18.3-linux-x64&#x2F;bin&#x2F;npm &#x2F;usr&#x2F;bin&#x2F;npm</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>4、查看node版本</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ node -v</span><br><span class="line">v12.18.3</span><br><span class="line">$ npm -v</span><br><span class="line">6.14.6</span><br></pre></td></tr></table></figure>
-
-<p>能查看版本,即表示安装成功.</p>
-<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_36272282/article/details/88887360">Ubuntu 16.04环境下nodejs的安装和配置</a></p>
 
     </div>
 
@@ -361,23 +342,19 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Ubuntu/" rel="tag"># Ubuntu</a>
-              <a href="/tags/Config/" rel="tag"># Config</a>
-              <a href="/tags/Node-js/" rel="tag"># Node.js</a>
+              <a href="/tags/DesignPattern/" rel="tag"># DesignPattern</a>
+              <a href="/tags/Singleton/" rel="tag"># Singleton</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2020/08/20/Ubuntu16-04-%E6%90%AD%E5%BB%BAHexo-Blog/" rel="prev" title="Ubuntu16.04-搭建Hexo-Blog">
-                  <i class="fa fa-chevron-left"></i> Ubuntu16.04-搭建Hexo-Blog
+                <a href="/2020/09/21/DesignPattern-Singleton/" rel="prev" title="DesignPattern-Singleton">
+                  <i class="fa fa-chevron-left"></i> DesignPattern-Singleton
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/" rel="next" title="PHP7内核-变量">
-                  PHP7内核-变量 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
@@ -500,7 +477,7 @@ NexT.utils.loadComments('#gitalk-container', () => {
       repo        : 'gitalk-comments',
       owner       : 'Jovry-Lee',
       admin       : ['Jovry-Lee'],
-      id          : '86cf63aefbf2333137078dea00217826',
+      id          : 'be4938c358823029e7216af186934737',
         language: 'en',
       distractionFreeMode: true
     });
