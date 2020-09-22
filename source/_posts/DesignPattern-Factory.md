@@ -46,7 +46,7 @@ if (picnic) {
 
 简单工厂模式，准确点来说，并不算是一种设计模式，反而比较像一种编程习惯．
 
-`实现原理`：新建一个工厂类，在工厂类内定义一个实例化各种对象的方法，将识别出来变化的部分移植到该方法中．
+实现方法：<u>新建一个工厂类，在工厂类内定义一个实例化各种对象的方法，将识别出来变化的部分移植到该方法中．</u>
 
 
 
@@ -57,13 +57,60 @@ if (picnic) {
 
 
 
+PHP示例：
+
+```php
+// 具体商品，白猫
+class WhiteCat{
+    function voice() {
+        echo "白猫喵喵..";
+    }
+}
+
+// 具体商品，黑猫
+class BlackCat{
+    function voice() {
+        echo "黑猫喵喵..";
+    }
+}
+
+// 工厂类，用于生产商品
+class factory {
+    // 可以通过一个静态方法，通过参数来区分要实例化的类．
+    public static function create($color) {
+        switch ($color) {
+            case 'white':
+                return new WhiteCat();
+                break;
+            case 'black':
+                return new BlackCat();
+                break;
+        }
+    }
+}
+
+// 模拟客户端
+class Client{
+    public static function main(){
+        $wCat = factory::create('white');
+        $wCat->voice();
+        $bCat = factory::create('black');
+        $bCat->voice();
+    }
+}
+
+Client::main();
+```
+
+
+
 #### 2.2 工厂方法模式（Factory Method Pattern）
 
 `工厂方法模式定义了一个创建对象的接口，但由子类决定要实例化的类是哪一个．工厂方法让类的实例化推迟到子类．`
 
 
 
-`实现原理`：通过在抽象类（Creator）中定义抽象的工厂方法（factoryMethod），让其子类（ConcreteCreator）实现此方法以创建实例．（抽象类中通常会包含依赖子类实现的工厂方法，但无须知道是在创建哪种具体的对象．）
+实现方法：<u>通过在抽象类（Creator）中定义抽象的工厂方法（factoryMethod），让其子类（ConcreteCreator）实现此方法以创建实例．（抽象类中通常会包含依赖子类实现的工厂方法，但无须知道是在创建哪种具体的对象．）</u>
 
 （注：Creator类并不是必须为抽象的，可实现其工厂方法作为默认方法，子类若有变化，则重写该方法）
 
@@ -72,6 +119,64 @@ if (picnic) {
 其类图如下：
 
 ![FactoryMethodPattern](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/FactoryMethodPattern.png)
+
+
+
+PHP示例：
+
+```php
+// 商品基类
+abstract class Cat{
+    abstract protected function voice();
+}
+
+// 具体商品WhiteCat
+class WhiteCat extends Cat{
+    function voice() {
+        echo "白猫喵喵..";
+    }
+}
+
+// 具体商品BlackCat
+class BlackCat extends Cat{
+    function voice() {
+        echo "黑猫喵喵..";
+    }
+}
+
+// 工厂接口，用于实例化
+interface factory{
+    // static主要是为了不实例子工厂类，直接调用create方法
+    public static function create();
+}
+
+// 白猫工厂，用于实例化白猫
+class WhiteCatFactory implements factory{
+    public static function create() {
+        return new WhiteCat();
+    }
+}
+
+// 黑猫工厂，用于实例化黑猫
+class BlackCatFactory implements factory{
+    public static function create() {
+        return new BlackCat();
+    }
+}
+
+class Client{
+    public static function main(){
+        $wCat = WhiteCatFactory::create();
+        $wCat->voice();
+        $bCat = BlackCatFactory::create();
+        $bCat->voice();
+    }
+}
+
+Client::main();
+```
+
+
 
 
 
@@ -106,6 +211,93 @@ if (picnic) {
 
 
 
+PHP示例：
+
+```php
+// 商品基类，猫
+abstract class Cat{
+    abstract protected function voice();
+}
+
+// 具体商品WhiteCat
+class WhiteCat extends Cat{
+    function voice() {
+        echo "白猫喵喵..";
+    }
+}
+
+// 具体商品BlackCat
+class BlackCat extends Cat{
+    function voice() {
+        echo "黑猫喵喵..";
+    }
+}
+
+// 商品基类，狗
+abstract class Dog{
+    abstract protected function voice();
+}
+
+// 具体商品WhiteDog
+class WhiteDog extends Dog{
+    function voice() {
+        echo "白狗汪汪..";
+    }
+}
+
+// 具体商品BlackDog
+class BlackDog extends Dog{
+    function voice() {
+        echo "黑狗汪汪..";
+    }
+}
+
+// 工厂接口，用于实例化,提供一组商品．
+interface factory{
+    public function createCat();
+    public function createDog();
+}
+
+// 白色动物工厂，用于实例化白猫，白狗
+class WhiteAnimalFactory implements factory{
+    public function createCat() {
+        return new WhiteCat();
+    }
+    public function createDog() {
+        return new WhiteDog();
+    }
+}
+
+// 黑色动物工厂，用于实例化黑猫，黑狗
+class BlackAnimalFactory implements factory{
+    public function createCat() {
+        return new BlackCat();
+    }
+    public function createDog() {
+        return new BlackDog();
+    }
+}
+
+class Client{
+    public static function main() {  
+        self::run(new WhiteAnimalFactory());  
+        self::run(new BlackAnimalFactory());  
+    }  
+
+    public static function run(factory $AnimalFactory){  
+        $cat = $AnimalFactory->createCat();  
+        $cat->Voice();  
+
+        $dog = $AnimalFactory->createDog();  
+        $dog->Voice();  
+    }
+}
+
+Client::main();
+```
+
+
+
 `抽象工厂模式的优点`：
 
 - 将一群相关的产品集合起来．
@@ -120,19 +312,19 @@ if (picnic) {
 
 ### 3 工厂方法与抽象工厂的比较
 
-`关联点`：
+**关联点**：
 
 - `抽象工厂的方法经常以工厂方法的方式实现`．抽象工厂的任务是定义一个负责创建一组产品的接口．这个接口内的每个方法都则创建一个具体的产品，同时利用实现抽象工厂的子类类提供这些具体的做法．
 
 
 
-`相同点`：
+**相同点**：
 
 - 工厂方法和抽象方法都能将对象的创建封装起来，使应用程序解偶，降低其对特定实现的依赖．
 
 
 
-`不同点`：
+**不同点**：
 
 | 功能                               | 工厂方法               | 抽象工厂                                                     |
 | ---------------------------------- | ---------------------- | ------------------------------------------------------------ |
