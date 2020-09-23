@@ -7,7 +7,7 @@ categories: ["HTTP"]
 
 
 
-GET和POST都是HTTP协议中的两种发送请求的方法，由于HTTP是基于TCP/IP，所以GET和POST的底层也是基于TCP/IP。GET和POST能做的事是一样的，使用GET方法请求时，加上Request body，或者使用POST请求方法是带上Url参数，技术上是完全行得通的。也就是说GET和POST在本质上没有什么太大的区别。
+GET和POST都是HTTP协议中的两种发送请求的方法，由于HTTP是基于TCP/IP，所以GET和POST的底层也是基于TCP/IP。GET和POST能做的事是一样的，使用GET方法请求时，加上`Request body`，或者使用POST请求方法是带上Url参数，技术上是完全行得通的。也就是说GET和POST在本质上没有什么太大的区别。
 
 <!--more-->
 
@@ -27,29 +27,20 @@ HTTP最早被用来做浏览器与服务器之间交互HTML和表单的通讯协
 ##### 1.1.2 能否缓存
 
 - GET：允许缓存
-
-- - 因为是获取资源，反复读取是不应该对数据有副作用的，比如：GET一下，用户就下单，返回订单已受理，这个是不能接收的。因为是获取资源，是可以对GET请求的数据进行缓存的，可由浏览器本身、代理（如Nginx）或服务端（Etag）缓存，减少带宽。
-
+    - 因为是获取资源，反复读取是不应该对数据有副作用的，比如：GET一下，用户就下单，返回订单已受理，这个是不能接收的。因为是获取资源，是可以对GET请求的数据进行缓存的，可由浏览器本身、代理（如Nginx）或服务端（Etag）缓存，减少带宽。
 - POST：不允许缓存
-
-- - 不幂等，意味着不能多次执行，也不能缓存。（比如：若下单请求成功页面被缓存了，POST请求不向服务器发送请求，直接返回成功，却没有真正创建订单。）在浏览器中刷新页面，也会有副作用，浏览器会弹出弹框，提示用户是否继续。
+    - 不幂等，意味着不能多次执行，也不能缓存。（比如：若下单请求成功页面被缓存了，POST请求不向服务器发送请求，直接返回成功，却没有真正创建订单。）在浏览器中刷新页面，也会有副作用，浏览器会弹出弹框，提示用户是否继续。
 
 ##### 1.1.3 携带参数的格式
 
 - GET：Url上携带
-
-- - 当在浏览器发出一个GET请求时，就意味着要么用户自己在浏览器地址栏输入，要么就是点击了HTML中a标签的href中的Url。因此不是GET只能用Url，而是浏览器提供的发出GET只能由一个Url触发。
-
+    - 当在浏览器发出一个GET请求时，就意味着要么用户自己在浏览器地址栏输入，要么就是点击了HTML中a标签的href中的Url。因此不是GET只能用Url，而是浏览器提供的发出GET只能由一个Url触发。
 （<u>注：HTTP本身是没有这个限制的！</u>）
-
 - POST：表单提交
-
-- - 浏览器的POST请求都来自表单提交，每次提交浏览器会将要提交的数据编码，并放在HTTP请求的body（请求主体）中。
-
-- - 浏览器发出的POST的body格式主要有两种：
-
-  - - ①、application/x-www-form-urlencoded：传输简单数据，通常以key-value格式传输。
-    - ②、multipart/form-data：比如传输大文件，或json串等。
+    - 浏览器的POST请求都来自表单提交，每次提交浏览器会将要提交的数据编码，并放在HTTP请求的body（请求主体）中。
+    - 浏览器发出的POST的body格式主要有两种：
+        - ①、application/x-www-form-urlencoded：传输简单数据，通常以key-value格式传输。
+        - ②、multipart/form-data：比如传输大文件，或json串等。
 
 （<u>注：当POST一个表单时，Url也可以带参数，只是的标签数据会存在body中</u>）
 
@@ -90,11 +81,8 @@ HTTP请求包格式如下：
 
 
 相比之下GET有更多的机会被泄露，比如：
-
-①、携带私密信息的Url会展示在地址栏，还可以分享给他人，非常不安全。
-
-②、从客户端到服务器端，有大量的中间结点，包括网关、代理等，他们的access log通常会输出完整的Url，比如Nginx默认的Access log会打印Url（当然，通过设置，也可打印出body中的内容）。如果Url中携带了敏感数据，就会被记录下来。
-
+- ①、携带私密信息的Url会展示在地址栏，还可以分享给他人，非常不安全。
+- ②、从客户端到服务器端，有大量的中间结点，包括网关、代理等，他们的access log通常会输出完整的Url，比如Nginx默认的Access log会打印Url（当然，通过设置，也可打印出body中的内容）。如果Url中携带了敏感数据，就会被记录下来。
 
 
 避免泄露的唯一手段，就是端端加密（HTTPS等实现）。推荐私密数据传输方法：用POST+body方式。
@@ -114,21 +102,17 @@ HTTP请求包格式如下：
 ```
 Thus, only alphanumerics, the special characters "$-_.+!*'(),", and
 reserved characters used for their reserved purposes may be used
-unencoded within a URL.
+unencoded within a URL.      
 ```
-
-​             
 
 ##### 3.1.2 特殊字符和中文
 
 有一个编码方式`Percent encoding`，可以将特殊字符和中文编码，甚至binary data编码为Url支持的字符。
-
 （这个编码方式只管把字符转换成Url可用字符，并不管字符集编码）
 
 
 
 #### 3.2 Body编码
-
 Body中有一个`Content-Type`来明确定义格式，如：
 
 ```
@@ -170,7 +154,5 @@ Body和Url都可以提交中文给后端，但是POST的规范好一些，比较
 ### 参考资料：
 
 1、[99% 的人都理解错了 HTTP 中 GET 与 POST 的区别【面试必问】](https://zhuanlan.zhihu.com/p/54654014)
-
 2、[GET和POST到底有什么区别？](https://www.zhihu.com/question/28586791/answer/767316172)
-
 3、[Percent-encoding](https://en.wikipedia.org/wiki/Percent-encoding)
