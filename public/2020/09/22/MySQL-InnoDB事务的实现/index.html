@@ -22,12 +22,12 @@
     var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="1 简介 事务隔离性由锁来实现。原子性，一致性，持久性通过数据库的redo log和undo log来实现.">
+  <meta name="description" content="1 简介事务隔离性由锁来实现。原子性，一致性，持久性通过数据库的redo log和undo log来实现.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL-InnoDB事务的实现">
 <meta property="og:url" content="https://jovry-lee.github.io/2020/09/22/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/index.html">
 <meta property="og:site_name" content="Jovry&#39;s blog">
-<meta property="og:description" content="1 简介 事务隔离性由锁来实现。原子性，一致性，持久性通过数据库的redo log和undo log来实现.">
+<meta property="og:description" content="1 简介事务隔离性由锁来实现。原子性，一致性，持久性通过数据库的redo log和undo log来实现.">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E6%97%A5%E5%BF%97%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98%E7%9A%84%E6%97%B6%E9%97%B4%E7%82%B9%E4%B8%8D%E5%90%8C.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%E5%9D%97%E7%BC%93%E5%AD%98%E7%9A%84%E7%BB%93%E6%9E%84.png">
@@ -35,13 +35,13 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%E6%A0%BC%E5%BC%8F.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E9%A1%B5%E4%B8%8A%E8%AE%B0%E5%BD%95%E7%9A%84%E6%8F%92%E5%85%A5%E5%92%8C%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C%E6%A0%BC%E5%BC%8F.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E6%81%A2%E5%A4%8D%E7%9A%84%E4%BE%8B%E5%AD%90.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/Insert-undo-log.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/Insert-undo-log.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/Update-undo-log.png">
-<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/undo-log%E4%B8%8Ehistory%E5%88%97%E8%A1%A8%E7%9A%84%E5%85%B3%E7%B3%BB.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/undo-log与history列表的关系.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E5%BC%80%E5%90%AF%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%97%A5%E5%BF%97%E5%90%8EInnoDB%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E7%9A%84%E6%8F%90%E4%BA%A4%E8%BF%87%E7%A8%8B.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/BLGC.png">
 <meta property="article:published_time" content="2020-09-22T13:38:43.000Z">
-<meta property="article:modified_time" content="2020-09-22T17:25:41.723Z">
+<meta property="article:modified_time" content="2020-09-23T03:57:23.957Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="InnoDB">
@@ -182,7 +182,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -194,6 +194,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-redo-log"><span class="nav-text">2 redo log</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E6%89%A9%E5%B1%95-%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%97%A5%E5%BF%97-Bin-log"><span class="nav-text">2.1 扩展: 二进制日志(Bin log)</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-1-Bin-log%E4%B8%8ERedo-log%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-text">2.1.1 Bin log与Redo log的区别</span></a></li></ol></li></ol></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -292,7 +293,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-09-23 01:25:41" itemprop="dateModified" datetime="2020-09-23T01:25:41+08:00">2020-09-23</time>
+        <time title="Modified: 2020-09-23 11:57:23" itemprop="dateModified" datetime="2020-09-23T11:57:23+08:00">2020-09-23</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -325,74 +326,63 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>1 简介</p>
-<p>事务隔离性由锁来实现。原子性，一致性，持久性通过数据库的<code>redo log</code>和<code>undo log</code>来实现.</p>
+        <h3 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h3><p>事务隔离性由<code>锁</code>来实现。原子性，一致性，持久性通过数据库的<code>redo log</code>和<code>undo log</code>来实现.</p>
 <a id="more"></a>
 
 <ul>
-<li>**redo log(重做日志)**：<u>用于保证事务的原子性和持久性</u>。redo恢复提交事务修改的页操作，通常是物理日志,记录的是页的物理修改操作。</li>
-<li>**undo log(撤销日志)**：<u>用于保证事务的一致性</u>。undo回滚行记录到某个特定版本，是逻辑日志。根据每行记录进行记录。</li>
+<li>**redo log(重做日志)**：<u>用于保证事务的原子性和持久性</u>。redo恢复提交事务修改的页操作，通常是<code>物理日志</code>，记录的是页的物理修改操作。</li>
+<li>**undo log(撤销日志)**：<u>用于保证事务的一致性</u>。undo回滚行记录到某个特定版本，是<code>逻辑日志</code>。根据每行记录进行记录。</li>
 </ul>
-<p>InnoDB是事务的存储引擎，通过<code>Force Log at Commit机制</code>实现事务的持久性。即当事务提交时，必须先将该事务的所有日志写入到重做日志文件进行持久化，待事务的提交操作完成才算完成。这里的日志指重做日志，在InnoDB存储引擎中,包括redo log和undo log。</p>
-<p>2 redo log</p>
-<p>redo log用来保证事务的持久性。其组成包含以下两个部分:</p>
+<p>InnoDB是事务的存储引擎，通过<code>Force Log at Commit机制</code>实现事务的持久性。即<u>当事务提交时，必须先将该事务的所有日志写入到重做日志文件进行持久化，待事务的提交操作完成才算完成</u>。这里的日志指重做日志，在InnoDB存储引擎中,包括redo log和undo log。</p>
+<h3 id="2-redo-log"><a href="#2-redo-log" class="headerlink" title="2 redo log"></a>2 redo log</h3><p>redo log用来保证事务的持久性。其组成包含以下两个部分:</p>
 <ul>
-<li><p><code>redo log buffer(重做日志缓冲)</code>：保存在内存中,属于掉电易失的.</p>
-</li>
-<li><p><code>redo log file(重做日志文件)</code>：保存在磁盘中,属于持久的.</p>
-</li>
+<li><code>redo log buffer(重做日志缓冲)</code>：保存在内存中，属于掉电易失的.</li>
+<li><code>redo log file(重做日志文件)</code>：保存在磁盘中，属于持久的.</li>
 </ul>
 <p>redo log基本上都是顺序写，<u>在数据库运行时不需要对redo log的文件进行读取操作</u>。</p>
-<p>为了确保每次日志都写入<code>redo log file</code>中，在每次将<code>redo log buffer</code>写入文件后，InnoDB存储引擎都需要调用一次<strong>fsync操作</strong>。(重<em>做日志文件打开并没有使用O_DIRECT选项，因此<code>redo log buffer</code>中的数据会先写入文件系统缓存.为了保证重做日志写入磁盘,必须进行一次fsync操作.其中fsync的效率取决于磁盘的性能,因此磁盘的性能决定了事务提交的性能，即数据库的性能</em>)</p>
+<p>为了确保每次日志都写入<code>redo log file</code>中，在每次将<code>redo log buffer</code>写入文件后，InnoDB存储引擎都需要调用一次<strong>fsync操作</strong>。(<em>重做日志文件打开并没有使用O_DIRECT选项，因此<code>redo log buffer</code>中的数据会先写入文件系统缓存．为了保证重做日志写入磁盘,必须进行一次fsync操作．其中fsync的效率取决于磁盘的性能,因此磁盘的性能决定了事务提交的性能，即数据库的性能</em>)</p>
 <p>参数<code>innodb_flush_log_at_trx_commit</code>用于控制redo log刷新到磁盘的策略。该参数可设置的为包括:</p>
 <ul>
 <li>0：表示事务提交时不进行写入重做日志操作，仅在master thread中每1秒进行一次fsync操作。</li>
-<li>1(默认)：表示事务提交时必须调用一次fsync操作。</li>
+<li>1：表示事务提交时必须调用一次fsync操作。（默认）</li>
 <li>2：表示事务提交时将重做日志写入重做日志文件，但仅写入文件系统的缓存中，不进行fsync操作。</li>
 </ul>
-<p>注：<u>设置innodb_flush_log_at_trx_commit为0或2可以提高事务的性能，但这种方式丧失了事务的ACID特性.</u></p>
-<p>2.1 扩展: 二进制日志(Bin log)</p>
-<p>MySQL数据库中还有一种二进制日志(binlog)，用来进行<code>POINT-IN-TIME(PIT)</code>的恢复及<code>主从复制(Replication)</code>环境的建立.</p>
-<p><strong>Bin log与Redo log的区别?</strong></p>
-<ul>
+<p>注：<u>设置<code>innodb_flush_log_at_trx_commit</code>为0或2可以提高事务的性能，但这种方式丧失了事务的ACID特性.</u></p>
+<h4 id="2-1-扩展-二进制日志-Bin-log"><a href="#2-1-扩展-二进制日志-Bin-log" class="headerlink" title="2.1 扩展: 二进制日志(Bin log)"></a>2.1 扩展: 二进制日志(Bin log)</h4><p>MySQL数据库中还有一种二进制日志(binlog)，用来进行<code>POINT-IN-TIME(PIT)</code>的恢复及<code>主从复制(Replication)</code>环境的建立.</p>
+<h5 id="2-1-1-Bin-log与Redo-log的区别"><a href="#2-1-1-Bin-log与Redo-log的区别" class="headerlink" title="2.1.1 Bin log与Redo log的区别"></a>2.1.1 Bin log与Redo log的区别</h5><ul>
 <li><p>日志产生的地方不同.</p>
 <ul>
-<li>Redo log是在InnoDB存储引擎层产生.</li>
-<li>Bin log是在MySQL数据库的上层产生的，Binlog不仅是针对InnoDB存储引擎，MySQL数据库中任何存储引擎对于数据库的更改都会产生二进制日志.</li>
+<li><code>Redo log是在InnoDB存储引擎层产生</code>.</li>
+<li><code>Bin log是在MySQL数据库的上层（服务层）产生的</code>，Binlog不仅是针对InnoDB存储引擎，MySQL数据库中任何存储引擎对于数据库的更改都会产生二进制日志.</li>
 </ul>
 </li>
 <li><p>日志记录的内容形式不同.</p>
 <ul>
-<li><code>Bin log是一种逻辑日志</code>，记录的是对应SQL语句.</li>
-<li><code>InnoDB的Redo log时物理格式的日志</code>，记录的时对于每个页的修改.</li>
+<li><code>Bin log是一种逻辑日志</code>，<u>记录的是对应SQL语句</u>.</li>
+<li><code>InnoDB的Redo log时物理格式的日志</code>，<u>记录的时对于每个页的修改</u>.</li>
 </ul>
 </li>
-<li><p>日志写入磁盘的时间点不同.如下图所示.</p>
-<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E6%97%A5%E5%BF%97%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98%E7%9A%84%E6%97%B6%E9%97%B4%E7%82%B9%E4%B8%8D%E5%90%8C.png" alt="日志写入磁盘的时间点不同"></p>
+<li><p>日志写入磁盘的时间点不同.</p>
 <ul>
 <li>Bin log只在事务提交完成后进行<strong>一次写入</strong>，且对于每一个事务，仅包含对应事务的一个日志（<code>即一个事务对应一个binlog日志</code>）。</li>
-<li>InnoDB的Redo log是在事务进行中<strong>不断的被写入</strong>，因此日志不是随事务提交顺序写入的。其记录的是物理操作日志，因此每个事务对应多个日志条目，且是并发的，并非在事务提交时写入，故其在文件中记录的顺序并非是事务开始的顺序。<em>T1、</em>T2、*T3表示的是事务提交时的日志。</li>
 </ul>
 </li>
+<li><p>InnoDB的Redo log是在事务进行中<strong>不断的被写入</strong>，因此日志不是随事务提交顺序写入的。其记录的是物理操作日志，因此每个事务对应多个日志条目，且是并发的，并非在事务提交时写入，故其在文件中记录的顺序并非是事务开始的顺序。<em>T1、</em>T2、*T3表示的是事务提交时的日志。</p>
+<p>如下图所示:</p>
+</li>
 </ul>
-<p>2.2 Log block</p>
-<p><code>在InnoDB存储引擎中，重做日志都是以512字节进行存储的</code>。其<u><code>redo log buffer</code>、<code>redo log file</code>都是以块（block）的方式进行保存的，称之为<strong>重做日志块（redo log block）</strong>，每块大小为512字节。</u></p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E6%97%A5%E5%BF%97%E5%86%99%E5%85%A5%E7%A3%81%E7%9B%98%E7%9A%84%E6%97%B6%E9%97%B4%E7%82%B9%E4%B8%8D%E5%90%8C.png" alt="日志写入磁盘的时间点不同"></p>
+<p>2.2 Log block<br><code>在InnoDB存储引擎中，重做日志都是以512字节进行存储的</code>。其<u><code>redo log buffer</code>、<code>redo log file</code>都是以块（block）的方式进行保存的，称之为<strong>重做日志块（redo log block）</strong>，每块大小为512字节。</u></p>
 <p>若一个页中产生的重做日志数量大于512字节，那么需要分割为多个重做日志块进行存储，由于重做日志快的大小和磁盘扇区大小一样，都是512字节，因此重做日志的写入可以保证原子性，不需要doublewrite技术。</p>
-<p><code>重做日志块缓存的结构</code>如下：</p>
-<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%E5%9D%97%E7%BC%93%E5%AD%98%E7%9A%84%E7%BB%93%E6%9E%84.png" alt="重做日志块缓存的结构"></p>
-<p><code>LOG_BLOCK_FIRST_REC_GROUP示例</code>：</p>
-<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/LOG_BLOCK_FIRST_REC_GROUP.png" alt="LOG_BLOCK_FIRST_REC_GROUP"></p>
-<p>2.3 Log group</p>
-<p><code>Log group</code>为<strong>重做日志组</strong>，<u>其中有多个redo log file</u>。虽然源码中一直有log group的镜像功能，但在ha_innobase.cc文件中禁止了该功能。<strong>因此InnoDB存储引擎实际只有一个log group。</strong>（Log group是一个逻辑上的概念，并没有一个实际存储的物理文件来表示log group信息。）</p>
+<p><code>重做日志块缓存的结构</code>如下：<br><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%E5%9D%97%E7%BC%93%E5%AD%98%E7%9A%84%E7%BB%93%E6%9E%84.png" alt="重做日志块缓存的结构"></p>
+<p><code>LOG_BLOCK_FIRST_REC_GROUP示例</code>：<br><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/LOG_BLOCK_FIRST_REC_GROUP.png" alt="LOG_BLOCK_FIRST_REC_GROUP"></p>
+<p>2.3 Log group<br><code>Log group</code>为<strong>重做日志组</strong>，<u>其中有多个redo log file</u>。虽然源码中一直有log group的镜像功能，但在ha_innobase.cc文件中禁止了该功能。<strong>因此InnoDB存储引擎实际只有一个log group。</strong>（Log group是一个逻辑上的概念，并没有一个实际存储的物理文件来表示log group信息。）</p>
 <p>Redo log file中存储的是Log buffer中保存的log block，因此Redo log file也是根据块的方式进行物理存储的管理，每个块的大小也是512字节。在InnoDB存储引擎运行过程，log buffer根据一定的规则将内存中的log block刷新到磁盘。</p>
 <p><strong>具体刷盘规则</strong>如下：</p>
 <ul>
-<li><p><code>事务提交时。</code></p>
-</li>
-<li><p><code>当log buffer中有一半的内存空间已经被使用时。</code></p>
-</li>
-<li><p><code>log checkpoint时</code>。</p>
-</li>
+<li><code>事务提交时。</code></li>
+<li><code>当log buffer中有一半的内存空间已经被使用时。</code></li>
+<li><code>log checkpoint时</code>。</li>
 </ul>
 <p><u>写入Redo log file的方式是Append（追加），当一个文件被写满时，会接着写入下一个文件，其使用方式为：<strong>round-robin（轮询调度算法）</strong>。</u></p>
 <p>Redo log file中除了保存log buffer刷新到磁盘的log block，还保存了2KB大小的其他信息，因此对redo log file的写入并不是完全顺序的。针对log group中第一个redo log file，其前2KB的部分保存了4个512字节大小的块。（注：只有每个log group的第一个redo log file中才有2KB的其他信息。其余redo log file仅保留这些空间，但不保存。）</p>
@@ -406,15 +396,12 @@
 <p>2.5 LSN（日志序列号）</p>
 <p>在InnoDB存储引擎中，LSN占用8个字节，并且单调递增，其表示的含义有：</p>
 <ul>
-<li><p>重做日志写入的总量</p>
-<ul>
+<li>重做日志写入的总量<ul>
 <li>LSN记录的是重做日志的总量，其单位为字节。</li>
 </ul>
 </li>
-<li><p>Checkpoint的位置</p>
-</li>
-<li><p>页的版本</p>
-<ul>
+<li>Checkpoint的位置</li>
+<li>页的版本<ul>
 <li>在每个页的头部，有一个FIL_PAGE_LSN，记录了该页的LSN。在页中，LSN表示该页最后刷新时LSN的大小。因为重做日志记录的是每个页的日志，因此页中的LSN用来判断页是否需要进行恢复操作。</li>
 </ul>
 </li>
@@ -424,39 +411,52 @@
 <p>通过<code>SHOW ENGINE INNODB STATUS</code>查看LSN的情况：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show engine innodb status\g;</span><br><span class="line">...</span><br><span class="line">---</span><br><span class="line">LOG</span><br><span class="line">---</span><br><span class="line">Log sequence number 11795911</span><br><span class="line">Log flushed up to   11795911</span><br><span class="line">Pages flushed up to 11795911</span><br><span class="line">Last checkpoint at  11795902</span><br><span class="line">0 pending log flushes, 0 pending chkp writes</span><br><span class="line">10 log i&#x2F;o&#39;s done, 0.00 log i&#x2F;o&#39;s&#x2F;second</span><br><span class="line">...</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
 
-<p><code>Log sequence number</code>：表示当前LSN</p>
-<p><code>Log flushed up to</code>：表示刷新到重做日志文件的LSN.</p>
-<p><code>Last checkpoint at</code>：表示刷新到磁盘的LSN</p>
+<p>其中：</p>
+<ul>
+<li><code>Log sequence number</code>：表示当前LSN</li>
+<li><code>Log flushed up to</code>：表示刷新到重做日志文件的LSN.</li>
+<li><code>Last checkpoint at</code>：表示刷新到磁盘的LSN</li>
+</ul>
 <p>其中以上三个参数可能是不同的，因为在一个事务中从日志缓冲刷新到重做日志文件并不只是在事务提交时发生，每秒都会有从日志缓冲刷新到重做日志文件的动作。</p>
-<p>2.6 恢复</p>
-<p>InnoDB存储引擎在启动时不管上次数据库运行时是否正常关闭，都会尝试进行恢复操作。由于checkpoint表示已经刷新到磁盘上的LSN，因此在恢复过程中仅需恢复checkpoint开始的日志部分。</p>
+<p>2.6 恢复<br>InnoDB存储引擎在启动时不管上次数据库运行时是否正常关闭，都会尝试进行恢复操作。由于checkpoint表示已经刷新到磁盘上的LSN，因此在恢复过程中仅需恢复checkpoint开始的日志部分。</p>
 <p>示例：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E6%81%A2%E5%A4%8D%E7%9A%84%E4%BE%8B%E5%AD%90.png" alt="恢复的例子"></p>
 <p>3 undo log</p>
 <p>3.1 基本概念</p>
-<p><strong>undo log用来帮助事务回滚及MVCC功能.</strong></p>
-<pre><code>  在对数据库进行修改时，InnoDB存储引擎不但会产生redo，还会产生一定量的undo。当用户之心事务或语句由于某某种原因是败了，又或者用户用一条ROLLBACK语句请求回滚，就可以利用这些undo信息将数据回滚到修改之前的样子。</code></pre>
-<p>redo存放在重做日志文件中，而undo存放在数据库内部的一个特殊段（segment）中，这个段称为undo段（undo segment）。undo段位于共享表空间内。</p>
-<p>undo是逻辑日志，因此只是将数据库逻辑地恢复到原来的样子。当InnoDB存储引擎回滚时，它实际上做的是与先前相反的工作。对于每个INSERT,INnoDB存储引擎会完成一个DELETE;对于每个UPDATE，InnoDB存储引擎会执行一个相反的UPDATE,将修改前的行放回去。</p>
-<p>除了回滚操作，undo的另一个作用是MVCC，即在InnoDB存储引擎中的MVCC的是显示通过undo来完成的。当用户读取一行记录时，若该记录已经被其他事务占用，当前事务可以通过undo读取之前的行版本信息，以此实现非锁定读取。</p>
-<p>注：undo log会产生redo log，也就是undo log的产生会伴随着redo log的产生，这是因为undo log也需要持久性的保护。</p>
+<p><strong>undo log的作用</strong>：</p>
+<ul>
+<li>帮助事务回滚；</li>
+<li>MVCC功能；</li>
+</ul>
+<p>3.1.1 undo log帮助事务回滚</p>
+<pre><code>  在对数据库进行修改时，InnoDB存储引擎不但会产生redo，还会产生一定量的undo。当用户执行事务或语句由于某种原因失败了，又或者用户用一条ROLLBACK语句请求回滚，就可以利用这些undo信息将数据回滚到修改之前的样子。</code></pre>
+<p>redo存放在重做日志文件中，而undo存放在数据库内部的一个特殊段（segment）中，这个段称为undo段（undo segment）。<u>undo段位于共享表空间内</u>。</p>
+<p><strong>undo是逻辑日志，因此只是将数据库逻辑地恢复到原来的样子</strong>。当InnoDB存储引擎回滚时，它实际上做的是与先前相反的工作。</p>
+<ul>
+<li><code>对于每个INSERT，InnoDB存储引擎会完成一个DELETE</code>；</li>
+<li><code>对于每个UPDATE，InnoDB存储引擎会执行一个相反的UPDATE,将修改前的行放回去</code>。</li>
+</ul>
+<p>3.1.2 undo log用于MVCC</p>
+<p>除了回滚操作，undo的另一个作用是MVCC，即在InnoDB存储引擎中的MVCC的是通过undo来完成的。当用户读取一行记录时，若该记录已经被其他事务占用，当前事务可以通过undo读取之前的行版本信息，以此<strong>实现非锁定读取</strong>。</p>
+<p><em>注：undo log会产生redo log，也就是undo log的产生会伴随着redo log的产生，这是因为undo log也需要持久性的保护。</em></p>
 <p>3.2 undo存储管理</p>
-<p>InnoDB存储引擎对undo的管理同样采用段的方式。InnoDB存储引擎有rollback segment，每个回滚段中记录了1024个undo log segment，而在每个undo log segment段中进行undo页的申请。共享表空间偏移量为5的页（0,5）记录了所有rollback segment header所在的页，这个页的类型为FIL_PAGE_TYPE_SYS。</p>
+<p>InnoDB存储引擎对undo的管理同样采用段的方式。InnoDB存储引擎有<code>rollback segment</code>，每个回滚段中记录了1024个<code>undo log segment</code>，而在每个undo log segment段中进行undo页的申请。共享表空间偏移量为5的页（0，5）记录了所有<code>rollback segment header</code>所在的页，这个页的类型为<code>FIL_PAGE_TYPE_SYS</code>。</p>
 <p>从InnoDB1.2版本开始，可通过参数对rollback segment做进一步设置。其中包含：</p>
 <ul>
-<li>innodb_undo_directory：用于设置rollback segment文件所在路径，默认值为‘.’,表示当前InnoDB存储引擎的目录。</li>
-<li>innodb_undo_logs：用于设置rollback segment的个数，默认值为128.</li>
-<li>innodb_undo_tabklespaces：用于设置构成rollback segment文件的数量，这样rollback segment可以较为平均地分不到多个文件中。设置该参数后，会在路径innodb_undo_directory看到undo为前缀的文件，该文件就代表rollback segment文件。如下所示：</li>
+<li><code>innodb_undo_directory</code>：用于设置rollback segment文件所在路径，默认值为＂．＂，表示当前InnoDB存储引擎的目录。</li>
+<li><code>innodb_undo_logs</code>：用于设置rollback segment的个数，默认值为128.</li>
+<li><code>innodb_undo_tabklespaces</code>：用于设置构成rollback segment文件的数量，这样rollback segment可以较为平均地分不到多个文件中。设置该参数后，会在路径innodb_undo_directory看到undo为前缀的文件，该文件就代表rollback segment文件。如下所示：</li>
 </ul>
-<p>mysql&gt; show variables like ‘innodb_undo%’; +————————–+——-+ | Variable_name            | Value | +————————–+——-+ | innodb_undo_directory    | ./    | | innodb_undo_log_truncate | OFF   | | innodb_undo_logs         | 128   | | innodb_undo_tablespaces  | 0     | +————————–+——-+ 4 rows in set (0.03 sec) mysql&gt; show variables like ‘datadir’; +—————+—————–+ | Variable_name | Value           | +—————+—————–+ | datadir       | /var/lib/mysql/ | +—————+—————–+ 1 row in set (0.00 sec) mysql&gt; system ls -lh /var/lib/mysql/undo*; ls: error initializing month strings ls: cannot access ‘/var/lib/mysql/undo*’: Permission denied</p>
-<p>注：事务在undo log segment分配页并写入undo log的这个过程同样需要写入重做日志。</p>
-<p>Q1：当事务提交时，InnoDB存储引擎会做什么操作？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#39;innodb_undo%&#39;;</span><br><span class="line">+--------------------------+-------+</span><br><span class="line">| Variable_name            | Value |</span><br><span class="line">+--------------------------+-------+</span><br><span class="line">| innodb_undo_directory    | .&#x2F;    |</span><br><span class="line">| innodb_undo_log_truncate | OFF   |</span><br><span class="line">| innodb_undo_logs         | 128   |</span><br><span class="line">| innodb_undo_tablespaces  | 0     |</span><br><span class="line">+--------------------------+-------+</span><br><span class="line">4 rows in set (0.03 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show variables like &#39;datadir&#39;;</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">| Variable_name | Value           |</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">| datadir       | &#x2F;var&#x2F;lib&#x2F;mysql&#x2F; |</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; system ls -lh &#x2F;var&#x2F;lib&#x2F;mysql&#x2F;undo*;</span><br><span class="line">ls: error initializing month strings</span><br><span class="line">ls: cannot access &#39;&#x2F;var&#x2F;lib&#x2F;mysql&#x2F;undo*&#39;: Permission denied</span><br></pre></td></tr></table></figure>
+
+<p><u>注：事务在undo log segment分配页并写入undo log的这个过程同样需要写入重做日志。</u></p>
+<p><strong>Q1：当事务提交时，InnoDB存储引擎会做什么操作？</strong></p>
 <p>当事务提交时，InooDB会做以下两种操作：</p>
 <ul>
 <li>①、将undo log放入链表中，以供之后的purge操作</li>
 <li>②、判断undo log所在的页是否可以重用，若可以分配给下个事务使用。</li>
 </ul>
-<p>Q2：为什么事务提交后并不能马上删除undo log及undo log所在的页？</p>
+<p><strong>Q2：为什么事务提交后并不能马上删除undo log及undo log所在的页？</strong></p>
 <p>因为此时可能还有其他事务需要通过undo log来的到行记录之前的版本。当事务提交时将undo log放入一个链表中，是否可以最终删除undo log及undo log所在页由purge线程来判断。</p>
 <p>由于事务提交时，可能并不能马上释放页，在大量更新删除操作的情况下会非常浪费存储空间。因此InnoDB存储引擎在设计中对undo页也可以重用。其具体重用方式如下：</p>
 <ul>
@@ -464,42 +464,52 @@
 <li>②、判断undo页的使用空间是否小于3/4，若是，则表示undo页可以被重用，之后新的undo log记录可能存放在当前undo log的后面。</li>
 </ul>
 <p>注：存放undo log链表是以记录进行组织的，而undo页可能存放着不同事务的undo log，因此purge操作需要设计磁盘的离散读取操作，是一个比较缓慢的过程。</p>
-<p>可以通过SHOW ENGINE INNODB STATUS来查看链表中undo log的数量，如：</p>
-<p>mysql&gt; show engine innodb status\g; … ———— TRANSACTIONS ———— Trx id counter 1795 Purge done for trx’s n:o &lt; 0 undo n:o &lt; 0 state: running but idle History list length 0 LIST OF TRANSACTIONS FOR EACH SESSION: —TRANSACTION 422058470606688, not started 0 lock struct(s), heap size 1136, 0 row lock(s) …</p>
-<p>其中History list length表示undo log的数量，这里为0,。purge操作会减少该值，然而由于undo log所在的页可以被重用，因此即使操作发生，History list length的值也可能不为0。</p>
+<p>可以通过<code>SHOW ENGINE INNODB STATUS</code>来查看链表中undo log的数量，如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show engine innodb status\g;</span><br><span class="line">...</span><br><span class="line">------------</span><br><span class="line">TRANSACTIONS</span><br><span class="line">------------</span><br><span class="line">Trx id counter 1795</span><br><span class="line">Purge done for trx&#39;s n:o &lt; 0 undo n:o &lt; 0 state: running but idle</span><br><span class="line">History list length 0</span><br><span class="line">LIST OF TRANSACTIONS FOR EACH SESSION:</span><br><span class="line">---TRANSACTION 422058470606688, not started</span><br><span class="line">0 lock struct(s), heap size 1136, 0 row lock(s)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>History list length</code>表示undo log的数量，这里为0．purge操作会减少该值，然而由于undo log所在的页可以被重用，因此即使操作发生，History list length的值也可能不为0。</p>
 <p>3.3 undo log格式</p>
 <p>在InnoDB存储引擎中，undo log分为：</p>
 <ul>
-<li>①、insert undo log </li>
-<li>②、update undo log</li>
+<li>①、<code>insert undo log</code> </li>
+<li>②、<code>update undo log</code></li>
 </ul>
 <p>3.3.1 Insert undo log</p>
-<p>Insert undo log是指在insert操作中产生的undo log。因为insert操作记录，只针对事务本身可见，对其他事务不可见（这是事务隔离性的要求），所以undo log可以在事务提交后直接删除。不需要进行purge操作。<strong>Insert undo log的格式</strong>如下：</p>
-<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/Insert-undo-log.png" alt="Insert-undo-log"></p>
+<p><strong>Insert undo log</strong>是指在<code>insert</code>操作中产生的undo log。因为insert操作记录，只针对事务本身可见，对其他事务不可见（这是事务隔离性的要求），所以<u>insert undo log可以在事务提交后直接删除。不需要进行purge操作。</u></p>
+<p><strong>Insert undo log的格式</strong>如下：</p>
+<img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/Insert-undo-log.png" alt="Insert-undo-log" style="zoom: 67%;" />
+
 <p>3.3.2 Update undo log</p>
-<p>Update undo log记录的是对delete和update操作产生的undo log。该undo log可能需要提供MVCC机制，因此不能在事务提交时就进行删除。提交时放入undo log链表，等待purge线程进行最后的删除。</p>
+<p><strong>Update undo log</strong>记录的是对<code>delete</code>和<code>update</code>操作产生的undo log。该<u>undo log可能需要提供MVCC机制，因此不能在事务提交时就进行删除。提交时放入undo log链表，等待purge线程进行最后的删除。</u></p>
 <p>Update undo log相对于Insert Undo log记录的内容更多，所需占用的空间更大。其结构如下图所示：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/Update-undo-log.png" alt="Update-undo-log"></p>
 <p>Type_cmpl，其可能的值包括：</p>
 <ul>
-<li>①、12 TRX_UNDO_UPD_EXIST_REC更新non-delete-mark的记录</li>
-<li>②、13 TRX_UNDO_UPD_DEL_REC将delete的记录标记为not delete</li>
-<li>③、14 TRX_UNDO_DEL_MARK_REC将记录标记为delete</li>
+<li>①、12：<code>TRX_UNDO_UPD_EXIST_REC</code>更新non-delete-mark的记录</li>
+<li>②、13：<code>TRX_UNDO_UPD_DEL_REC</code>将delete的记录标记为not delete</li>
+<li>③、14：<code>TRX_UNDO_DEL_MARK_REC</code>将记录标记为delete</li>
 </ul>
 <p>Update_vector信息表示update操作发生改变的列。每个修改的列信息都要记录到undo log中，对于不同的undo log类型，可能还需要记录对索引列所做的修改。</p>
 <p>3.4  查看Undo 信息</p>
 <p>Oracle和Microsoft SQL Server数据库都是由内部的数据字典来观察当前undo的信息。InnoSQL对information_schema进行了扩展，添加了两张数据字典表，方便查看undo信息。涉及的字典表为：</p>
 <ul>
-<li>①、INNODB_TRX_ROLLBACK_SEGMENT：查看rollback segment</li>
-<li>②、INNODB_TRX_UNDO：查看记录事务对应undo log</li>
+<li>①、<code>INNODB_TRX_ROLLBACK_SEGMENT</code>：查看rollback segment</li>
+<li>②、<code>INNODB_TRX_UNDO</code>：查看记录事务对应undo log</li>
 </ul>
-<p>INNODB_TRX_ROLLBACK_SEGMENT 其表结构如下所示（执行书上的命令时发现字典不存在…？？？？？？）</p>
-<p>mysql&gt; desc INNODB_TRX_ROLLBACK_SEGMENT; ERROR 1146 (42S02): Table ‘sys.INNODB_TRX_ROLLBACK_SEGMENT’ doesn’t exist</p>
+<p>INNODB_TRX_ROLLBACK_SEGMENT 其表结构如下所示（<em>执行书上的命令时发现字典不存在…？？？？？？</em>）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; desc INNODB_TRX_ROLLBACK_SEGMENT;</span><br><span class="line">ERROR 1146 (42S02): Table &#39;sys.INNODB_TRX_ROLLBACK_SEGMENT&#39; doesn&#39;t exist</span><br></pre></td></tr></table></figure>
+
+
+
 <p>按照书中演示的使用INNODB_TRX_UNDO表</p>
-<p>①、创建测试表</p>
-<p>mysql&gt; create table t(a int,b varchar(32), primary key(a), key(b))engine=innodb; Query OK, 0 rows affected (0.09 sec)</p>
-<p>②、插入一条记录，并尝试通过INNODB_TRX_UNDO观察该事务的undo log的情况</p>
-<p>mysql&gt; start transaction; Query OK, 0 rows affected (0.00 sec) mysql&gt; insert into t select 1, ‘1’; Query OK, 1 row affected (0.01 sec) Records: 1  Duplicates: 0  Warnings: 0 mysql&gt; select * from information_schema.INNODB_TRX_UNDO\G; ERROR 1109 (42S02): Unknown table ‘INNODB_TRX_UNDO’ in information_schema</p>
+<ul>
+<li>①、创建测试表</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create table t(a int,b varchar(32), primary key(a), key(b))engine&#x3D;innodb;</span><br><span class="line">Query OK, 0 rows affected (0.09 sec)</span><br></pre></td></tr></table></figure>
+
+<p>②、插入一条记录，并尝试通过<code>INNODB_TRX_UNDO</code>观察该事务的undo log的情况</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t select 1, &#39;1&#39;;</span><br><span class="line">Query OK, 1 row affected (0.01 sec)</span><br><span class="line">Records: 1  Duplicates: 0  Warnings: 0</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from information_schema.INNODB_TRX_UNDO\G;</span><br><span class="line">ERROR 1109 (42S02): Unknown table &#39;INNODB_TRX_UNDO&#39; in information_schema</span><br></pre></td></tr></table></figure>
+
 <p>阿西吧，此时发现该字典表也不存在….?????????</p>
 <p>Delete操作并不直接删除记录，而只是将记录标记为已删除，也就是将记录的delete flag设置为1。而记录最终的删除是在purge操作中完成的。</p>
 <p>Update操作实际分为两步：</p>
@@ -509,33 +519,35 @@
 </ul>
 <p>4 Purge</p>
 <p>Purge用于最终完成delete和update操作，这样设计是因为InnoDB存储引擎支持MVCC，所以记录不能在事务提交时立即处理。其操作示例如下图所示：</p>
-<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/undo-log%E4%B8%8Ehistory%E5%88%97%E8%A1%A8%E7%9A%84%E5%85%B3%E7%B3%BB.png" alt="undo-log与history列表的关系"></p>
+<img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/undo-log与history列表的关系.png" alt="undo-log与history列表的关系" style="zoom:67%;" />
+
 <p>Innodb提供了一个全局动态参数用于控制purge操作：</p>
 <ul>
-<li>①、innodb_purge_batch_size：用于设置每次purge操作需要清理的undo page数量，默认值为300。推荐采用默认值。</li>
-<li>②、innodb_max_purge_lag：用于控制history list的长度，若长度大于该参数，其会延缓”DML“的操作。该参数默认值为0，表示不对history list做任何限制。当大于0时，就会延缓DML的操作，其延缓单位为毫秒，延缓算法为：</li>
+<li>①、<code>innodb_purge_batch_size</code>：用于设置每次purge操作需要清理的undo page数量，默认值为300。推荐采用默认值。</li>
+<li>②、<code>innodb_max_purge_lag</code>：用于控制history list的长度，若长度大于该参数，其会延缓”DML“的操作。该参数默认值为0，表示不对history list做任何限制。当大于0时，就会延缓DML的操作，其延缓单位为毫秒，延缓算法为：</li>
 </ul>
-<p>delay = ((length(history_list) - innodb_max_purge_lag) * 10) - 5</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">delay &#x3D; ((length(history_list) - innodb_max_purge_lag) * 10) - 5</span><br></pre></td></tr></table></figure>
+
 <p>注：delay的对象是行，而不是一个DML操作，即假设update操作5行数据时，总延时时间为5*delay。</p>
 <ul>
-<li>③、innodb_max_purge_lag_delay：要求版本大于InooDB1.2版本，用于控制delay的最大毫秒数。即当计算的delay值大于此参数时，将delay设置为此参数，避免由于purge操作缓慢导致其他SQL线程出现无限制的等待。</li>
+<li>③、<code>innodb_max_purge_lag_delay</code>：要求版本大于InooDB1.2版本，用于控制delay的最大毫秒数。即当计算的delay值大于此参数时，将delay设置为此参数，避免由于purge操作缓慢导致其他SQL线程出现无限制的等待。</li>
 </ul>
 <p>5 Group Commit</p>
-<p>Group commit操作用于提高磁盘fsync的效率，即一次fsync操作可以刷新确保多个事务日志被写入文件。</p>
+<p><strong>Group commit</strong>操作<u>用于提高磁盘fsync的效率，即一次fsync操作可以刷新确保多个事务日志被写入文件。</u></p>
 <p>对于InnoDB存储引擎，事务提交时会进行两个阶段的操作：</p>
 <ul>
 <li>①、修改内存中事务对应的信息，并将日志写入重做日志缓冲。</li>
-<li>②、调用fsync将去报日志都从重做日志缓冲写入磁盘。</li>
+<li>②、调用<code>fsync</code>将去把日志都从重做日志缓冲写入磁盘。</li>
 </ul>
 <p>其中第②步较慢，因此存储引擎需要和磁盘打交道。对于在执行第②段操作时，其他的事务可以进行第一段操作，然后将多个事务的重做日志通过一次fsync刷新到磁盘，大大减少磁盘的压力，提高数据库性能。对于Insert和update较为明显的操作，Group Commit的效果尤为明显。</p>
-<p>Q3：在InnoDB1.2版本以后，在开启二进制日志后，InnoDB的Group Commit功能会实现，导致性能下降，其原因为？</p>
+<p><strong>Q3：在InnoDB1.2版本以后，在开启二进制日志后，InnoDB的Group Commit功能会实现，导致性能下降，其原因为？</strong></p>
 <p>导致这个问题的原因在于开启二进制日志后，为了保证存储引擎层中的事务和二进制日志的一致性，二者之前使用两阶段事务，其步骤如下：</p>
 <ul>
 <li><p>①、当事务提交时，InnoDB存储引擎进行prepare操作。</p>
 </li>
-<li><p>②、Mysql数据库上层写二进制日志。（一旦这一步提交，就确保了事务的提交，即使在第③步中发生了宕机。）（这一步由参数sync_binlog控制）</p>
+<li><p>②、Mysql数据库上层写二进制日志。（一旦这一步提交，就确保了事务的提交，即使在第③步中发生了宕机。）（这一步由参数<code>sync_binlog</code>控制）</p>
 </li>
-<li><p>③、InnoDB存储引擎层将日志写入重做日志文件。（这一步的fsync由参数innodb_flush_log_at_trx_commit控制）</p>
+<li><p>③、InnoDB存储引擎层将日志写入重做日志文件。（这一步的<code>fsync</code>由参数<code>innodb_flush_log_at_trx_commit</code>控制）</p>
 </li>
 <li><ul>
 <li>a、修改内存中事务对应的信息，并将日志写入重做日志缓冲。</li>
@@ -543,20 +555,21 @@
 </ul>
 </li>
 </ul>
-<p>注：每个步骤都需要fsync操作才能保证上下两层数据的一致性。</p>
+<p><em>注：每个步骤都需要fsync操作才能保证上下两层数据的一致性。</em></p>
 <p>其整体过程如下：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/%E5%BC%80%E5%90%AF%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%97%A5%E5%BF%97%E5%90%8EInnoDB%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E7%9A%84%E6%8F%90%E4%BA%A4%E8%BF%87%E7%A8%8B.png" alt="开启二进制日志后InnoDB存储引擎的提交过程"></p>
-<p>为了保证二进制日志的写入顺序与InnoDB层的事务提交顺序一致，Mysql数据库内部使用了prepare_commit_mutex锁，当开启这个锁后，步骤③中的a将不可以在其他事务中执行步骤b，从而导致了Group Commit失效。</p>
-<p>Q4：如何解决Q3的问题？</p>
-<p>Mysql5.6采用了Binary Log Group Commit（BLGC）的方式将事务提交的过程采用三段式提交方式，如下图所示：</p>
+<p>为了保证二进制日志的写入顺序与InnoDB层的事务提交顺序一致，Mysql数据库内部使用了<code>prepare_commit_mutex</code>锁，当开启这个锁后，步骤③中的a将不可以在其他事务中执行步骤b，从而导致了Group Commit失效。</p>
+<p><strong>Q4：如何解决Q3的问题？</strong></p>
+<p>Mysql5.6采用了<code>Binary Log Group Commit（BLGC）</code>的方式<u>将事务提交的过程采用三段式提交方式</u>，如下图所示：</p>
 <p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0/BLGC.png" alt="BLGC"></p>
 <p>当有一组事务在今次那个Commit阶段时，其他新事物可以进行Flush阶段，从而使Group Commit不断生效。</p>
 <p>InnoDB提供了一些参数用于控制Bin log提交：</p>
-<p>①、binlog_max_flush_quenue_time：用于控制Flush阶段中等待的时间，即使之前一组事务完成提交，当前一组是物业部马上进入Sync阶段，而是至少等待一端时间，这样做的好处是Group Commit的事务数量更过，缺点是可能会导致事务的响应时间变量。默认值为0，且不建议修改。</p>
-<p><strong>参考资料</strong></p>
+<p>①、<code>binlog_max_flush_quenue_time</code>：用于控制Flush阶段中等待的时间，即使之前一组事务完成提交，当前一组事务也不马上进入Sync阶段，而是至少等待一端时间，这样做的好处是Group Commit的事务数量更过，缺点是可能会导致事务的响应时间变量。默认值为0，且不建议修改。</p>
+<hr>
+<p>参考资料</p>
 <ul>
-<li>\1. MySQL技术内幕+InnoDB存储引擎第2版(7.2节)</li>
-<li>2.<a target="_blank" rel="noopener" href="http://blog.itpub.net/30221425/viewspace-2154670/">【MySQL】SHOW ENGINE INNODB STATUS \G之Pages flushed up to的理解</a></li>
+<li>MySQL技术内幕+InnoDB存储引擎第2版(7.2节)</li>
+<li><a target="_blank" rel="noopener" href="http://blog.itpub.net/30221425/viewspace-2154670/">SHOW ENGINE INNODB STATUS \G之Pages flushed up to的理解</a></li>
 </ul>
 
     </div>
