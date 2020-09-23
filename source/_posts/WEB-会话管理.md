@@ -147,7 +147,8 @@ Session，顾名思义，会话。服务器要知道当前请求是谁发送来�
 
 ------
 
-参考资料
+### 参考资料
+
 [彻底理解session、cookie、token](https://www.cnblogs.com/moyand/p/9047978.html)
 [阿里面试题cookie和session的区别及session的生命周期](https://zhuanlan.zhihu.com/p/80716402)
 [大话Token、Cookie和Session](https://zhuanlan.zhihu.com/p/88185448)
