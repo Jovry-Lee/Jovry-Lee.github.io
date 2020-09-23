@@ -11,8 +11,8 @@ categories: ["MySQL","InnoDB"]
 
 <!--more-->
 
-- **redo log(重做日志)**：<u>用于保证事务的原子性和持久性</u>。redo恢复提交事务修改的页操作，通常是`物理日志`，记录的是页的物理修改操作。
-- **undo log(撤销日志)**：<u>用于保证事务的一致性</u>。undo回滚行记录到某个特定版本，是`逻辑日志`。根据每行记录进行记录。
+- `redo log(重做日志)`：<u>用于保证事务的原子性和持久性</u>。redo恢复提交事务修改的页操作，通常是`物理日志`，记录的是页的物理修改操作。
+- `undo log(撤销日志)`：<u>用于保证事务的一致性</u>。undo回滚行记录到某个特定版本，是`逻辑日志`。根据每行记录进行记录。
 
 InnoDB是事务的存储引擎，通过`Force Log at Commit机制`实现事务的持久性。即<u>当事务提交时，必须先将该事务的所有日志写入到重做日志文件进行持久化，待事务的提交操作完成才算完成</u>。这里的日志指重做日志，在InnoDB存储引擎中,包括redo log和undo log。
 
@@ -20,13 +20,16 @@ InnoDB是事务的存储引擎，通过`Force Log at Commit机制`实现事务�
 
 ### 2 redo log
 
-redo log用来保证事务的持久性。其组成包含以下两个部分:
+**redo log用来保证事务的持久性**。其组成包含以下两个部分:
+
 - `redo log buffer(重做日志缓冲)`：保存在内存中，属于掉电易失的.
 - `redo log file(重做日志文件)`：保存在磁盘中，属于持久的.
 
 redo log基本上都是顺序写，<u>在数据库运行时不需要对redo log的文件进行读取操作</u>。
 
-为了确保每次日志都写入`redo log file`中，在每次将`redo log buffer`写入文件后，InnoDB存储引擎都需要调用一次**fsync操作**。(*重做日志文件打开并没有使用O_DIRECT选项，因此`redo log buffer`中的数据会先写入文件系统缓存．为了保证重做日志写入磁盘,必须进行一次fsync操作．其中fsync的效率取决于磁盘的性能,因此磁盘的性能决定了事务提交的性能，即数据库的性能*)
+为了确保每次日志都写入`redo log file`中，在每次将`redo log buffer`写入文件后，InnoDB存储引擎都需要调用一次**fsync操作**。
+
+(*注：重做日志文件打开并没有使用O_DIRECT选项，因此`redo log buffer`中的数据会先写入文件系统缓存．为了保证重做日志写入磁盘,必须进行一次fsync操作．其中fsync的效率取决于磁盘的性能,因此磁盘的性能决定了事务提交的性能，即数据库的性能*)
 
 
 
@@ -63,10 +66,11 @@ MySQL数据库中还有一种二进制日志(binlog)，用来进行`POINT-IN-TIM
 
 ![日志写入磁盘的时间点不同](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/日志写入磁盘的时间点不同.png)
 
-2.2 Log block
-`在InnoDB存储引擎中，重做日志都是以512字节进行存储的`。其<u>`redo log buffer`、`redo log file`都是以块（block）的方式进行保存的，称之为**重做日志块（redo log block）**，每块大小为512字节。</u>
+#### 2.2 Log block
 
-若一个页中产生的重做日志数量大于512字节，那么需要分割为多个重做日志块进行存储，由于重做日志快的大小和磁盘扇区大小一样，都是512字节，因此重做日志的写入可以保证原子性，不需要doublewrite技术。
+`在InnoDB存储引擎中，重做日志都是以512字节进行存储的`。其<u>`redo log buffer`、`redo log file`都是以`块（block）`的方式进行保存的，称之为**重做日志块（redo log block）**，每块大小为512字节。</u>
+
+若一个页中产生的重做日志数量大于512字节，那么需要分割为多个重做日志块进行存储，由于重做日志快的大小和磁盘扇区大小一样，都是512字节，因此重做日志的写入可以保证原子性，不需要double write技术。
 
 
 
@@ -78,7 +82,8 @@ MySQL数据库中还有一种二进制日志(binlog)，用来进行`POINT-IN-TIM
 `LOG_BLOCK_FIRST_REC_GROUP示例`：
 ![LOG_BLOCK_FIRST_REC_GROUP](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/LOG_BLOCK_FIRST_REC_GROUP.png)
 
-2.3 Log group
+#### 2.3 Log group
+
 `Log group`为**重做日志组**，<u>其中有多个redo log file</u>。虽然源码中一直有log group的镜像功能，但在ha_innobase.cc文件中禁止了该功能。**因此InnoDB存储引擎实际只有一个log group。**（Log group是一个逻辑上的概念，并没有一个实际存储的物理文件来表示log group信息。）
 
 
@@ -91,7 +96,7 @@ Redo log file中存储的是Log buffer中保存的log block，因此Redo log fil
 - `log checkpoint时`。
   
 
-<u>写入Redo log file的方式是Append（追加），当一个文件被写满时，会接着写入下一个文件，其使用方式为：**round-robin（轮询调度算法）**。</u>
+<u>**写入Redo log file的方式**是`Append（追加）`，当一个文件被写满时，会接着写入下一个文件，其使用方式为：**round-robin（轮询调度算法）**。</u>
 
 Redo log file中除了保存log buffer刷新到磁盘的log block，还保存了2KB大小的其他信息，因此对redo log file的写入并不是完全顺序的。针对log group中第一个redo log file，其前2KB的部分保存了4个512字节大小的块。（注：只有每个log group的第一个redo log file中才有2KB的其他信息。其余redo log file仅保留这些空间，但不保存。）
 
@@ -101,17 +106,19 @@ Redo log file中除了保存log buffer刷新到磁盘的log block，还保存了
 
 
 
-2.4 重做日志格式
+#### 2.4 重做日志格式
 
 不同的数据库操作会有对应的重做日志格式。<u>InnoDB存储引擎的存储管理是基于页的，所以重做日志格式也是基于页的</u>。虽然有不同的重做日志格式，但他们有着通用的头部格式，如下图所示：
 
 ![重做日志格式](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/重做日志格式.png)
 
-对于页上记录的插入和删除操作，其格式如下：
+
+
+对于页上记录的`插入`和`删除`操作，其格式如下：
 
 ![页上记录的插入和删除操作格式](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/页上记录的插入和删除操作格式.png)
 
-2.5 LSN（日志序列号）
+#### 2.5 LSN（日志序列号）
 
 在InnoDB存储引擎中，LSN占用8个字节，并且单调递增，其表示的含义有：
 - 重做日志写入的总量
@@ -122,7 +129,7 @@ Redo log file中除了保存log buffer刷新到磁盘的log block，还保存了
 
 
 
-示例：
+`示例`：
 
 页P1的LSN为10000，而数据库启动时，InnoDB检测到写入重做日志中的LSN为13000，并且该事务已经提交，那么数据需要进行恢复操作，将重做日志应用到P1页中。同样的对于重做日志中LSN小于P1页的LSN，不需要进行重做，因为P1页中LSN表示页已经被刷新到该位置.
 
@@ -154,27 +161,28 @@ Last checkpoint at  11795902
 
 
 
-2.6 恢复
+#### 2.6 恢复
+
 InnoDB存储引擎在启动时不管上次数据库运行时是否正常关闭，都会尝试进行恢复操作。由于checkpoint表示已经刷新到磁盘上的LSN，因此在恢复过程中仅需恢复checkpoint开始的日志部分。
 
-示例：
+`示例`：
 
 ![恢复的例子](https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/恢复的例子.png)
 
-3 undo log
+### 3 undo log
 
-3.1 基本概念
+#### 3.1 基本概念
 
 **undo log的作用**：
 
-- 帮助事务回滚；
-- MVCC功能；
+- `帮助事务回滚`；
+- `MVCC功能`．
 
 
 
-3.1.1 undo log帮助事务回滚
+##### 3.1.1 undo log帮助事务回滚
 
-  	在对数据库进行修改时，InnoDB存储引擎不但会产生redo，还会产生一定量的undo。当用户执行事务或语句由于某种原因失败了，又或者用户用一条ROLLBACK语句请求回滚，就可以利用这些undo信息将数据回滚到修改之前的样子。
+在对数据库进行修改时，InnoDB存储引擎不但会产生redo，还会产生一定量的undo。当用户执行事务或语句由于某种原因失败了，又或者用户用一条ROLLBACK语句请求回滚，就可以利用这些undo信息将数据回滚到修改之前的样子。
 
 redo存放在重做日志文件中，而undo存放在数据库内部的一个特殊段（segment）中，这个段称为undo段（undo segment）。<u>undo段位于共享表空间内</u>。
 
@@ -185,7 +193,7 @@ redo存放在重做日志文件中，而undo存放在数据库内部的一个特
 
 
 
-3.1.2 undo log用于MVCC
+##### 3.1.2 undo log用于MVCC
 
 除了回滚操作，undo的另一个作用是MVCC，即在InnoDB存储引擎中的MVCC的是通过undo来完成的。当用户读取一行记录时，若该记录已经被其他事务占用，当前事务可以通过undo读取之前的行版本信息，以此**实现非锁定读取**。
 
@@ -193,7 +201,7 @@ redo存放在重做日志文件中，而undo存放在数据库内部的一个特
 
 
 
-3.2 undo存储管理
+#### 3.2 undo存储管理
 
 InnoDB存储引擎对undo的管理同样采用段的方式。InnoDB存储引擎有`rollback segment`，每个回滚段中记录了1024个`undo log segment`，而在每个undo log segment段中进行undo页的申请。共享表空间偏移量为5的页（0，5）记录了所有`rollback segment header`所在的页，这个页的类型为`FIL_PAGE_TYPE_SYS`。
 
@@ -245,12 +253,12 @@ ls: cannot access '/var/lib/mysql/undo*': Permission denied
 
 因为此时可能还有其他事务需要通过undo log来的到行记录之前的版本。当事务提交时将undo log放入一个链表中，是否可以最终删除undo log及undo log所在页由purge线程来判断。
 
-由于事务提交时，可能并不能马上释放页，在大量更新删除操作的情况下会非常浪费存储空间。因此InnoDB存储引擎在设计中对undo页也可以重用。其具体重用方式如下：
+由于事务提交时，可能并不能马上释放页，在大量更新删除操作的情况下会非常浪费存储空间。因此InnoDB存储引擎在设计中对undo页也可以重用。其**具体重用方式如下**：
 
 - ①、当事务提交时，首先将undo log放入链表中。
 - ②、判断undo页的使用空间是否小于3/4，若是，则表示undo页可以被重用，之后新的undo log记录可能存放在当前undo log的后面。
 
-注：存放undo log链表是以记录进行组织的，而undo页可能存放着不同事务的undo log，因此purge操作需要设计磁盘的离散读取操作，是一个比较缓慢的过程。
+注：<u>存放undo log链表是以记录进行组织的，而undo页可能存放着不同事务的undo log，因此purge操作需要设计磁盘的离散读取操作，是一个比较缓慢的过程。</u>
 
 
 
@@ -275,7 +283,7 @@ LIST OF TRANSACTIONS FOR EACH SESSION:
 
 
 
-3.3 undo log格式
+#### 3.3 undo log格式
 
 在InnoDB存储引擎中，undo log分为：
 
@@ -284,7 +292,7 @@ LIST OF TRANSACTIONS FOR EACH SESSION:
 
 
 
-3.3.1 Insert undo log
+##### 3.3.1 Insert undo log
 
 **Insert undo log**是指在`insert`操作中产生的undo log。因为insert操作记录，只针对事务本身可见，对其他事务不可见（这是事务隔离性的要求），所以<u>insert undo log可以在事务提交后直接删除。不需要进行purge操作。</u>
 
@@ -292,7 +300,7 @@ LIST OF TRANSACTIONS FOR EACH SESSION:
 
 <img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/Insert-undo-log.png" alt="Insert-undo-log" style="zoom: 67%;" />
 
-3.3.2 Update undo log
+##### 3.3.2 Update undo log
 
 **Update undo log**记录的是对`delete`和`update`操作产生的undo log。该<u>undo log可能需要提供MVCC机制，因此不能在事务提交时就进行删除。提交时放入undo log链表，等待purge线程进行最后的删除。</u>
 
@@ -310,7 +318,7 @@ Update_vector信息表示update操作发生改变的列。每个修改的列信�
 
 
 
-3.4  查看Undo 信息
+#### 3.4  查看Undo 信息
 
 Oracle和Microsoft SQL Server数据库都是由内部的数据字典来观察当前undo的信息。InnoSQL对information_schema进行了扩展，添加了两张数据字典表，方便查看undo信息。涉及的字典表为：
 
@@ -365,9 +373,9 @@ Update操作实际分为两步：
 
 
 
-4 Purge
+### 4 Purge
 
-Purge用于最终完成delete和update操作，这样设计是因为InnoDB存储引擎支持MVCC，所以记录不能在事务提交时立即处理。其操作示例如下图所示：
+**Purge用于最终完成delete和update操作**，<u>这样设计是因为InnoDB存储引擎支持MVCC，所以记录不能在事务提交时立即处理</u>。其操作示例如下图所示：
 
 <img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-InnoDB事务的实现/undo-log与history列表的关系.png" alt="undo-log与history列表的关系" style="zoom:67%;" />
 
@@ -386,7 +394,7 @@ delay = ((length(history_list) - innodb_max_purge_lag) * 10) - 5
 
 
 
-5 Group Commit
+### 5 Group Commit
 
 **Group commit**操作<u>用于提高磁盘fsync的效率，即一次fsync操作可以刷新确保多个事务日志被写入文件。</u>
 
@@ -442,7 +450,7 @@ InnoDB提供了一些参数用于控制Bin log提交：
 
 ------
 
-参考资料
+### 参考资料
 
 - MySQL技术内幕+InnoDB存储引擎第2版(7.2节)
 - [SHOW ENGINE INNODB STATUS \G之Pages flushed up to的理解](http://blog.itpub.net/30221425/viewspace-2154670/)
