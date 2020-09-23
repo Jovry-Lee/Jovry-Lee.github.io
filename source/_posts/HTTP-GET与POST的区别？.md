@@ -1,7 +1,7 @@
 ---
 title: HTTP-GET与POST的区别？
 date: 2020-09-23 15:12:44
-tags: ["HTTP"]
+tags: ["HTTP","Interview"]
 categories: ["HTTP"]
 ---
 

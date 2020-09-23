@@ -1,7 +1,7 @@
 ---
 title: MySQL-为什么使用B+树作为索引结构
 date: 2020-09-07 17:03:33
-tags: ["MySQL","索引"]
+tags: ["MySQL","索引","Interview"]
 categories: ["MySQL", "索引"]
 ---
 

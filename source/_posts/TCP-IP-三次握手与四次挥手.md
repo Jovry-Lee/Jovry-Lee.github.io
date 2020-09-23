@@ -1,7 +1,7 @@
 ---
 title: TCP/IP-三次握手与四次挥手
 date: 2020-09-23 17:16:33
-tags: ["TCP/IP"]
+tags: ["TCP/IP","Interview"]
 categories: ["TCP/IP"]
 ---
 
@@ -70,6 +70,7 @@ MSL（Maximum Segment Lifetime），TCP允许不同的实现可以设置不同�
 
 
 ------
-参考资料
+### 参考资料
+
 [两张动图-彻底明白TCP的三次握手与四次挥手](https://blog.csdn.net/qzcsu/article/details/72861891)
 [TCP的三次握手与四次挥手理解及面试题（很全面）](https://blog.csdn.net/qq_38950316/article/details/81087809)

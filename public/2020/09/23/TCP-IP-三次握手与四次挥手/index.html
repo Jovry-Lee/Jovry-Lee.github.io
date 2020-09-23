@@ -32,9 +32,10 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/TCP-IP/三次握手.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/TCP-IP/四次挥手.png">
 <meta property="article:published_time" content="2020-09-23T09:16:33.000Z">
-<meta property="article:modified_time" content="2020-09-23T09:56:53.513Z">
+<meta property="article:modified_time" content="2020-09-23T09:59:14.762Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="TCP&#x2F;IP">
+<meta property="article:tag" content="Interview">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/TCP-IP/三次握手.png">
 
@@ -184,7 +185,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BC%95%E8%A8%80"><span class="nav-text">1 引言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B"><span class="nav-text">2 三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B"><span class="nav-text">3 四次挥手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%B8%B8%E8%A7%81%E9%9D%A2%E8%AF%95%E9%97%AE%E9%A2%98"><span class="nav-text">4 常见面试问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E4%B8%BA%E4%BB%80%E4%B9%88TCP%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%80%E5%90%8E%E8%BF%98%E8%A6%81%E5%8F%91%E9%80%81%E4%B8%80%E6%AC%A1%E7%A1%AE%E8%AE%A4%E5%91%A2%EF%BC%9F"><span class="nav-text">4.1 为什么TCP客户端最后还要发送一次确认呢？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5%E6%98%AF%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%EF%BC%8C%E5%85%B3%E9%97%AD%E8%BF%9E%E6%8E%A5%E7%A1%AE%E6%98%AF%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E5%91%A2%EF%BC%9F"><span class="nav-text">4.2 为什么建立连接是三次握手，关闭连接确是四次挥手呢？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-%E5%A6%82%E6%9E%9C%E5%B7%B2%E7%BB%8F%E5%BB%BA%E7%AB%8B%E4%BA%86%E8%BF%9E%E6%8E%A5%EF%BC%8C%E4%BD%86%E6%98%AF%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%AA%81%E7%84%B6%E5%87%BA%E7%8E%B0%E6%95%85%E9%9A%9C%E4%BA%86%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F"><span class="nav-text">4.3 如果已经建立了连接，但是客户端突然出现故障了怎么办？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-TCP%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%80%E5%90%8E%E8%BF%98%E8%A6%81%E7%AD%89%E5%BE%852MSL%EF%BC%9F"><span class="nav-text">4.4 TCP四次挥手为什么客户端最后还要等待2MSL？</span></a></li></ol></li></ol></div>
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BC%95%E8%A8%80"><span class="nav-text">1 引言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B"><span class="nav-text">2 三次握手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B"><span class="nav-text">3 四次挥手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%B8%B8%E8%A7%81%E9%9D%A2%E8%AF%95%E9%97%AE%E9%A2%98"><span class="nav-text">4 常见面试问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E4%B8%BA%E4%BB%80%E4%B9%88TCP%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%80%E5%90%8E%E8%BF%98%E8%A6%81%E5%8F%91%E9%80%81%E4%B8%80%E6%AC%A1%E7%A1%AE%E8%AE%A4%E5%91%A2%EF%BC%9F"><span class="nav-text">4.1 为什么TCP客户端最后还要发送一次确认呢？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5%E6%98%AF%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%EF%BC%8C%E5%85%B3%E9%97%AD%E8%BF%9E%E6%8E%A5%E7%A1%AE%E6%98%AF%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E5%91%A2%EF%BC%9F"><span class="nav-text">4.2 为什么建立连接是三次握手，关闭连接确是四次挥手呢？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-%E5%A6%82%E6%9E%9C%E5%B7%B2%E7%BB%8F%E5%BB%BA%E7%AB%8B%E4%BA%86%E8%BF%9E%E6%8E%A5%EF%BC%8C%E4%BD%86%E6%98%AF%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%AA%81%E7%84%B6%E5%87%BA%E7%8E%B0%E6%95%85%E9%9A%9C%E4%BA%86%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F"><span class="nav-text">4.3 如果已经建立了连接，但是客户端突然出现故障了怎么办？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-TCP%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%80%E5%90%8E%E8%BF%98%E8%A6%81%E7%AD%89%E5%BE%852MSL%EF%BC%9F"><span class="nav-text">4.4 TCP四次挥手为什么客户端最后还要等待2MSL？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -213,7 +214,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">35</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -277,7 +278,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2020-09-23 17:16:33 / Modified: 17:56:53" itemprop="dateCreated datePublished" datetime="2020-09-23T17:16:33+08:00">2020-09-23</time>
+      <time title="Created: 2020-09-23 17:16:33 / Modified: 17:59:14" itemprop="dateCreated datePublished" datetime="2020-09-23T17:16:33+08:00">2020-09-23</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -340,7 +341,7 @@
 　　</p>
 <h4 id="4-4-TCP四次挥手为什么客户端最后还要等待2MSL？"><a href="#4-4-TCP四次挥手为什么客户端最后还要等待2MSL？" class="headerlink" title="4.4 TCP四次挥手为什么客户端最后还要等待2MSL？"></a>4.4 TCP四次挥手为什么客户端最后还要等待2MSL？</h4><p>MSL（Maximum Segment Lifetime），TCP允许不同的实现可以设置不同的MSL值。<br>第一，<strong>保证客户端发送的最后一个ACK报文能够到达服务器</strong>，因为这个ACK报文可能丢失，站在服务器的角度看来，我已经发送了FIN+ACK报文请求断开了，客户端还没有给我回应，应该是我发送的请求断开报文它没有收到，于是服务器又会重新发送一次，而客户端就能在这个2MSL时间段内收到这个重传的报文，接着给出回应报文，并且会重启2MSL计时器。<br>第二，<strong>防止类似与“三次握手”中提到了的“已经失效的连接请求报文段”出现在本连接中</strong>。客户端发送完最后一个确认报文后，在这个2MSL时间中，就可以使本连接持续的时间内所产生的所有报文段都从网络中消失。这样新的连接中不会出现旧连接的请求报文。</p>
 <hr>
-<p>参考资料<br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qzcsu/article/details/72861891">两张动图-彻底明白TCP的三次握手与四次挥手</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_38950316/article/details/81087809">TCP的三次握手与四次挥手理解及面试题（很全面）</a></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qzcsu/article/details/72861891">两张动图-彻底明白TCP的三次握手与四次挥手</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_38950316/article/details/81087809">TCP的三次握手与四次挥手理解及面试题（很全面）</a></p>
 
     </div>
 
@@ -351,6 +352,7 @@
     <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/TCP-IP/" rel="tag"># TCP/IP</a>
+              <a href="/tags/Interview/" rel="tag"># Interview</a>
           </div>
 
         

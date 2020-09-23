@@ -3,6 +3,8 @@ title: Architecture-既然有HTTP请求，为何要用RPC调用
 date: 2020-09-23 16:56:17
 tags:
   - Architecture
+  - RPC
+  - Interview
 categories:
   - Architecture
 ---
