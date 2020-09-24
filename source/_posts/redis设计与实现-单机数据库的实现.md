@@ -1,8 +1,8 @@
 ---
 title: redis设计与实现-单机数据库的实现
 date: 2020-09-03 14:29:25
-tags: ["Redis","Note"]
-categories: ["Redis", "Note", "Redis设计与实现"]
+tags: ["Redis","Note","Redis设计与实现"]
+categories: ["Redis"]
 ---
 
 

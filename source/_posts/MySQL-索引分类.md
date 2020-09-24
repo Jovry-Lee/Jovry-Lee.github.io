@@ -2,7 +2,7 @@
 title: MySQL-索引分类
 date: 2020-09-06 01:04:57
 tags: ["MySQL","索引"]
-categories: ["MySQL", "索引"]
+categories: ["MySQL"]
 ---
 
 ### 1 从逻辑角度划分类
