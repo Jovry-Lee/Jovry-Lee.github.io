@@ -2,7 +2,7 @@
 title: DesignPattern-Observer(观察者模式)
 date: 2020-09-22 15:58:36
 tags: ["DesignPattern","Observer"]
-categories: ["DesignPattern","Observer"]
+categories: ["DesignPattern"]
 ---
 
 ### 1 引入

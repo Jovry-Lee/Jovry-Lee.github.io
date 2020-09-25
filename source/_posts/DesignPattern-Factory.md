@@ -1,7 +1,7 @@
 ---
 title: DesignPattern-Factory
 tags: ["DesignPattern","Factory"]
-categories: ["DesignPattern","Factory"]
+categories: ["DesignPattern"]
 date: 2020-09-21 17:54:27
 ---
 

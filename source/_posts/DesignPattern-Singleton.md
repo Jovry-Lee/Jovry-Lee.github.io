@@ -2,7 +2,7 @@
 title: DesignPattern-Singleton
 date: 2020-09-21 16:34:15
 tags: ["DesignPattern","Singleton"]
-categories: ["DesignPattern","Singleton"]
+categories: ["DesignPattern"]
 ---
 
 
