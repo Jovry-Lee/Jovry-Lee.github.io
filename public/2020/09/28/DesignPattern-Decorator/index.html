@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 概述我们知道OOP的＂继承＂功能非常强大，利用继承设计子类的行为，是在编译时静态决定的，而且所有的子类都会继承到相同的行为，达到复用的目的．但实际上使用继承的方式却不总是最有弹性的，可能造成的问题有：类数量爆炸，设计死板，基类加入新功能并不适用与所有的子类．">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DesignPattern-Decorator">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/28/DesignPattern-Decorator/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 概述我们知道OOP的＂继承＂功能非常强大，利用继承设计子类的行为，是在编译时静态决定的，而且所有的子类都会继承到相同的行为，达到复用的目的．但实际上使用继承的方式却不总是最有弹性的，可能造成的问题有：类数量爆炸，设计死板，基类加入新功能并不适用与所有的子类．">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/Decorator_UML.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/DecoratorExample.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/JavaIO-Decorator.png">
+<meta property="article:published_time" content="2020-09-28T02:08:45.000Z">
+<meta property="article:modified_time" content="2020-09-28T10:26:54.364Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="DesignPattern">
+<meta property="article:tag" content="Decorator">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/Decorator_UML.png">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/28/DesignPattern-Decorator/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>DesignPattern-Decorator | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%A3%85%E9%A5%B0%E8%80%85%E6%A8%A1%E5%BC%8F"><span class="nav-text">2 装饰者模式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F%E4%B8%AD%E7%BB%A7%E6%89%BF%E5%92%8C%E7%BB%84%E5%90%88%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-text">2.1 装饰器模式中继承和组合的关系</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%A4%BA%E4%BE%8B"><span class="nav-text">3 装饰器模式示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-text">4 装饰器模式的应用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/28/DesignPattern-Decorator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DesignPattern-Decorator
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2020-09-28 10:08:45 / Modified: 18:26:54" itemprop="dateCreated datePublished" datetime="2020-09-28T10:08:45+08:00">2020-09-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h3><p>我们知道OOP的＂继承＂功能非常强大，利用继承设计子类的行为，是在编译时静态决定的，而且所有的子类都会继承到相同的行为，达到复用的目的．但实际上使用继承的方式却不总是最有弹性的，可能造成的问题有：类数量爆炸，设计死板，基类加入新功能并不适用与所有的子类．</p>
+<a id="more"></a>
+
+<p>利用组合（composition）和委托（delegation）可以在运行时具有继承的效果．通过动态地组合对象，可以写新的代码添加新功能，而无须修改现有代码．既然没有改变现有代码，那么引进bug或产生意外副作用的机会将大大减少．</p>
+<p>这里有一个<strong>重要的设计原则</strong>：</p>
+<blockquote>
+<p>类应该对扩展开放，对修改关闭</p>
+</blockquote>
+<p>该设计原则的目标是：<u>允许类容易扩展，在不修改现有代码的情况下，可以搭配新的行为．使其具有弹性可以应对改变，可以接受新的功能来应对改变的需求．</u></p>
+<p>装饰者模式就是完全遵守开放-关闭原则的一个好例子．</p>
+<h3 id="2-装饰者模式"><a href="#2-装饰者模式" class="headerlink" title="2 装饰者模式"></a>2 装饰者模式</h3><p><strong>装饰者模式</strong>动态地将责任附加到对象上．若要扩展功能，装饰者提供了比继承更有弹性的替代方案．</p>
+<p>其UML图如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/Decorator_UML.png" alt="Decorator_UML"></p>
+<p><code>特征</code>：</p>
+<ul>
+<li>装饰者(<code>Decorator</code>)和被装饰对象(<code>ConcreteComponent</code>)有相同的超类型（<code>Component</code>）；</li>
+<li>可以用一个或多个装饰者包装一个对象；</li>
+<li>装饰者和被装饰对象有相同的超类型，所以在任何需要原始对象（被包装的）的场合，都可以用装饰过的对象代替它．</li>
+<li>装饰者可以在所委托被装饰者的行为之前与/或之后，加上自己的行为，以达到特定的目的．</li>
+<li>对象可以在任何时候被装饰，所以可以在运行时动态地，不限量的用装饰者来装饰对象．</li>
+</ul>
+<h4 id="2-1-装饰器模式中继承和组合的关系"><a href="#2-1-装饰器模式中继承和组合的关系" class="headerlink" title="2.1 装饰器模式中继承和组合的关系"></a>2.1 装饰器模式中继承和组合的关系</h4><p>从装饰器模式的类图可见．<code>Decorator</code>继承了<code>Component</code>，这里用到继承．但是这里实际上是让装饰者和被装饰者拥有相同的超类．此处的继承是为了＂类型匹配＂，而不是＂继承行为＂；</p>
+<h3 id="3-装饰器模式示例"><a href="#3-装饰器模式示例" class="headerlink" title="3 装饰器模式示例"></a>3 装饰器模式示例</h3><p>根据以下类图实现一个简单的饮料系统：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/DecoratorExample.png" alt="DecoratorExample"></p>
+<blockquote>
+<p>在Head First设计模式书的示例中，Beverage抽象类中包含一个getDescription和cost两个方法，其中cost方法是抽象方法；CondimentDecorator抽象类继承于Beverage类，并将getDescription这个非抽象方法重载为抽象方法．</p>
+<p>对于PHP编码报出以下错误：PHP Fatal error:  Cannot make non abstract method Beverage::getDescription() abstract in class CondimentDecorator</p>
+<p>即对于PHP语言，不能将一个已声明为非抽象的方法，重新声明为抽象方法．</p>
+</blockquote>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Beverage是一个抽象类．</span></span><br><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Beverage</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> $description = <span class="string">&quot;Unknown Beverage&quot;</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getDescription</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">$this</span>-&gt;description;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 子类必须实现此方法．</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="function"><span class="keyword">function</span> <span class="title">cost</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* </span></span><br><span class="line"><span class="comment">// 由于PHP不支持将非抽象方法声明为抽象方法，因此测试时，先将该方法注释掉．</span></span><br><span class="line"><span class="comment">// 装饰器类必须与被装饰类拥有相同的超类.</span></span><br><span class="line"><span class="comment">abstract class CondimentDecorator extends Beverage</span></span><br><span class="line"><span class="comment">&#123;</span></span><br><span class="line"><span class="comment">    // 所有的装饰者都必须重新实现getDescription方法.</span></span><br><span class="line"><span class="comment">    public abstract function getDescription();</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="comment">// 浓缩咖啡．</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Espresso</span> <span class="keyword">extends</span> <span class="title">Beverage</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">$this</span>-&gt;description = <span class="string">&#x27;Espresso&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">cost</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1.99</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HouseBlend</span> <span class="keyword">extends</span> <span class="title">Beverage</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">$this</span>-&gt;description = <span class="string">&#x27;House Blend Coffee&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">cost</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0.89</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Mocha是一个装饰者，所以让他继承CondimentDecorator</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Mocha</span> <span class="keyword">extends</span> <span class="title">Beverage</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="comment">/** <span class="doctag">@var</span> Beverage $beverage 用于让Mocha引用一个Beverage*/</span></span><br><span class="line">    <span class="keyword">public</span> $beverage;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将Beverage实例传给Mocha的实例变量中.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">Beverage $beverage</span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">$this</span>-&gt;beverage = $beverage;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加Mocha的描述．</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getDescription</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">$this</span>-&gt;beverage-&gt;getDescription() . <span class="string">&quot;, Mocha&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加摩卡的价格．</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">cost</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0.2</span> + <span class="keyword">$this</span>-&gt;beverage-&gt;cost();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建一个被浓缩咖啡．</span></span><br><span class="line">$beverage = <span class="keyword">new</span> Espresso();</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&#123;$beverage-&gt;getDescription()&#125; \$&#123;$beverage-&gt;cost()&#125;\n&quot;</span>;</span><br><span class="line"><span class="comment">// 做成一杯摩卡．</span></span><br><span class="line">$beverage = <span class="keyword">new</span> Mocha($beverage);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&#123;$beverage-&gt;getDescription()&#125; \$&#123;$beverage-&gt;cost()&#125;\n&quot;</span>;</span><br><span class="line"></span><br><span class="line">$beverage１ = <span class="keyword">new</span> HouseBlend();</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&#123;$beverage１-&gt;getDescription()&#125; \$&#123;$beverage１-&gt;cost()&#125;\n&quot;</span>;</span><br><span class="line"></span><br><span class="line">$beverage１ = <span class="keyword">new</span> Mocha($beverage１);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&#123;$beverage１-&gt;getDescription()&#125; \$&#123;$beverage１-&gt;cost()&#125;\n&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-装饰器模式的应用"><a href="#4-装饰器模式的应用" class="headerlink" title="4 装饰器模式的应用"></a>4 装饰器模式的应用</h3><p>在JAVA语言中，java.io包里面很多都应用了装饰器模式，例如<code>FileInputStream--&gt;BufferedInputStream--&gt;LineNumberInputStream</code>，其中：</p>
+<ul>
+<li>FileInputStream是被装饰的组件，Java I/O程序库提供了几个组件，包括FileInputStream，StringBufferInputStream，ByteArrayInputStream等，这些都提供了最基本的字节读取功能；</li>
+<li>BufferedInputStream是一个具体的装饰者，它加入来嗯中行为：利用缓冲输入来改进性能，用一个readline()方法来增强接口；</li>
+<li>LineNumberInputStream也是一个具体的装饰者，他加上了计算行数的能力．</li>
+</ul>
+<p>如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/JavaIO-Decorator.png" alt="JavaIO-Decorator"></p>
+<hr>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>Head First设计模式 装饰对象：装饰者模式（P79）</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DesignPattern/" rel="tag"># DesignPattern</a>
+              <a href="/tags/Decorator/" rel="tag"># Decorator</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/26/Differences-OOP%E5%92%8CPOP%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F/" rel="prev" title="Differences-OOP和POP的区别？">
+                  <i class="fa fa-chevron-left"></i> Differences-OOP和POP的区别？
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'a7cb2fcd4b6058f4479615c488fa3632',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
