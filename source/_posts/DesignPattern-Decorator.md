@@ -1,5 +1,5 @@
 ---
-title: DesignPattern-Decorator
+title: DesignPattern-Decorator(装饰者模式)
 date: 2020-09-28 10:08:45
 tags: ["DesignPattern","Decorator"]
 categories: ["DesignPattern"]
@@ -95,7 +95,7 @@ abstract class CondimentDecorator extends Beverage
     public abstract function getDescription();
 }
 */
-// 浓缩咖啡．
+// 浓缩饮料．
 class Espresso extends Beverage
 {
     public function __construct()
@@ -149,16 +149,16 @@ class Mocha extends Beverage
 
 // 创建一个被浓缩咖啡．
 $beverage = new Espresso();
-echo "{$beverage->getDescription()} \${$beverage->cost()}\n";
+echo "{$beverage->getDescription()} \${$beverage->cost()}\n";　// Espresso $1.99
 // 做成一杯摩卡．
 $beverage = new Mocha($beverage);
-echo "{$beverage->getDescription()} \${$beverage->cost()}\n";
+echo "{$beverage->getDescription()} \${$beverage->cost()}\n"; // Espresso, Mocha $2.19
 
 $beverage１ = new HouseBlend();
-echo "{$beverage１->getDescription()} \${$beverage１->cost()}\n";
+echo "{$beverage１->getDescription()} \${$beverage１->cost()}\n"; // House Blend Coffee $0.89
 
 $beverage１ = new Mocha($beverage１);
-echo "{$beverage１->getDescription()} \${$beverage１->cost()}\n";
+echo "{$beverage１->getDescription()} \${$beverage１->cost()}\n"; // House Blend Coffee, Mocha $1.09
 ```
 
 

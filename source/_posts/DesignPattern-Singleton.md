@@ -1,5 +1,5 @@
 ---
-title: DesignPattern-Singleton
+title: DesignPattern-Singleton(单例模式)
 date: 2020-09-21 16:34:15
 tags: ["DesignPattern","Singleton"]
 categories: ["DesignPattern"]

@@ -1,5 +1,5 @@
 ---
-title: DesignPattern-Factory
+title: DesignPattern-Factory(工厂模式)
 tags: ["DesignPattern","Factory"]
 categories: ["DesignPattern"]
 date: 2020-09-21 17:54:27
