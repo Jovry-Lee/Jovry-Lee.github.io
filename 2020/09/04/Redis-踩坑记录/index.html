@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="记录一些平时遇到的Redis的坑…">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis-踩坑记录">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/04/Redis-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="记录一些平时遇到的Redis的坑…">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-04T02:54:33.000Z">
+<meta property="article:modified_time" content="2020-09-04T03:58:52.794Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/04/Redis-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Redis-踩坑记录 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Bitmap%E4%BD%BF%E7%94%A8%E8%B8%A9%E5%9D%91"><span class="nav-text">1 Bitmap使用踩坑</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-%E5%BC%95%E5%85%A5"><span class="nav-text">1.1 引入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-%E9%97%AE%E9%A2%98"><span class="nav-text">1.2 问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-text">1.3 解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-1-%E4%BD%BF%E7%94%A8bitmap%E6%96%B9%E5%BC%8F%E8%BF%9B%E8%A1%8C%E5%AD%98%E5%82%A8"><span class="nav-text">1.3.1 使用bitmap方式进行存储</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-2-%E4%BD%BF%E7%94%A8key-value%E7%9A%84%E6%96%B9%E5%BC%8F"><span class="nav-text">1.3.2 使用key-value的方式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-text">1.4 总结：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Redis-%E7%83%AD%E9%94%AE%E8%AE%BF%E9%97%AE"><span class="nav-text">2 Redis 热键访问</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E5%BC%95%E5%85%A5"><span class="nav-text">2.1 引入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E9%97%AE%E9%A2%98"><span class="nav-text">2.2 问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-%E8%A7%A3%E5%86%B3"><span class="nav-text">2.3 解决</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-%E8%B8%A9%E5%9D%91"><span class="nav-text">2.4 踩坑</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-4-1-%E8%A7%A3%E5%86%B3"><span class="nav-text">2.4.1 解决</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/04/Redis-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis-踩坑记录
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2020-09-04 10:54:33 / Modified: 11:58:52" itemprop="dateCreated datePublished" datetime="2020-09-04T10:54:33+08:00">2020-09-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>记录一些平时遇到的Redis的坑…</p>
+<a id="more"></a>
+
+<h3 id="1-Bitmap使用踩坑"><a href="#1-Bitmap使用踩坑" class="headerlink" title="1 Bitmap使用踩坑"></a>1 Bitmap使用踩坑</h3><h4 id="1-1-引入"><a href="#1-1-引入" class="headerlink" title="1.1 引入"></a>1.1 引入</h4><p>最近在做RTA功能，实现精准投放，主要流程是媒体平台将用户加密设备号下发给广告主，广告主根据自有数据，对设备号进行过滤，并返回投放竞价信息, 实现个性化用户筛选(是否参与竞价)及流量实时优选(根据返回信息实现优选).</p>
+<h4 id="1-2-问题"><a href="#1-2-问题" class="headerlink" title="1.2 问题"></a>1.2 问题</h4><ul>
+<li>媒体平台对RTA接口响应要求高(例如,广点通限制请求响应时间在60ms之内),其中网络耗时已经高达40到50ms,因此,对于我们提供的RTA接口的逻辑处理时间必须限制在10到15ms之内.</li>
+<li>QPS高达15W,若直接丛数据库查询,将导致数据库实例单机负载高,查询速度降低.</li>
+<li>现在用户设备号数量约为2.3亿.</li>
+</ul>
+<h4 id="1-3-解决方案"><a href="#1-3-解决方案" class="headerlink" title="1.3 解决方案"></a>1.3 解决方案</h4><p>考虑其响应时间限制,使用Redis存储的方案，减少直接的DB访问,提高响应速度。</p>
+<ul>
+<li><ul>
+<li>方案一：使用bitmap方式进行存储</li>
+<li>方案二：将设备信息通过key-value方式存储。</li>
+</ul>
+</li>
+</ul>
+<h5 id="1-3-1-使用bitmap方式进行存储"><a href="#1-3-1-使用bitmap方式进行存储" class="headerlink" title="1.3.1 使用bitmap方式进行存储"></a>1.3.1 使用bitmap方式进行存储</h5><p>思路: bitmap中bit映射被限制在512M之内，所以最大为32位，即offset最大为‭2^(32)-1 (即4294967295)‬，对于2.3亿多的数据直接通过一个key就能存储。</p>
+<p>媒体平台推送过来的设备号是md5加密后的imei或者idfa，是128位（16字节）的散列值。而offset应该为整数，因此需将设备号转换为唯一对应的整型数值。但查询了一堆资料均没有找到方法直接转换。</p>
+<p>考虑使用CRC32方式，对设备号进行转换，然后将crc32的结果作为offset，为了减少冲突，将设备号的最后3位拼接在key上，即key的数量为4096个。</p>
+<p>问题来了，crc32的结果非常大，导致一个key的内存占用高达几百兆，DBA分配的测试集群一共20G，只写入了73个key，内存就满了。。。</p>
+<p>后续是将设备号的最后1位拼接在key上，即key的数量为16个，这样能保证内存占用少（16个key对应的内存占用最大为：8G）。</p>
+<p>但是新的问题又来了，由于key的数量减少了，可能导致所有的key都被哈希到一个分片，且还是无法保证其唯一性。另外crc32转换为数字方式仍然有冲突的风险。</p>
+<h5 id="1-3-2-使用key-value的方式"><a href="#1-3-2-使用key-value的方式" class="headerlink" title="1.3.2 使用key-value的方式"></a>1.3.2 使用key-value的方式</h5><p>之前因为2亿的数据，担心内存占用太大，但在后续测试过程中，发现10000条数据写入占用1.11M，即2亿占用内存大约为20多G，是在能接收的范围，且数据可靠。</p>
+<h3 id="1-4-总结："><a href="#1-4-总结：" class="headerlink" title="1.4 总结："></a>1.4 总结：</h3><p><code>bitmap的offset需要数字方式或者能转换为数字形式，且offset应该尽可能小！！！！</code></p>
+<h3 id="2-Redis-热键访问"><a href="#2-Redis-热键访问" class="headerlink" title="2 Redis 热键访问"></a>2 Redis 热键访问</h3><h4 id="2-1-引入"><a href="#2-1-引入" class="headerlink" title="2.1 引入"></a>2.1 引入</h4><p>也是处理RTA逻辑,在公司内部处理逻辑中,需要根据用户设备命中的策略,返回相应的排除竞价的账户id.</p>
+<h4 id="2-2-问题"><a href="#2-2-问题" class="headerlink" title="2.2 问题"></a>2.2 问题</h4><p>由于QPS过高，直接通过查询数据库，对数据库造成的压力大,DBA同学开始找麻烦了…</p>
+<h4 id="2-3-解决"><a href="#2-3-解决" class="headerlink" title="2.3 解决"></a>2.3 解决</h4><p>在数据库层之前增加一层缓存层,优先从缓存中获取数据,若数据不存在,再查询数据库,并写入缓存.从而减少数据库压力.账户信息属于变动不频繁的数据, 设置1小时的过期时间,期间的数据不一致,尚且可以接收.</p>
+<h4 id="2-4-踩坑"><a href="#2-4-踩坑" class="headerlink" title="2.4 踩坑"></a>2.4 踩坑</h4><p>目前公司对接了多个渠道的RTA,例如,头条的穿山甲,腾讯的广点通,华为的Ads等等,每个渠道的账户均不同,因此将账户id写入缓存时是以渠道为key,即一个渠道对应一个key.每个请求过来时均会获取该渠道的账户信息.</p>
+<p>此时,在高QPS的下,Redis key分布不均匀,造成一个实例负载非常高,读缓存时长增加,整体响应时间增加,造成大量请求超时的情况.</p>
+<h5 id="2-4-1-解决"><a href="#2-4-1-解决" class="headerlink" title="2.4.1 解决"></a>2.4.1 解决</h5><p>多设置几个key，使redis分布均匀…</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u011957758/article/details/74783347">一看就懂系列之 详解redis的bitmap在亿级项目中的应用</a></p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/103574447">精准营销系列:RTA投放</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/03/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-RDB%E6%8C%81%E4%B9%85%E5%8C%96/" rel="prev" title="Redis设计与实现-RDB持久化">
+                  <i class="fa fa-chevron-left"></i> Redis设计与实现-RDB持久化
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/04/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-Schema%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BC%98%E5%8C%96/" rel="next" title="高性能MySQL-Schema与数据类型优化">
+                  高性能MySQL-Schema与数据类型优化 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'f65ddd85e4cc32d480af795034f61db7',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

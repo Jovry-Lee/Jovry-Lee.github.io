@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 简介C&#x2F;C++语言中，如果想在堆上分配变量，需要手动进行内存的分配与释放，变量的内存管理是见非常繁琐的事，稍有不慎就可能导致不可域值的错误。 PHP实现了自动GC机制，由语言自行管理。PHP中的变量是不需要手动释放的，内核帮我们实现了变量的内存管理，包括内存的分配与回收。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP7内核-内存管理-GC机制">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 简介C&#x2F;C++语言中，如果想在堆上分配变量，需要手动进行内存的分配与释放，变量的内存管理是见非常繁琐的事，稍有不慎就可能导致不可域值的错误。 PHP实现了自动GC机制，由语言自行管理。PHP中的变量是不需要手动释放的，内核帮我们实现了变量的内存管理，包括内存的分配与回收。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/F0B25584D691443AB81AB2C8EA60C941?method=download&shareKey=98bf888bb661490664329007cb8b939c&ynotemdtimestamp=1598325595262">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/4CDEAFB9332D4EEE9443D527A09934BF?method=download&shareKey=26b4c24edc932c27e427583bc422d2e3&ynotemdtimestamp=1598325595262">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/8C22AE1A04B249948E9ADECA4F6D9865?method=download&shareKey=90e64014943ead9d4294b592037d0484&ynotemdtimestamp=1598325595262">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/74E94E6D9F384C0A9E9F44FF5F086CC9?method=download&shareKey=1ef849b379e45a8729679844f572119d&ynotemdtimestamp=1598325595262">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/0A2236A0CF6442A0BB985383709DB5B7?method=download&shareKey=6656570e92c3731c6f1ce8572522a2d0&ynotemdtimestamp=1598325595262">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/B788660EE8EE43DDB952F0DC408264B7?method=download&shareKey=3896ffff3a8a0ab653a5c4fd197426da&ynotemdtimestamp=1598325595262">
+<meta property="article:published_time" content="2020-08-25T03:20:09.000Z">
+<meta property="article:modified_time" content="2020-08-30T12:42:36.923Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="PHP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://note.youdao.com/yws/api/personal/file/F0B25584D691443AB81AB2C8EA60C941?method=download&shareKey=98bf888bb661490664329007cb8b939c&ynotemdtimestamp=1598325595262">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>PHP7内核-内存管理-GC机制 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E5%BC%95%E7%94%A8%E8%AE%A1%E6%95%B0"><span class="nav-text">2 引用计数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6"><span class="nav-text">3 写时复制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-%E5%8F%98%E9%87%8F%E5%9B%9E%E6%94%B6"><span class="nav-text">4 变量回收</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="nav-text">5 垃圾回收</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#5-1-%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95"><span class="nav-text">5.1 回收算法</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#5-2-%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0"><span class="nav-text">5.2 具体实现</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-GC%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP7内核-内存管理-GC机制
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-25 11:20:09" itemprop="dateCreated datePublished" datetime="2020-08-25T11:20:09+08:00">2020-08-25</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-08-30 20:42:36" itemprop="dateModified" datetime="2020-08-30T20:42:36+08:00">2020-08-30</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h5 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h5><p>C/C++语言中，如果想在<code>堆</code>上分配变量，需要手动进行内存的分配与释放，变量的内存管理是见非常繁琐的事，稍有不慎就可能导致不可域值的错误。 PHP实现了自动GC机制，由语言自行管理。PHP中的变量是不需要手动释放的，内核帮我们实现了变量的内存管理，包括内存的分配与回收。</p>
+<a id="more"></a>
+
+<p><strong>自动GC最简单的实现方式</strong>：在函数中定义变量时分配一块内存，用于保存zval及对应的value结构，在函数返回时再将内存释放，若函数执行期间改变来凝固作为参数调用了其他函数或复制给了其他变量，则把变量复制一份，变量之间相互独立，不会出现冲突。<br>（<u>问题：深拷贝可能造成内存浪费，比如定义一个变量赋值给另一个变量，后面是只读操作的情况</u>）</p>
+<p><strong>解决方式（PHP采用此种方式）:</strong> <code>引用计数</code>+<code>写时复制</code>。</p>
+<ul>
+<li>当变量赋值、传递时多个变量公用一个value，引用计数用来记录value有多少个变量在使用；</li>
+<li>当变量的value发生改变时，进行深拷贝。</li>
+</ul>
+<p>注：long、double类型是使用的硬拷贝。</p>
+<h5 id="2-引用计数"><a href="#2-引用计数" class="headerlink" title="2 引用计数"></a>2 引用计数</h5><p>引用计数用来记录当前有多少<code>zval</code>指向同一个<code>zend_value</code>.<br>引用计数：<u>指在value中增加一个字段refcount记录指向当前value的数量，变量复制、函数传参时并不直接硬拷贝一份value数据，而是将refcount++，变量销毁时将refcount–，等到refcount减为0时表示已经没有变量引用这个value，将它销毁即可。</u></p>
+<p><strong>PHP7中将变量的引用计数保存在zend_value中</strong>（与之前版本不同）</p>
+<p>之前变量中不同类型的结构体中都有一个相同的成员：gc，该结构用于保存引用计数的,其定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zend_type.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">zend_refcounted_h</span> &#123;</span></span><br><span class="line">    <span class="comment">// 引用计数</span></span><br><span class="line">	<span class="keyword">uint32_t</span>         refcount;			<span class="comment">/* reference counter 32-bit */</span></span><br><span class="line">	<span class="keyword">union</span> &#123;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">			ZEND_ENDIAN_LOHI_3(</span><br><span class="line">			    <span class="comment">// 类型</span></span><br><span class="line">				zend_uchar    type,</span><br><span class="line">				zend_uchar    flags,    <span class="comment">/* used for strings &amp; objects */</span></span><br><span class="line">				<span class="comment">// 垃圾回收时用到</span></span><br><span class="line">				<span class="keyword">uint16_t</span>      gc_info)  <span class="comment">/* keeps GC root number (or 0) and color */</span></span><br><span class="line">		&#125; v;</span><br><span class="line">		<span class="keyword">uint32_t</span> type_info;</span><br><span class="line">	&#125; u;</span><br><span class="line">&#125; zend_refcounted_h;</span><br></pre></td></tr></table></figure>
+
+<p>例1：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$a = <span class="string">&quot;time:&quot;</span> . time();   <span class="comment">//$a       -&gt;  zend_string_1(refcount=1)</span></span><br><span class="line">$b = $a;                 <span class="comment">//$a,$b    -&gt;  zend_string_1(refcount=2)</span></span><br><span class="line">$c = $b;                 <span class="comment">//$a,$b,$c -&gt;  zend_string_1(refcount=3)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">unset</span>($b);               <span class="comment">//$b = IS_UNDEF  $a,$c -&gt;  zend_string_1(refcount=2)</span></span><br></pre></td></tr></table></figure>
+
+<p>例2：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$a = <span class="keyword">array</span>();   <span class="comment">// $a       -&gt; zend_array(refcount=1)</span></span><br><span class="line">$b = $a;        <span class="comment">// $a,$b    -&gt;zend_array(refcount=2)</span></span><br><span class="line">$c = $b;        <span class="comment">// $a,$b,$c -&gt; zend_array(refcount=3)</span></span><br><span class="line"><span class="keyword">unset</span>($b);      <span class="comment">// $a,$c    -&gt; zend_array(refcount=2)  $b = IS_UNDEF</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>问: 是所有变量类型会用到引用计数吗?如果不是,那么那些情况不会用到呢?</strong></p>
+<p>不是, 其中不会用到引用计数的情况如下:</p>
+<ul>
+<li>①、没有具体value结构的类型是不会用到的，比如：整型、浮点型、布尔型、NULL，他们的值直接通过zval保存，赋值时采用<u>深拷贝</u>。</li>
+<li>②、interned string：内部字符串，在PHP中写的函数名、类名、变量名、静态字符串等都是这种类型，定义:$a = “hi<del>“;后面的字符串内容是唯一不变的，这些字符串等同于C语言中定义在静态变量区的字符串：char *a = “hi</del>“;，这些字符串的生命周期为request期间，request完成后会统一销毁释放，自然也就无需在运行期间通过引用计数管理内存。<br>（注：<em>内部字符串与普通字符串的类型都是IS_STRING，它们并不是通过type进行区分的，而是通过zend_refcount_h.u.v.flag区分，内部字符串的flag值将包含IS_STR_INTERNED</em>）</li>
+<li>③、immutable array：不可变数组，只有在用opcache的时候才会用到这种类型，不清楚具体实现，暂时忽略。</li>
+</ul>
+<p>除了以上几种情况, 其余类型将会用到引用计数。</p>
+<p><strong>问: PHP内核是怎样区分value是否支持引用计数的呢?</strong></p>
+<p>使用<code>zval.u1</code>中的类型掩码<code>type_flag</code>字段， 这个字段除了标识value是否支持引用计数外还有其它几个标识位，按位分割<br><em>注：type_flag与zval.value-&gt;gc.u.flag不是一个值。</em></p>
+<p>支持引用计数的value类型是<code>zval.u1.type_flag &amp; IS_TYPE_REFCOUNTED</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// IS_TYPE_REFCOUNTED = 4</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_TYPE_REFCOUNTED          (1&lt;&lt;2)</span></span><br></pre></td></tr></table></figure>
+
+<p>下列类型会使用引用计数机制：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">|     type       | refcounted |</span><br><span class="line">+----------------+------------+</span><br><span class="line">|simple types    |            |</span><br><span class="line">|string          |      Y     |</span><br><span class="line">|interned string |            |</span><br><span class="line">|array           |      Y     |</span><br><span class="line">|immutable array |            |</span><br><span class="line">|object          |      Y     |</span><br><span class="line">|resource        |      Y     |</span><br><span class="line">|reference       |      Y     |</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="3-写时复制"><a href="#3-写时复制" class="headerlink" title="3 写时复制"></a>3 写时复制</h5><p>写时复制机制，它只有在必要的时候（即发生写的时候）才会进行深拷贝，可以很好地提升效率。</p>
+<p>具体过程：<u>变量使用了引用计数，当出现其中一个变量修改value的情况，这个时候就需要对value进行分离，发生改变的变量恢复至一份数据出来进行修改，同时断开原来value的指向，指向新的value。</u></p>
+<p>例1：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$a = <span class="keyword">array</span>(<span class="number">1</span>,<span class="number">2</span>);</span><br><span class="line">$b = &amp;$a;</span><br><span class="line">$c = $a;</span><br><span class="line"></span><br><span class="line"><span class="comment">//发生分离</span></span><br><span class="line">$b[] = <span class="number">3</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/F0B25584D691443AB81AB2C8EA60C941?method=download&shareKey=98bf888bb661490664329007cb8b939c&ynotemdtimestamp=1598325595262" alt="zval_sep"></p>
+<p>例2：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$a = <span class="keyword">array</span>(<span class="number">1</span>,<span class="number">2</span>);</span><br><span class="line">$b = &amp;$a;</span><br><span class="line">$c = $a;</span><br><span class="line"></span><br><span class="line"><span class="comment">//发生分离</span></span><br><span class="line">$c[] = <span class="number">3</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/4CDEAFB9332D4EEE9443D527A09934BF?method=download&shareKey=26b4c24edc932c27e427583bc422d2e3&ynotemdtimestamp=1598325595262" alt="a、b、c发生写时复制的过程"></p>
+<p>注：不是所有类型都可以copy的，比如<u>对象、资源就无法进行复制，也就是无法进行分离，如果多个变量指向同一个对象，当其中一个变量修改对象时，其修改将反映到所有变量上</u>。事实上<strong>只有string、array两种支持value的分离</strong>，与引用计数相同，也是通过<code>zval.u1.type_flag</code>标识value是否可复制的。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// IS_TYPE_COPYABLE = 16</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_TYPE_COPYABLE         (1&lt;&lt;4)</span></span><br><span class="line">|     type       |  copyable  |</span><br><span class="line">+----------------+------------+</span><br><span class="line">|simple types    |            |</span><br><span class="line">|<span class="built_in">string</span>          |      Y     |</span><br><span class="line">|interned <span class="built_in">string</span> |            |</span><br><span class="line">|<span class="built_in">array</span>           |      Y     |</span><br><span class="line">|immutable <span class="built_in">array</span> |            |</span><br><span class="line">|object          |            |</span><br><span class="line">|resource        |            |</span><br><span class="line">|reference       |            |</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="4-变量回收"><a href="#4-变量回收" class="headerlink" title="4 变量回收"></a>4 变量回收</h5><p>PHP变量回收方式：</p>
+<ul>
+<li>主动销毁：指的就是 unset。</li>
+<li>自动销毁：指PHP的自动管理机制（GC机制).<ul>
+<li>在return时减掉局部变量的refcount，即使没有显式的return，PHP也会自动给加上这个操作;</li>
+<li>写时复制时也会断开原来value的指向，这时候也会检查断开后旧value的refcount。</li>
+</ul>
+</li>
+</ul>
+<p>变量回收时机： zval断开value的指向时，若发现refcount=0则会直接释放value。其中发生断开的情况包括：</p>
+<ul>
+<li>修改变量：修改变量时会断开原有value的指向</li>
+<li>函数返回：函数返回时会释放所有的局部变量，也就是把所有局部变量的引用计数减1.</li>
+</ul>
+<h5 id="5-垃圾回收"><a href="#5-垃圾回收" class="headerlink" title="5 垃圾回收"></a>5 垃圾回收</h5><p>PHP用过引用计数实现了变量的自动GC机制，还是会有一种情况GC机制无法解决，从而导致变量无法回首导致内存始终得不到释放，造成内存泄露。</p>
+<p>造成内存泄漏的情况：<u>循环引用</u></p>
+<p><strong>问: 什么是循环引用?</strong><br>循环引用就是变量的内部成员引用了变量自身，比如数组中某个元素指向了数组，这样一来数组的引用计数中就有一个来自自身成员，当所有外部引用断开时，数组的refcount仍然大于0而得不到释放，但实际上这种变量不可能再被使用了。</p>
+<p><strong>垃圾收集器收集的时机</strong>：<u>refcount减少时，即每次refcount减少都会试图收集</u></p>
+<p>示例：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$a = <span class="keyword">array</span>(<span class="number">1</span>);</span><br><span class="line">$a[] = &amp;$a;</span><br><span class="line"><span class="keyword">unset</span>($a);</span><br></pre></td></tr></table></figure>
+
+<p>unset($a)前，变量a的类型为引用，该引用的refcount=2，一个来自于$a,一个来自于$a[1];示意图如下： <img src="https://note.youdao.com/yws/api/personal/file/8C22AE1A04B249948E9ADECA4F6D9865?method=download&shareKey=90e64014943ead9d4294b592037d0484&ynotemdtimestamp=1598325595262" alt="unset($a)前的引用关系"></p>
+<p>unset($a)后，减少了一次该引用的refcount，此时已经没有任何外部引用了，但是数组中仍然有一个元素指向该引用，如下图所示： <img src="https://note.youdao.com/yws/api/personal/file/74E94E6D9F384C0A9E9F44FF5F086CC9?method=download&shareKey=1ef849b379e45a8729679844f572119d&ynotemdtimestamp=1598325595262" alt="unset($a)后的引用关系"></p>
+<p>这种因为循环引用而导致无法释放的变量称之为垃圾，PHP引入了另一种机制来对这些垃圾进行回收，即<strong>垃圾回收器</strong>。</p>
+<ul>
+<li>若一个变量value的refcount减少到0，那么此vlaue可以被释放掉，不属于垃圾。</li>
+<li>若一个变量value的refcount减少之后大于0，那么此vlaue还不能被释放，此value<u>可能</u>成为一个垃圾。</li>
+</ul>
+<p>垃圾回收器会将可能成为垃圾的value收集起来，等到达一定数量后开始启动垃圾鉴定程序，将真正的垃圾释放掉。</p>
+<p><strong>当前垃圾只会出现在array、object两种类型中</strong></p>
+<ul>
+<li>array：数组中的某个成员指向了数组</li>
+<li>object：对象的成员属性引用对象本身</li>
+</ul>
+<p><strong>问：垃圾回收器怎样判断当前类型是否可回收？</strong> </p>
+<p>垃圾回收器不是通过变量类型进行判断的，而是通过<code>zval.u1.type_flag</code>标识进行判断，只有包含<code>IS_TYPE_COLLECTABLE</code>标识的变量类型才会被收集。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// IS_TYPE_COLLECTABLE = 8</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> IS_TYPE_COLLECTABLE  (1&lt;&lt;3)</span></span><br></pre></td></tr></table></figure>
+
+<h6 id="5-1-回收算法"><a href="#5-1-回收算法" class="headerlink" title="5.1 回收算法"></a>5.1 回收算法</h6><p>垃圾回收器把收集到的可能垃圾保存到一个buffer缓冲区中，当到达一定数量后就会启动垃圾鉴定、回收程序。<br>回收算法的原理：<u>既然垃圾是由于成员引用自身导致的，那么就对value的所有成员减一遍引用计数，如果发现value本身refcount变为了0，则表明引用全部来自自身成员。</u></p>
+<h6 id="5-2-具体实现"><a href="#5-2-具体实现" class="headerlink" title="5.2 具体实现"></a>5.2 具体实现</h6><p>垃圾回收器主要通过<code>zend_gc_globals</code>这个这结构对垃圾进行管理，收集到的可能成为垃圾的vlaue就保存在这个结构的buf中，即<code>垃圾缓冲区</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zend_gc.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">zend_gc_globals</span> &#123;</span></span><br><span class="line">    <span class="comment">// 是否启用gc（php.ini中zend.enable_gc设置是否开启，默认是开启的）</span></span><br><span class="line">	zend_bool         gc_enabled;</span><br><span class="line">	<span class="comment">// 是否在垃圾检查过程中</span></span><br><span class="line">	zend_bool         gc_active;</span><br><span class="line">	<span class="comment">// 缓存区是否已满</span></span><br><span class="line">	zend_bool         gc_full;</span><br><span class="line">    <span class="comment">// 启动时分配的用于保存可能垃圾的缓存区(初始化时，一次性分配了10001个gc_root_buffer,其中第一个被保留)</span></span><br><span class="line">	gc_root_buffer   *buf;				<span class="comment">/* preallocated arrays of buffers   */</span></span><br><span class="line">	<span class="comment">// 指向buf中最新加入的一个可能垃圾（root是一个双向链表的头部）</span></span><br><span class="line">	gc_root_buffer    roots;			<span class="comment">/* list of possible roots of cycles */</span></span><br><span class="line">	<span class="comment">// 指向bug中没有使用的buffer（用于管理buf中开始加入后面又删除的结点，是一个单链表）</span></span><br><span class="line">	gc_root_buffer   *unused;			<span class="comment">/* list of unused buffers           */</span></span><br><span class="line">	<span class="comment">// 指向buf中第一个没有使用的buffer</span></span><br><span class="line">	gc_root_buffer   *first_unused;		<span class="comment">/* pointer to first unused buffer   */</span></span><br><span class="line">	<span class="comment">// 指向buf尾部</span></span><br><span class="line">	gc_root_buffer   *last_unused;		<span class="comment">/* pointer to last unused buffer    */</span></span><br><span class="line">    <span class="comment">// 待释放的垃圾</span></span><br><span class="line">	gc_root_buffer    to_free;			<span class="comment">/* list to free                     */</span></span><br><span class="line">	gc_root_buffer   *next_to_free;</span><br><span class="line">    <span class="comment">// 统计gc运行次数</span></span><br><span class="line">	<span class="keyword">uint32_t</span> gc_runs;</span><br><span class="line">	<span class="comment">// 统计已回收的垃圾数</span></span><br><span class="line">	<span class="keyword">uint32_t</span> collected;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> GC_BENCH</span></span><br><span class="line">	<span class="keyword">uint32_t</span> root_buf_length;</span><br><span class="line">	<span class="keyword">uint32_t</span> root_buf_peak;</span><br><span class="line">	<span class="keyword">uint32_t</span> zval_possible_root;</span><br><span class="line">	<span class="keyword">uint32_t</span> zval_buffered;</span><br><span class="line">	<span class="keyword">uint32_t</span> zval_remove_from_buffer;</span><br><span class="line">	<span class="keyword">uint32_t</span> zval_marked_grey;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">	gc_additional_buffer *additional_buffer;</span><br><span class="line"></span><br><span class="line">&#125; zend_gc_globals;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>buf用于保存收集到的value，他是一个数组，在垃圾回收器初始化时一次性分配了10001个gc_root_buffer，其中第一个buffer被保留，插入vlaue时直接取出可用结点即可。</li>
+<li>roots指向buf中最新加入的一个结点，root是一个双向链表的头部，之所以是一个双向链表，是因为bug数组中保存的只是有可能成为垃圾的vlaue吗，其中有些value在加入之后又被删除了，这样bug数组中就会出现一些空隙。</li>
+<li>first_unused一开始指向bug的第一个位置，有些元素插入roots时如果first_unused还没有到达buf尾部，则返回first_unused给最新的元素，然后执行first_unused++,直到last_unused.</li>
+</ul>
+<p>下图为已经加入了2个gc的结构： <img src="https://note.youdao.com/yws/api/personal/file/0A2236A0CF6442A0BB985383709DB5B7?method=download&shareKey=6656570e92c3731c6f1ce8572522a2d0&ynotemdtimestamp=1598325595262" alt="buf缓冲区的可用节点"></p>
+<ul>
+<li>unused成员，他的含义与first_unused类似，用来管理buf中开始加入后面又删除的结点，是一个单链表结构。也就是说first_unused是一直往后偏移的，直到buf的结尾，buf中间由于value删除而重新空闲的结点则由unused串起来。下次有新的value插入roots时优先使用unused的这些节点，其次才是first_unused的结点。</li>
+</ul>
+<p>下图为移除了buf[1]的结构： <img src="https://note.youdao.com/yws/api/personal/file/B788660EE8EE43DDB952F0DC408264B7?method=download&shareKey=3896ffff3a8a0ab653a5c4fd197426da&ynotemdtimestamp=1598325595262" alt="buf[1]移除缓存去后的可用结点"></p>
+<ul>
+<li>第一步，初始化 gc_init()初始化垃圾回收器：分配buf数组内存、设置first_unused/unused等</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ZEND_API <span class="keyword">void</span> <span class="title">gc_init</span><span class="params">(<span class="keyword">void</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (GC_G(buf) == <span class="literal">NULL</span> &amp;&amp; GC_G(gc_enabled)) &#123;</span><br><span class="line">	    <span class="comment">// 分配buf缓冲区内存，大小为GC_ROOT_BUFFER_MAX_ENTERIES(10001),其中第1个保留不被使用。</span></span><br><span class="line">		GC_G(buf) = (gc_root_buffer*) <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(gc_root_buffer) * GC_ROOT_BUFFER_MAX_ENTRIES);</span><br><span class="line">		GC_G(last_unused) = &amp;GC_G(buf)[GC_ROOT_BUFFER_MAX_ENTRIES];</span><br><span class="line">		<span class="comment">// 进行GC_G的初始化，其中：GC_G(first_unused) = GC_G(buf) + 1;从第二个开始，保留第一个。</span></span><br><span class="line">		gc_reset();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>第二步，垃圾回收，在Zend执行过程中如果销毁一个变量就会判断是否需要加入垃圾收集器。销毁一个zval会调用i_zval_ptr_dtor()进行处理。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_variables.h</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> zend_always_inline <span class="keyword">void</span> <span class="title">i_zval_ptr_dtor</span><span class="params">(zval *zval_ptr ZEND_FILE_LINE_DC)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 不使用引用计数的类型不需要进行回收（整型、浮点型、布尔型，null）</span></span><br><span class="line">	<span class="keyword">if</span> (Z_REFCOUNTED_P(zval_ptr)) &#123;</span><br><span class="line">	    <span class="comment">// refcount减一</span></span><br><span class="line">		<span class="keyword">if</span> (!Z_DELREF_P(zval_ptr)) &#123;</span><br><span class="line">		    <span class="comment">// refcount减一后变为0，不是垃圾，正常回收</span></span><br><span class="line">			_zval_dtor_func_for_ptr(Z_COUNTED_P(zval_ptr) ZEND_FILE_LINE_RELAY_CC);</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		    <span class="comment">// refcount减一后仍然大于0，表示该变量可能是一个垃圾，被垃圾回收器回收。</span></span><br><span class="line">			GC_ZVAL_CHECK_POSSIBLE_ROOT(zval_ptr);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// file:zend_gc.h</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GC_ZVAL_CHECK_POSSIBLE_ROOT(z) \</span></span><br><span class="line">	gc_check_possible_root((z))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> zend_always_inline <span class="keyword">void</span> <span class="title">gc_check_possible_root</span><span class="params">(zval *z)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ZVAL_DEREF(z);</span><br><span class="line">	<span class="comment">// 判断是否是可收集（检查变量类型掩码zval.u1.type_flag是否包含IS_TYPE_COLLECTABLE,即数组、对象）以及是否已经收集过了（通过zend_refcount_h.v.u.gc_info来判断，第一次收集后会把这个值设置为GC_PURPLE来避免重复收集）</span></span><br><span class="line">	<span class="keyword">if</span> (Z_COLLECTABLE_P(z) &amp;&amp; UNEXPECTED(!Z_GC_INFO_P(z))) &#123;</span><br><span class="line">		gc_possible_root(Z_COUNTED_P(z));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>收集时首先会从buf中选择一个空闲节点，然后将vlaue的gc保存到这个结点中，若没有空闲节点则表明回收器已经满了，这个时候就会触发垃圾鉴定、回收程序。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_gc.c</span></span><br><span class="line"><span class="function">ZEND_API <span class="keyword">void</span> ZEND_FASTCALL <span class="title">gc_possible_root</span><span class="params">(zend_refcounted *ref)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	gc_root_buffer *newRoot;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (UNEXPECTED(CG(unclean_shutdown)) || UNEXPECTED(GC_G(gc_active))) &#123;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	ZEND_ASSERT(GC_TYPE(ref) == IS_ARRAY || GC_TYPE(ref) == IS_OBJECT);</span><br><span class="line">	<span class="comment">// 插入的结点必须是GC_BLACK,防止重复插入</span></span><br><span class="line">	ZEND_ASSERT(EXPECTED(GC_REF_GET_COLOR(ref) == GC_BLACK));</span><br><span class="line">	ZEND_ASSERT(!GC_ADDRESS(GC_INFO(ref)));</span><br><span class="line"></span><br><span class="line">	GC_BENCH_INC(zval_possible_root);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 首先看一下unused中又没有可用的。</span></span><br><span class="line">	newRoot = GC_G(unused);</span><br><span class="line">	<span class="keyword">if</span> (newRoot) &#123;</span><br><span class="line">	    <span class="comment">// 有的话先用unused的，然后将GC_G(unused)指向单链表的下一个</span></span><br><span class="line">		GC_G(unused) = newRoot-&gt;prev;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (GC_G(first_unused) != GC_G(last_unused)) &#123;</span><br><span class="line">	    <span class="comment">// unused没有可用的，且bug中还有可用</span></span><br><span class="line">		newRoot = GC_G(first_unused);</span><br><span class="line">		GC_G(first_unused)++;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	    <span class="comment">// buf缓存区已满，这时需要启动垃圾鉴定、回收程序。</span></span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line">    <span class="comment">// 将插入的red标位紫色，防止重复插入</span></span><br><span class="line">	GC_TRACE_SET_COLOR(ref, GC_PURPLE);</span><br><span class="line">	<span class="comment">// 将该节点在buf中的位置保存到gc_info中，目的在于当后续value的refcount变为了0，需要将其从buf中删除时可以知道该value保存在那个gc_root_buffer中，如果没有这个信息，在删除vlaue时无法获取gc_root_buffer的位置。</span></span><br><span class="line">	GC_INFO(ref) = (newRoot - GC_G(buf)) | GC_PURPLE;</span><br><span class="line">	newRoot-&gt;ref = ref;</span><br><span class="line">    <span class="comment">// 插入roots链表头部</span></span><br><span class="line">	newRoot-&gt;next = GC_G(roots).next;</span><br><span class="line">	newRoot-&gt;prev = &amp;GC_G(roots);</span><br><span class="line">	GC_G(roots).next-&gt;prev = newRoot;</span><br><span class="line">	GC_G(roots).next = newRoot;</span><br><span class="line"></span><br><span class="line">	GC_BENCH_INC(zval_buffered);</span><br><span class="line">	GC_BENCH_INC(root_buf_length);</span><br><span class="line">	GC_BENCH_PEAK(root_buf_peak, root_buf_length);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>第三步，删除 删除的操作通过GC_REMOVE_FROM_BUFFER()完成。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_gc.h</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GC_REMOVE_FROM_BUFFER(p) do &#123; \</span></span><br><span class="line">		zend_refcounted *_p = (zend_refcounted*)(p); \</span><br><span class="line">		<span class="keyword">if</span> (GC_ADDRESS(GC_INFO(_p))) &#123; \</span><br><span class="line">			gc_remove_from_buffer(_p); \</span><br><span class="line">		&#125; \</span><br><span class="line">	&#125; <span class="keyword">while</span> (<span class="number">0</span>)</span><br><span class="line">	</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GC_ADDRESS(v) \</span></span><br><span class="line">	((v) &amp; ~GC_COLOR)</span><br></pre></td></tr></table></figure>
+
+<p>删除时，先根据gc_info取到gc_root_buffer，然后再从buf中移除，删除后再把空的gc_root_buffer插入到unused单链表尾部。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// file:zend_gc.c</span></span><br><span class="line"><span class="function">ZEND_API <span class="keyword">void</span> ZEND_FASTCALL <span class="title">gc_remove_from_buffer</span><span class="params">(zend_refcounted *ref)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	gc_root_buffer *root;</span><br><span class="line"></span><br><span class="line">	ZEND_ASSERT(GC_ADDRESS(GC_INFO(ref)));</span><br><span class="line"></span><br><span class="line">	GC_BENCH_INC(zval_remove_from_buffer);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (EXPECTED(GC_ADDRESS(GC_INFO(ref)) &lt; GC_ROOT_BUFFER_MAX_ENTRIES)) &#123;</span><br><span class="line">		root = GC_G(buf) + GC_ADDRESS(GC_INFO(ref));</span><br><span class="line">		gc_remove_from_roots(root);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		root = gc_find_additional_buffer(ref);</span><br><span class="line">		gc_remove_from_additional_roots(root);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (GC_REF_GET_COLOR(ref) != GC_BLACK) &#123;</span><br><span class="line">		GC_TRACE_SET_COLOR(ref, GC_PURPLE);</span><br><span class="line">	&#125;</span><br><span class="line">	GC_INFO(ref) = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* updete next root that is going to be freed */</span></span><br><span class="line">	<span class="keyword">if</span> (GC_G(next_to_free) == root) &#123;</span><br><span class="line">		GC_G(next_to_free) = root-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当buf缓存区满了执行垃圾回收的过程如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ZEND_API <span class="keyword">int</span> <span class="title">zend_gc_collect_cycles</span><span class="params">(<span class="keyword">void</span>)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	    ...</span><br><span class="line">	    <span class="comment">// (1)遍历roots链表，对当前结点vlaue的所有成员（如数组元素、成员变量）进行深度优先遍历，把成员refcount减1.</span></span><br><span class="line">		gc_mark_roots();</span><br><span class="line">		GC_TRACE(<span class="string">&quot;Scanning roots&quot;</span>);</span><br><span class="line">		<span class="comment">// (2)再次遍历roots链表，检查各结点当前refcount是否为0，是的话标为white，表示是垃圾，不是的话需要还原（1），吧refcount再加回去</span></span><br><span class="line">		gc_scan_roots();</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> ZEND_GC_DEBUG</span></span><br><span class="line">		orig_gc_full = GC_G(gc_full);</span><br><span class="line">		GC_G(gc_full) = <span class="number">0</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">		GC_TRACE(<span class="string">&quot;Collecting roots&quot;</span>);</span><br><span class="line">		additional_buffer_snapshot = GC_G(additional_buffer);</span><br><span class="line">		<span class="comment">// 将roots链表中的非白色结点删除，之后roots链表中全部是真正的垃圾，将垃圾链表转到to_free等待释放</span></span><br><span class="line">	  </span><br><span class="line">	  ...</span><br><span class="line">	  </span><br><span class="line">		</span><br><span class="line">		<span class="comment">// 释放垃圾</span></span><br><span class="line">		current = to_free.next;</span><br><span class="line">		<span class="keyword">while</span> (current != &amp;to_free) &#123;</span><br><span class="line">			next = current-&gt;next;</span><br><span class="line">			p = current-&gt;ref;</span><br><span class="line">			<span class="keyword">if</span> (EXPECTED(current &gt;= GC_G(buf) &amp;&amp; current &lt; GC_G(buf) + GC_ROOT_BUFFER_MAX_ENTRIES)) &#123;</span><br><span class="line">				current-&gt;prev = GC_G(unused);</span><br><span class="line">				GC_G(unused) = current;</span><br><span class="line">			&#125;</span><br><span class="line">			efree(p);</span><br><span class="line">			current = next;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/25/FastCGI%E5%92%8CPHP-FPM%E7%9A%84%E5%85%B3%E7%B3%BB/" rel="prev" title="FastCGI和PHP-FPM的关系">
+                  <i class="fa fa-chevron-left"></i> FastCGI和PHP-FPM的关系
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/08/25/PHP7%E5%86%85%E6%A0%B8-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86-%E5%86%85%E5%AD%98%E6%B1%A0/" rel="next" title="PHP7内核-内存管理-内存池">
+                  PHP7内核-内存管理-内存池 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '22a1c762fff7020844b2449fc630607b',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 简单动态字符串(SDS)Redis中有两种字符串表示：  ①、C字符串：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。  ②、简单动态字符串：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis设计与实现-数据结构">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 简单动态字符串(SDS)Redis中有两种字符串表示：  ①、C字符串：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。  ②、简单动态字符串：简单动态字符串（simple dynamic string, SDS）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/list%E7%BB%93%E6%9E%84%E5%92%8C%E4%B8%89%E4%B8%AAlistNode%E7%BB%93%E6%9E%84%E7%BB%84%E6%88%90%E7%9A%84%E9%93%BE%E8%A1%A8.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%A4%A7%E5%B0%8F%E4%B8%BA4%E7%9A%84%E7%A9%BA%E5%93%88%E5%B8%8C%E8%A1%A8.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E9%80%9A%E8%BF%87next%E6%8C%87%E9%92%88,%E5%B0%86%E4%B8%A4%E4%B8%AA%E7%B4%A2%E5%BC%95%E5%80%BC%E7%9B%B8%E5%90%8C%E7%9A%84%E9%94%AEk1%E5%92%8Ck0%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%99%AE%E9%80%9A%E7%8A%B6%E6%80%81%E4%B8%8B%E7%9A%84%E5%AD%97%E5%85%B8%E7%A4%BA%E4%BE%8B.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/k2%E4%B8%8Ek1%E5%8F%91%E7%94%9F%E4%BA%86%E9%94%AE%E5%86%B2%E7%AA%81,k2%E5%90%8E%E6%B7%BB%E5%8A%A0.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%B7%83%E8%A1%A8%E7%A4%BA%E4%BE%8B.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E9%AB%98%E5%BA%A6%E5%88%86%E5%88%AB%E4%B8%BA1%E5%B1%82,3%E5%B1%82,5%E5%B1%82%E7%9A%84%E8%8A%82%E7%82%B9.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%B7%83%E8%A1%A8%E9%81%8D%E5%8E%86.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8E%8B%E7%BC%A9%E8%A1%A8%E5%90%84%E9%83%A8%E5%88%86%E7%BB%84%E6%88%90.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8E%8B%E7%BC%A9%E8%A1%A8%E5%90%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86%E7%9A%84%E7%B1%BB%E5%9E%8B,%E9%95%BF%E5%BA%A6%E4%BB%A5%E5%8F%8A%E7%94%A8%E9%80%94.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8C%85%E5%90%AB%E4%B8%89%E4%B8%AA%E8%8A%82%E7%82%B9%E7%9A%84%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8%E7%BB%93%E7%82%B9%E7%9A%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/encoding%E5%B1%9E%E6%80%A7%E6%95%B0%E7%BB%84%E7%BC%96%E7%A0%81.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/encoding%E5%B1%9E%E6%80%A7%E6%95%B4%E6%95%B0%E7%BC%96%E7%A0%81.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E4%BF%9D%E5%AD%98%E5%AD%97%E8%8A%82%E6%95%B0%E7%BB%84%E7%9A%84%E8%8A%82%E7%82%B9%E7%A4%BA%E4%BE%8B.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E4%BF%9D%E5%AD%98%E6%95%B4%E6%95%B0%E5%80%BC%E7%9A%84%E8%8A%82%E7%82%B9%E7%A4%BA%E4%BE%8B.png">
+<meta property="article:published_time" content="2020-08-25T08:30:57.000Z">
+<meta property="article:modified_time" content="2020-09-24T09:28:37.850Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="Note">
+<meta property="article:tag" content="Redis设计与实现">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8.png">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Redis设计与实现-数据结构 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E5%8D%95%E5%8A%A8%E6%80%81%E5%AD%97%E7%AC%A6%E4%B8%B2-SDS"><span class="nav-text">1 简单动态字符串(SDS)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-SDS%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="nav-text">1.1 SDS的定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2%E3%80%81SDS%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9B%B8%E5%AF%B9%E4%BA%8EC%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E4%BC%98%E7%82%B9"><span class="nav-text">1.2、SDS字符串相对于C字符串的优点</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-1-%E7%A9%BA%E9%97%B4%E9%A2%84%E5%88%86%E9%85%8D"><span class="nav-text">1.2.1 空间预分配</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-2-%E6%83%B0%E6%80%A7%E7%A9%BA%E9%97%B4%E9%87%8A%E6%94%BE"><span class="nav-text">1.2.2 惰性空间释放</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%93%BE%E8%A1%A8"><span class="nav-text">2 链表</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E9%93%BE%E8%A1%A8%E5%92%8C%E9%93%BE%E8%A1%A8%E8%8A%82%E7%82%B9%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">2.1 链表和链表节点的实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%AD%97%E5%85%B8"><span class="nav-text">3 字典</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E5%AD%97%E5%85%B8%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">3.1 字典的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-1-%E5%93%88%E5%B8%8C%E8%A1%A8"><span class="nav-text">3.1.1 哈希表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-2-%E5%93%88%E5%B8%8C%E8%A1%A8%E7%BB%93%E7%82%B9"><span class="nav-text">3.1.2 哈希表结点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-3-%E5%AD%97%E5%85%B8"><span class="nav-text">3.1.3 字典</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95"><span class="nav-text">3.2 哈希算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-%E8%A7%A3%E5%86%B3%E9%94%AE%E5%86%B2%E7%AA%81"><span class="nav-text">3.3 解决键冲突</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-rehash"><span class="nav-text">3.4 rehash</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-%E6%B8%90%E8%BF%9B%E5%BC%8Frehash"><span class="nav-text">3.5 渐进式rehash</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E8%B7%B3%E8%B7%83%E8%A1%A8"><span class="nav-text">4 跳跃表</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E8%B7%B3%E8%B7%83%E8%A1%A8%E7%BB%93%E7%82%B9%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">4.1 跳跃表结点的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-1-%E5%B1%82"><span class="nav-text">4.1.1 层</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-2-%E5%89%8D%E8%BF%9B%E6%8C%87%E9%92%88"><span class="nav-text">4.1.2 前进指针</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-3-%E8%B7%A8%E5%BA%A6"><span class="nav-text">4.1.3 跨度</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-4-%E5%90%8E%E9%80%80%E6%8C%87%E9%92%88"><span class="nav-text">4.1.4 后退指针</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-5-%E5%88%86%E5%80%BC%E5%92%8C%E6%88%90%E5%91%98"><span class="nav-text">4.1.5 分值和成员</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-%E8%B7%B3%E8%B7%83%E8%A1%A8%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">4.2 跳跃表的实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%95%B4%E6%95%B0%E9%9B%86%E5%90%88"><span class="nav-text">五、整数集合</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-%E6%95%B4%E6%95%B0%E9%9B%86%E5%90%88%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">5.1 整数集合的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-%E5%8D%87%E7%BA%A7"><span class="nav-text">5.2 升级</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-3-%E9%99%8D%E7%BA%A7"><span class="nav-text">5.3 降级</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8"><span class="nav-text">六、压缩列表</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#6-1-%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8%E7%9A%84%E6%9E%84%E6%88%90"><span class="nav-text">6.1 压缩列表的构成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-2-%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8%E8%8A%82%E7%82%B9%E7%9A%84%E6%9E%84%E6%88%90"><span class="nav-text">6.2 压缩列表节点的构成</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#6-2-1-previous-entry-length"><span class="nav-text">6.2.1 previous_entry_length</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-2-2-encoding"><span class="nav-text">6.2.2 encoding</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-2-3-content"><span class="nav-text">6.2.3 content</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-3-%E8%BF%9E%E9%94%81%E6%9B%B4%E6%96%B0"><span class="nav-text">6.3 连锁更新</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/25/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis设计与实现-数据结构
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-25 16:30:57" itemprop="dateCreated datePublished" datetime="2020-08-25T16:30:57+08:00">2020-08-25</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-24 17:28:37" itemprop="dateModified" datetime="2020-09-24T17:28:37+08:00">2020-09-24</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-简单动态字符串-SDS"><a href="#1-简单动态字符串-SDS" class="headerlink" title="1 简单动态字符串(SDS)"></a>1 简单动态字符串(SDS)</h3><p>Redis中有两种字符串表示：</p>
+<ul>
+<li><p><strong>①、C字符串</strong>：C字符串只会作为字符串字面量（string literal），用在一些无须对字符串值进行修改的地方，如打印日志。</p>
+</li>
+<li><p><strong>②、简单动态字符串</strong>：简单动态字符串（<code>simple dynamic string, SDS</code>）是redis构建一种字符串的抽象类型，是redis的默认字符串表示。如字符串键值对、缓冲区等都有SDS实现。</p>
+</li>
+</ul>
+<a id="more"></a>
+
+<h4 id="1-1-SDS的定义"><a href="#1-1-SDS的定义" class="headerlink" title="1.1 SDS的定义"></a>1.1 SDS的定义</h4><p>sds.h/sdshdr结构表示一个SDS的值，如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    <span class="comment">// 记录bug数组汇总已使用字节的数量.</span></span><br><span class="line">    <span class="comment">// 等于SDS所保存字符串的长度</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> len;</span><br><span class="line">    <span class="comment">// 记录buf数组中未使用字节的数量.</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> <span class="built_in">free</span>;</span><br><span class="line">    <span class="comment">// 字节数组，用于保存字符串.</span></span><br><span class="line">    <span class="keyword">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><em>注：SDS遵循C字符串以<code>空字符（&#39;\0&#39;）</code>结尾，但这个字节的空间不计算在SDS的<code>len属性</code>中。</em></p>
+<h4 id="1-2、SDS字符串相对于C字符串的优点"><a href="#1-2、SDS字符串相对于C字符串的优点" class="headerlink" title="1.2、SDS字符串相对于C字符串的优点"></a>1.2、SDS字符串相对于C字符串的优点</h4><ul>
+<li><p>常数复杂度获取字符串长度</p>
+<ul>
+<li>C字符串，没有记录自身的长度信息，获取C字符串长度时需进行遍历，其复杂度为O(N)。</li>
+<li>SDS字符串，有len属性，获取长度的复杂度为O(1)。</li>
+</ul>
+</li>
+<li><p>杜绝缓冲区溢出: SDS相对于C字符串，根据其空间分配策略，杜绝了发生缓冲区溢出的可能性。</p>
+</li>
+<li><p>减少修改字符串时带来的内存重新分配次数: SDS通过未使用空间<code>free记录</code>，实现<code>空间预分配</code>和<code>惰性空间释放</code>两种优化策略。</p>
+</li>
+<li><p>二进制安全</p>
+</li>
+<li><p>兼容部分C字符串函数</p>
+</li>
+</ul>
+<h5 id="1-2-1-空间预分配"><a href="#1-2-1-空间预分配" class="headerlink" title="1.2.1 空间预分配"></a>1.2.1 空间预分配</h5><p>空间预分配用于优化SDS的字符串<code>增长操作</code>，当SDS的API对SDS进行修改，并且需要对SDS进行空间扩展时，程序不仅会为SDS分配修改所必须的空间，还会为SDS分配额外的未使用空间。</p>
+<p>分配策略：</p>
+<ul>
+<li>若对SDS修改过后，len属性的值小于1MB，则分配与len属性同样大小的未使用空间，即此时len和free属性大小一致。</li>
+<li>若对SDS修改过后，len属性的值大于1MB，则分配1MB的未使用空间。</li>
+</ul>
+<h5 id="1-2-2-惰性空间释放"><a href="#1-2-2-惰性空间释放" class="headerlink" title="1.2.2 惰性空间释放"></a>1.2.2 惰性空间释放</h5><p>惰性空间释放用于优化SDS的字符串<code>缩短操作</code>，当SDS的API需要缩短SDS保存的字符串时，程序并不立即使用内存重新分配来回收缩短后多出来的字节，而是使用free属性将这些字节数量记录起来，并等待将来使用。</p>
+<h3 id="2-链表"><a href="#2-链表" class="headerlink" title="2 链表"></a>2 链表</h3><p>链表作为一种常用的数据结构，在Redis中应用广泛，如列表键的底层实现之一就是链表。当一个列表键包含了数量比较多的元素，又或者列表中包含的元素都是比较长的字符串时，Redis就会使用链表作为列表键的底层实现。此外，还有打不与订阅、慢查询、监视器等功能也用到了链表。</p>
+<p><em>注：Redis的链表为<u>双向链表</u>。</em></p>
+<h4 id="2-1-链表和链表节点的实现"><a href="#2-1-链表和链表节点的实现" class="headerlink" title="2.1 链表和链表节点的实现"></a>2.1 链表和链表节点的实现</h4><p>链表节点，使用一个<code>adlist.h/listNode结构</code>来表示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="keyword">void</span> *value;</span><br><span class="line">&#125; listNode;</span><br></pre></td></tr></table></figure>
+
+<p>多个listNode可以通过prev和next指针组成<strong>双向链表</strong>，如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8.png" alt="双向链表"></p>
+<p>链表，使用<code>adlist.h/list结构</code>表示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    <span class="comment">// 表头节点</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    <span class="comment">// 表尾结点</span></span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="comment">// 节点值赋值函数</span></span><br><span class="line">    <span class="keyword">void</span> *(*dup)(<span class="keyword">void</span> *ptr);</span><br><span class="line">    <span class="comment">// 节点值释放函数</span></span><br><span class="line">    <span class="keyword">void</span> (*<span class="built_in">free</span>)(<span class="keyword">void</span> *ptr);</span><br><span class="line">    <span class="comment">// 节点值比对函数，比对链表节点梭堡村的值和另一个输入值是否相等</span></span><br><span class="line">    <span class="keyword">int</span> (*match)(<span class="keyword">void</span> *ptr, <span class="keyword">void</span> *key);</span><br><span class="line">    <span class="comment">// 链表所包含的节点数量</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> len;</span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure>
+
+<p>示例：下图为一个list结构和三个listNode结构组成的链表。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/list%E7%BB%93%E6%9E%84%E5%92%8C%E4%B8%89%E4%B8%AAlistNode%E7%BB%93%E6%9E%84%E7%BB%84%E6%88%90%E7%9A%84%E9%93%BE%E8%A1%A8.png" alt="list结构和三个listNode结构组成的链表"></p>
+<h3 id="3-字典"><a href="#3-字典" class="headerlink" title="3 字典"></a>3 字典</h3><p>字典，又称为符号表（symbol table）、关联数组（assiciative array）或映射（map），是一种用于保存键值对（key-value pair）的抽象数据结构。字典中每个键都是独一无二的。</p>
+<p>字典的应用：字典在Redis的应用广泛，如Redis的数据库就是使用字典来作为底层实现的。此外字典还是哈希键的底层实现之一。</p>
+<h4 id="3-1-字典的实现"><a href="#3-1-字典的实现" class="headerlink" title="3.1 字典的实现"></a>3.1 字典的实现</h4><p><u>Redis的字典使用<code>哈希表</code>作为底层实现</u>，<u>一个哈希表里面可以有多个哈希表结点</u>，<u>而每个哈希表结点就保存了一个字段中的键值对</u>。</p>
+<h5 id="3-1-1-哈希表"><a href="#3-1-1-哈希表" class="headerlink" title="3.1.1 哈希表"></a>3.1.1 哈希表</h5><p>Redis字典所使用的哈希表由<code>dict.h/dictht结构</code>定义：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictht</span> &#123;</span></span><br><span class="line">    <span class="comment">// 哈希表数组，数组中的每个元素都是一个指向dict.h/dictEntry结构的指针，每个结构保存着一个键值对。</span></span><br><span class="line">    dictEntry **table;</span><br><span class="line">    <span class="comment">// 哈希表大小.</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> size;</span><br><span class="line">    <span class="comment">// 哈希表大小掩码，用于计算索引值.</span></span><br><span class="line">    <span class="comment">// 总是等于size-1.</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> sizemask;</span><br><span class="line">    <span class="comment">// 该哈希表已有结点的数量.</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> used;</span><br><span class="line">&#125; dictht;</span><br></pre></td></tr></table></figure>
+
+<p>示例：下图为一个大小为4的空哈希表。（没有任何键值对）</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%A4%A7%E5%B0%8F%E4%B8%BA4%E7%9A%84%E7%A9%BA%E5%93%88%E5%B8%8C%E8%A1%A8.png" alt="大小为4的空哈希表"></p>
+<h5 id="3-1-2-哈希表结点"><a href="#3-1-2-哈希表结点" class="headerlink" title="3.1.2 哈希表结点"></a>3.1.2 哈希表结点</h5><p>哈希表结点使用<code>dictEntry结构</code>表示，每个dictEntry结构都保存着一个键值对：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> &#123;</span></span><br><span class="line">    <span class="comment">// 键</span></span><br><span class="line">    <span class="keyword">void</span> *key;</span><br><span class="line">    <span class="comment">// 值</span></span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="keyword">void</span> *val;</span><br><span class="line">        <span class="keyword">uint64_t</span> u64;</span><br><span class="line">        <span class="keyword">int64_t</span> s64;</span><br><span class="line">        <span class="keyword">double</span> d;</span><br><span class="line">    &#125; v;</span><br><span class="line">    <span class="comment">// 指向下一个哈希表结点,形成链表,用以解决哈希冲突的问题.</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> *<span class="title">next</span>;</span></span><br><span class="line">&#125; dictEntry;</span><br></pre></td></tr></table></figure>
+
+<p>示例：下图是通过<code>next指针</code>,将两个指引着相同的键<code>k1</code>和<code>k0</code>连接的数据结构.</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E9%80%9A%E8%BF%87next%E6%8C%87%E9%92%88,%E5%B0%86%E4%B8%A4%E4%B8%AA%E7%B4%A2%E5%BC%95%E5%80%BC%E7%9B%B8%E5%90%8C%E7%9A%84%E9%94%AEk1%E5%92%8Ck0%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84.png" alt="通过next指针,将两个索引值相同的键k1和k0连接的数据结构"></p>
+<h5 id="3-1-3-字典"><a href="#3-1-3-字典" class="headerlink" title="3.1.3 字典"></a>3.1.3 字典</h5><p>Redis中的字典由<code>dict.h/dict结构</code>表示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dict</span> &#123;</span></span><br><span class="line">    <span class="comment">// 类型特定函数.Redis会为用途不同的字典设置不同的类型特定函数。</span></span><br><span class="line">    dictType *type;</span><br><span class="line">    <span class="comment">// 私有数据.保存了需要传给那些类型特定函数的可选参数。</span></span><br><span class="line">    <span class="keyword">void</span> *privdata;</span><br><span class="line">    <span class="comment">// 哈希表.包含了两个项的数组，每个项都是dictht哈希表，通常，字典只使用ht[0]哈希表，ht[1]哈希表只会在ht[0]进行rehash时使用。</span></span><br><span class="line">    dictht ht[<span class="number">2</span>];</span><br><span class="line">    <span class="comment">// rehash索引.记录rehash的进度，若当前没有进行rehash，那么它的值为-1.</span></span><br><span class="line">    <span class="keyword">long</span> rehashidx; <span class="comment">/* rehashing not in progress if rehashidx == -1 */</span></span><br><span class="line">    <span class="keyword">int</span> iterators; <span class="comment">/* number of iterators currently running */</span></span><br><span class="line">&#125; dict;</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>type</code>和<code>privdata</code>属性是<u>针对不同类型的键值对,为创建多态字典而设置</u>。</p>
+<p>type特定函数结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictType</span> &#123;</span></span><br><span class="line">    <span class="comment">// 计算哈希值的函数。</span></span><br><span class="line">    <span class="function"><span class="keyword">unsigned</span> <span class="title">int</span> <span class="params">(*hashFunction)</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span> *key)</span></span>;</span><br><span class="line">    <span class="comment">// 复制键的函数。</span></span><br><span class="line">    <span class="keyword">void</span> *(*keyDup)(<span class="keyword">void</span> *privdata, <span class="keyword">const</span> <span class="keyword">void</span> *key);</span><br><span class="line">    <span class="comment">// 复制值的函数。</span></span><br><span class="line">    <span class="keyword">void</span> *(*valDup)(<span class="keyword">void</span> *privdata, <span class="keyword">const</span> <span class="keyword">void</span> *obj);</span><br><span class="line">    <span class="comment">// 对比键的函数.</span></span><br><span class="line">    <span class="keyword">int</span> (*keyCompare)(<span class="keyword">void</span> *privdata, <span class="keyword">const</span> <span class="keyword">void</span> *key1, <span class="keyword">const</span> <span class="keyword">void</span> *key2);</span><br><span class="line">    <span class="comment">// 销毁键的函数。</span></span><br><span class="line">    <span class="keyword">void</span> (*keyDestructor)(<span class="keyword">void</span> *privdata, <span class="keyword">void</span> *key);</span><br><span class="line">    <span class="comment">// 销毁值的函数。</span></span><br><span class="line">    <span class="keyword">void</span> (*valDestructor)(<span class="keyword">void</span> *privdata, <span class="keyword">void</span> *obj);</span><br><span class="line">&#125; dictType;</span><br></pre></td></tr></table></figure>
+
+<p>示例：下图为普通状态的下的字典示例。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%99%AE%E9%80%9A%E7%8A%B6%E6%80%81%E4%B8%8B%E7%9A%84%E5%AD%97%E5%85%B8%E7%A4%BA%E4%BE%8B.png" alt="普通状态下的字典示例"></p>
+<h4 id="3-2-哈希算法"><a href="#3-2-哈希算法" class="headerlink" title="3.2 哈希算法"></a>3.2 哈希算法</h4><p>要将一个新的键值对添加到字典中时，程序需先根据键值对的键计算出哈希值和索引值，然后再根据索引值，将包含新键值对的哈希表结点放到哈希表数组的指定索引上面。</p>
+<p><strong>Redis计算哈希值方式？</strong></p>
+<p>使用字典设置的哈希函数，计算键key的哈希值：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hash &#x3D; dict-&gt;type-&gt;hashFunction(key);</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>Redis计算索引值的方式？</strong></p>
+<p>根据哈希表的<code>sizemask属性</code>和哈希值计算出索引值，其中根据情况不同，ht[x]可以使ht[0]或ht[1]。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">index &#x3D; hash &amp; dict-&gt;ht[x].sizemask;</span><br></pre></td></tr></table></figure>
+
+<p>注：当字典被用作数据库的底层实现，或者哈希键的底层实现时，Redis使用MurmurHash2算法来计算键的哈希值。</p>
+<h4 id="3-3-解决键冲突"><a href="#3-3-解决键冲突" class="headerlink" title="3.3 解决键冲突"></a>3.3 解决键冲突</h4><p>当有两个或者以上数量的键被分配到了哈希表数组的同一个索引上面时，我们称这些键发生了<code>冲突（collision）</code>。</p>
+<p><strong>Redis怎样解决键冲突？</strong></p>
+<p>Redis的哈希表使用<code>链地址法</code>来解决键冲突。</p>
+<p>每个哈希表结点都有一个<code>next指针</code>，多个哈希表结点可以用next指针构成一个<u>单向链表</u>，被分配到同一个索引上的多个结点可以用这个单向链表连接起来，解决键冲突的问题。</p>
+<p><em>注：由于dictEntry结点组成的链表没有指向链表表尾的指针，所以程序总是将新节点添加到链表的表头位置（复杂度为O(1)）</em></p>
+<p>示例：k2与k1发生了键冲突，k2后添加，如下图所示。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/k2%E4%B8%8Ek1%E5%8F%91%E7%94%9F%E4%BA%86%E9%94%AE%E5%86%B2%E7%AA%81,k2%E5%90%8E%E6%B7%BB%E5%8A%A0.png" alt="k2与k1发生了键冲突,k2后添加"></p>
+<h4 id="3-4-rehash"><a href="#3-4-rehash" class="headerlink" title="3.4 rehash"></a>3.4 rehash</h4><p>随着操作的不断执行，哈希表保存的键值对会逐渐增减，为了让哈希表的负载因子维持在一个合理的范围内，需对哈希表的大小进行相应的扩展或收缩。这个过程就是rehash。</p>
+<p><strong>Redis是怎样对字典的哈希表执行rehash的（rehash的步骤）？</strong></p>
+<ul>
+<li>①、为字典的<code>h[1]</code>哈希表分配空间。<ul>
+<li>扩展操作：<code>ht[1]</code>的大小为第一个大于等于<code>ht[0].used*2的2^n</code>(2的n次方幂)；</li>
+<li>收缩操作：<code>ht[1]</code>的大小为第一个大于等于<code>ht[0].used的2^n</code>。</li>
+</ul>
+</li>
+<li>②、将保存在<code>ht[0]</code>中的所有键值对rehash到<code>ht[1]</code>上面，rehash指的是重新计算键的哈希值和索引值，然后将键值对放置到ht[1]哈希表的指定位置上。</li>
+<li>③、当<code>ht[0]</code>包含的所有键值对都前移到了<code>ht[1]</code>后，释放<code>ht[0]</code>，将<code>ht[1]</code>设置为<code>ht[0]</code>，并在<code>ht[1]</code>新创建一个空白哈希表，为下一次rehash做准备。</li>
+</ul>
+<p>示例：假设ht[0].used当前的值为4，要对进行扩展操作，则ht[1]的大小为4*2=8，刚好为2^3，所以ht[1]哈希表的大小设置为8.</p>
+<p><strong>哈希表的扩展与收缩都与负载因子有关，那么什么是负载因子呢？怎样计算负载因子？</strong></p>
+<p>Redis的负载因子为哈希表以保存结点的数量与哈希表的大小的比值，计算方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load_factor &#x3D; ht[0].used &#x2F; ht[0].size</span><br></pre></td></tr></table></figure>
+
+<p>示例：对于一个大小为512，包含256个键值对的哈希表说，这个哈希表的负载因子为：</p>
+<p>load_factor = 256 / 512 = 0.5</p>
+<p><strong>什么情况下程序会自动对哈希表执行扩展操作？</strong></p>
+<ul>
+<li>①、服务器没有在执行<code>BGSAVE</code>或者<code>BGREWRITEAOF</code>命令，并且哈希表的负载因子<u>大于等于1</u>.</li>
+<li>②、服务器正在执行<code>BGSAVE</code>或者<code>BGREWRITEAOF</code>命令，并且哈希表的负载因子<u>大于等于5</u>.</li>
+</ul>
+<p><em>注：在执行BGSAVE或者BGREWRITEAOF命令的过程中，Redis需要创建当前服务器进程的子进程，而大多数操作系统都采用写时复制技术来优化子进程的使用效率，所以在子进程存在期间，服务器会提高执行扩展操作所需的负载因子，从而避免在子进程存在期间进行哈希表扩展操作，避免不必要的内存写入，最大限度地节约内存。</em></p>
+<p><strong>什么情况下程序会对哈希表执行收缩操作？</strong></p>
+<p>当哈希表的负载因子<u>小于0.1</u>时，程序自动开始对哈希表执行收缩操作。</p>
+<h4 id="3-5-渐进式rehash"><a href="#3-5-渐进式rehash" class="headerlink" title="3.5 渐进式rehash"></a>3.5 渐进式rehash</h4><p>扩展或收缩哈希表需要将<code>ht[0]</code>里面的键值对rehash到<code>ht[1]</code>里面，但是这个rehash动作并不是一次性、集中式完成的，而是分多次、<u>渐进式</u>地完成的。</p>
+<p><strong>为什么要渐进式完成rehash？</strong></p>
+<p>为了<u>避免大量键值对rehash对服务器性能造成影响</u>。采用分而治之的方式，将rehash键值对所需的计算工作均摊到对字典的每个添加、删除、查找和更新操作上，从而避免了集中式rehash而带来的庞大计算量。</p>
+<p><strong>哈希表是怎样渐进式rehash的（rehash的详细步骤）？</strong></p>
+<ul>
+<li>①、为<code>ht[1]</code>分配空间，让字典同时持有ht[0]和ht[1]两个哈希表、</li>
+<li>②、在字典中维持一个<code>rehashidx</code>，并将它的值设置为0，表示rehash工作正式开始。</li>
+<li>③、在rehash进行期间，每次对字段执行添加、删除、查找、更新操作时，程序除了执行指定的操作以外，还会顺带将ht[0]哈希表在rehashidx索引上的所有键值对rehash到ht[1],当rehash工作完成之后，程序将rehashidx属性的值增加一。</li>
+<li>④、随着字典操作的不断执行，最终在某个时间点上，ht[0]的所有键值对都会被rehash到ht[1]上，这是程序将rehashidx属性设为-1，表示rehash操作已完成。</li>
+</ul>
+<p><strong>渐进式rehash执行期间会涉及到ht[0]和ht[1]两个哈希表，是怎样操作的呢？</strong></p>
+<ul>
+<li>针对删除、查找、更新操作，会在两个哈希表上进行，例如，查找一个键时，程序会在ht[0]上查找，若没有找到，会继续到ht[1]里面进行查找。</li>
+<li>对于新增操作，新增加到字典的键值对一律被保存到ht[1]里面，而ht[0]则不再进行任何操作。</li>
+</ul>
+<h3 id="4-跳跃表"><a href="#4-跳跃表" class="headerlink" title="4 跳跃表"></a>4 跳跃表</h3><p>跳跃表是一种<code>有序数据结构</code>，它<u>通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问节点的目的</u>。</p>
+<p>Redis使用跳跃表作为<code>有序集合键</code>的底层实现之一，若一个有序集合包含的元素数量比较多，又或者有序集合中元素的成员是比较长的字符串时，Redis就会使用跳跃表来作为有序集合键的底层实现。此外，跳跃表还在集群节点中用作内部数据结构。</p>
+<h4 id="4-1-跳跃表结点的实现"><a href="#4-1-跳跃表结点的实现" class="headerlink" title="4.1 跳跃表结点的实现"></a>4.1 跳跃表结点的实现</h4><p>Redis跳跃表由<code>redis.h/zskiplistNode和redis.h/zskiplist</code>两个结构定义。</p>
+<p>跳跃表示例如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%B7%83%E8%A1%A8%E7%A4%BA%E4%BE%8B.png" alt="跳跃表示例"></p>
+<p><code>zskiplistNode结构</code>用于表示跳跃表的结点。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    <span class="comment">// 成员对象.示例图中o1，o2，o3是结点所保存的成员对象。</span></span><br><span class="line">    robj *obj;</span><br><span class="line">    <span class="comment">// 分值. 跳跃表中，结点按照各自所保存的分值从小到大排列。</span></span><br><span class="line">    <span class="keyword">double</span> score;</span><br><span class="line">    <span class="comment">// 后退指针.指向当前的结点的前一个结点，后退指针在程序从表尾想表头遍历时使用。示例图上用BW标识结点的后退指针。</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span></span><br><span class="line">    <span class="comment">// 层.每个层都有两个属性：前进指针和跨度。</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="comment">// 前进指针.前进指针用于访问表尾方向的其他节点。示例图上的带有数字的剪头就表示前进指针。</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplostNode</span> *<span class="title">forward</span>;</span></span><br><span class="line">        <span class="comment">// 跨度.跨度记录了前进指针所指向结点和当前结点的距离。示例图上箭头上的数字就表示跨度。</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">int</span> span;</span><br><span class="line">    &#125; level[];</span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure>
+
+<h5 id="4-1-1-层"><a href="#4-1-1-层" class="headerlink" title="4.1.1 层"></a>4.1.1 层</h5><p>跳跃表节点的<code>level数组</code>可以包含多个元素，每个元素都包含一个指向其他节点的指针，程序可以通过这些层来加快访问其他节点的速度。一般来说，层的数量越多，访问其他节点的速度就越快。</p>
+<p>每次创建一个新跳跃表节点的时候，程序都根据<u>幂次定律</u>(power law，越大的数出现的概率越小)随机生成一个介于1和32之间的值作为level数组的大小，这个大小就是层的高度。</p>
+<p>示例：下图为三个高度分别为1层、3层、5层的节点。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E9%AB%98%E5%BA%A6%E5%88%86%E5%88%AB%E4%B8%BA1%E5%B1%82,3%E5%B1%82,5%E5%B1%82%E7%9A%84%E8%8A%82%E7%82%B9.png" alt="高度分别为1层,3层,5层的节点"></p>
+<h5 id="4-1-2-前进指针"><a href="#4-1-2-前进指针" class="headerlink" title="4.1.2 前进指针"></a>4.1.2 前进指针</h5><p>每个层都有一个指向表尾党项的<code>前进指针</code>（<code>level[i].forward</code>属性），用于从表头向表尾方向访问节点。</p>
+<p><strong>跳跃表是怎样遍历所有节点的呢？</strong></p>
+<p>示例图如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%B7%83%E8%A1%A8%E9%81%8D%E5%8E%86.png" alt="跳跃表遍历"></p>
+<ul>
+<li>①、迭代程序首先访问跳跃表的第一个节点（表头），然后从第四层的前进指针移动到表中第二个节点。</li>
+<li>②、在第二个结点时，程序沿着第二层的前进指针移动到表中第三个节点。</li>
+<li>③、在第三个节点时，程序沿着第二层的前进指针移动到表中的第四个结点。</li>
+<li>④、当程序在此沿着第四个节点的前进指针移动时，它碰到了一个NULL，程序知道这时已经到达了跳跃表的表尾，结束遍历。</li>
+</ul>
+<p><em>注：遍历操作只使用前进指针就能完成。</em></p>
+<h5 id="4-1-3-跨度"><a href="#4-1-3-跨度" class="headerlink" title="4.1.3 跨度"></a>4.1.3 跨度</h5><p>层的跨度（<code>level[i].span</code>属性）用于记录两个结点之间的距离，两个结点之间跨度越大，他们相距得就越远；指向<code>null</code>的所有前进指针的跨度都为0，因为他们没有指向任何节点。</p>
+<p><u>跨度实际上是用来计算排位的</u>：在查找某个结点的过程中，将访问过的所有层的跨度累计起来，得到的结果就是目标结点在跳跃表中的排位。</p>
+<h5 id="4-1-4-后退指针"><a href="#4-1-4-后退指针" class="headerlink" title="4.1.4 后退指针"></a>4.1.4 后退指针</h5><p>节点的后退指针(<code>backward</code>属性)用于从<u>表尾向表头</u>方向访问节点：跟可以一次跳过多个节点的前进指针不同，因为每个节点只有一个后退指针，所以每次只能后退至前一个节点。</p>
+<h5 id="4-1-5-分值和成员"><a href="#4-1-5-分值和成员" class="headerlink" title="4.1.5 分值和成员"></a>4.1.5 分值和成员</h5><p>节点的分值(<code>score</code>属性)是一个<code>double类型的浮点数</code>，跳跃表中的所有结点都按分值<u>从小到大来排序</u>。</p>
+<p>节点的成员对象(obj属性)是一个指针，他指向一个字符串对象，而字符串对象则保存着一个SDS值。</p>
+<p>注：<strong>同一个跳跃表中，各个节点保存的成员对象必须是唯一的，但多个结点保存的分值却可以是相同的</strong>。分值相同的结点将按照成员对象在字典序中的大小来进行排序，成员对象较小的结点会排在前面（靠近表头的方向）。</p>
+<h4 id="4-2-跳跃表的实现"><a href="#4-2-跳跃表的实现" class="headerlink" title="4.2 跳跃表的实现"></a>4.2 跳跃表的实现</h4><p>仅靠多个跳跃表节点就可以组成一个跳跃表，但通过一个<code>zskiplist结构</code>来持有这些节点，程序可以更方便地对整个跳跃表进行处理，比如快速访问跳跃表的表头节点和表尾节点，或快速地获取跳跃表节点的数量等信息。</p>
+<p><code>zskiplist结构</code>如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="comment">// header 指向跳跃表的表头节点。</span></span><br><span class="line">    <span class="comment">// tail 指向跳跃表的表位节点.</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span></span><br><span class="line">    <span class="comment">// 记录跳跃表的长度，即跳跃表目前包含结点的数量（表头节点不计算在内）</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> length;</span><br><span class="line">    <span class="comment">// level 记录目前跳跃表内，层数最大的那个节点的层数（表头节点的层数不计算在内）。</span></span><br><span class="line">    <span class="keyword">int</span> level;</span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure>
+
+<p><em>注：level表头节点的层高并不计算在内。</em></p>
+<h3 id="五、整数集合"><a href="#五、整数集合" class="headerlink" title="五、整数集合"></a>五、整数集合</h3><p>整数集合是<code>集合键</code>的底层实现之一，当一个<strong>集合只包含整数值元素，并且这个集合的元素数量不多时</strong>，Redis就会使用整数集合作为集合键得底层实现。</p>
+<p>（<u>注：整数集合是只包含整数值元素的集合。</u>）</p>
+<h4 id="5-1-整数集合的实现"><a href="#5-1-整数集合的实现" class="headerlink" title="5.1 整数集合的实现"></a>5.1 整数集合的实现</h4><p>整数集合是Redis用于保存整数值的集合抽象数据结构，它可以保存类型为<code>int16_t</code>、<code>int32_t</code>或者<code>int64_t</code>的整数值，并保证集合中不会出现重复元素。</p>
+<p>每个<code>intset.h/intset结构</code>表示一个整数集合：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="comment">// 编码方式.</span></span><br><span class="line">    <span class="keyword">uint_32_t</span> encoding;</span><br><span class="line">    <span class="comment">// 集合包含的元素数量.即contents数组的长度。</span></span><br><span class="line">    <span class="keyword">uint32_t</span> length;</span><br><span class="line">    <span class="comment">// 保存元素的数组.</span></span><br><span class="line">    <span class="keyword">int8_t</span> contents[];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>整数集合的底层实现是什么？</strong></p>
+<p>整数集合的底层是通过<u>数组</u>（<code>contents</code>属性）实现的，整数集合的每个元素都是contents数组的一个数组项(item)，各个项在数组中按值的大小<u>从小到大</u>有序地排列，并且数组中不包含任何重复项。</p>
+<p>注：</p>
+<p>①、数组元素在底层是有进行从小到大的排序的。</p>
+<p>②、虽然intset结构将contents属性声明为int8_t类型的数组，但实际上contents数组并不保存int8_t类型的值，contents数组的真正类型取决于encoding属性的值。</p>
+<p>encoding属性的取值包括以下内容：</p>
+<ul>
+<li><strong>INTSET_ENC_INT16</strong>:表示<code>int16_t</code>类型的数组，数组里面每个项都是一个int16_t类型的整数值（2^15 ~2^(15)-1）。</li>
+<li><strong>INTSET_ENC_INT32</strong>:表示<code>int32_t</code>类型的数组，数组里面每个项都是一个int32_t类型的整数值(2^31 ~2^(31)-1)。</li>
+<li><strong>INTSET_ENC_INT64</strong>:表示<code>int64_t</code>类型的数组，数组里面每个项都是一个int64_t类型的整数值(2^63 ~2^(63)-1)。</li>
+</ul>
+<h4 id="5-2-升级"><a href="#5-2-升级" class="headerlink" title="5.2 升级"></a>5.2 升级</h4><p>当添加新元素到整数集合中时，<u>新元素的类型比整数集合现有所有元素的类型都要长时，整数集合需要先升级，然后才能将新元素添加到整数集合里面</u>。</p>
+<p><strong>Redis是怎样升级整数集合并添加新元素的呢（升级及添加新元素的步骤）？</strong></p>
+<p>升级整数集合并添加新元素共分为三步进行：</p>
+<ul>
+<li>①、根据新元素的类型，扩展整数集合底层数组的空间大小，并为新元素分配空间。</li>
+<li>②、将底层数组现有的所有元素都转换成新元素相同的类型，并将类型转换后的元素放置到正确的位上，而且在防止元素的过程中，需要继续维持底层数组的有序性质不变。</li>
+<li>③、将新元素添加到底层数组里面。</li>
+</ul>
+<p><em>注：每次向整数集合添加新元素都可能会引起升级，而每次升级都需要对底层数组中又有的元素进行类型转换，所以向整数集合添加新元素的时间复杂度为O(N)。</em></p>
+<p>升级时新元素的摆放位置，要引发升级，那么要么新元素大于所有现有元素，要么小于现有所有元素，因此摆放位置应该在数组的两端。</p>
+<p>为什么要进行升级，而不是直接采用int64_t类型？</p>
+<ul>
+<li>①、提高灵活性。</li>
+<li>②、节约内存。</li>
+</ul>
+<h4 id="5-3-降级"><a href="#5-3-降级" class="headerlink" title="5.3 降级"></a>5.3 降级</h4><p>整数集合<strong>不支持降级操作</strong>，一旦对数组进行了升级，编码就会一直保持升级后的状态。</p>
+<h3 id="六、压缩列表"><a href="#六、压缩列表" class="headerlink" title="六、压缩列表"></a>六、压缩列表</h3><p>压缩列表（ziplist）是<code>列表键</code>和<code>哈希键</code>的底层实现之一。</p>
+<p>压缩列表(ziplist)在Redis的应用场景有哪些？</p>
+<ul>
+<li>①、当一个列表键只包含少量列表项，并且每个列表项要么就是小整数值，要么就是长度比较短的字符串，那么Redis就会使用压缩列表来做列表键的底层实现。</li>
+</ul>
+<ul>
+<li>②、当一个哈希键只包含少量键值对，并且每个键值对的键和值要么就是小整数值，要么就是长度比较短的字符串，那么Redis就会使用压缩列表来做哈希键的底层实现。</li>
+</ul>
+<h4 id="6-1-压缩列表的构成"><a href="#6-1-压缩列表的构成" class="headerlink" title="6.1 压缩列表的构成"></a>6.1 压缩列表的构成</h4><p>压缩列表是Redis为了<u>节约内存</u>而开发的，是由一系列特殊编码的<u>连续内存块组成</u>的顺序型数据结构。一个压缩列表可以包含任意多个节点，每个节点可以保存一个字节数组或一个整数值。</p>
+<p>压缩列表的各个组成部分如下图：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8E%8B%E7%BC%A9%E8%A1%A8%E5%90%84%E9%83%A8%E5%88%86%E7%BB%84%E6%88%90.png" alt="压缩表各部分组成"></p>
+<p>下表中记录了各个组成部分的类型、长度以及用途。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8E%8B%E7%BC%A9%E8%A1%A8%E5%90%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86%E7%9A%84%E7%B1%BB%E5%9E%8B,%E9%95%BF%E5%BA%A6%E4%BB%A5%E5%8F%8A%E7%94%A8%E9%80%94.png" alt="压缩表各组成部分的类型,长度以及用途"></p>
+<p>示例：包含三个节点的压缩列表</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8C%85%E5%90%AB%E4%B8%89%E4%B8%AA%E8%8A%82%E7%82%B9%E7%9A%84%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8.png" alt="包含三个节点的压缩列表"></p>
+<p>其中：</p>
+<ul>
+<li><code>zlbytes</code>的属性值为0x50,表示压缩列表的总长为80.</li>
+<li><code>zltail</code>属性的值为0x3c，表示有一个指向压缩列表起始地址的指针p，在指针p加上偏移量60，就可以计算出表尾节点entry3的地址。</li>
+<li><code>zllen</code>属性值为0x3，表示压缩列表包含三个节点。</li>
+<li><code>zlend</code>属性值为特殊值，用于标记压缩列表的末端。</li>
+</ul>
+<h4 id="6-2-压缩列表节点的构成"><a href="#6-2-压缩列表节点的构成" class="headerlink" title="6.2 压缩列表节点的构成"></a>6.2 压缩列表节点的构成</h4><p>每个压缩列表节点可以保存<u>一个字节数组</u>或者<u>一个整数值</u>。</p>
+<ul>
+<li><strong>字节数组</strong>可以是以下三中长度的其中一种：<ul>
+<li>长度小于等于63（2^6-1）字节的字节数组。</li>
+<li>长度小于等于16383（2^14-1）字节的字节数组。</li>
+<li>长度小于等于4294967295（2^32-1）字节的字节数组。</li>
+</ul>
+</li>
+<li><strong>整数值</strong>可以是以下六种长度的其中一种：<ul>
+<li>4位长，介于0~12之间的无符号整数；</li>
+<li>1字节长的有符号整数；</li>
+<li>3字节长的有符号整数；</li>
+<li>int16_t类型整数；</li>
+<li>int32_t类型整数；</li>
+<li>int64_t类型整数。</li>
+</ul>
+</li>
+</ul>
+<p><code>压缩列表结点的组成部分</code>如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8%E7%BB%93%E7%82%B9%E7%9A%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86.png" alt="压缩列表结点的组成部分"></p>
+<h5 id="6-2-1-previous-entry-length"><a href="#6-2-1-previous-entry-length" class="headerlink" title="6.2.1 previous_entry_length"></a>6.2.1 previous_entry_length</h5><p><code>previous_entry_length属性</code>以<code>字节</code>为单位，记录了压缩列表中前一个节点的长度，<code>previous_entry_length</code>属性的长度可以是1字节或者5字节。</p>
+<ul>
+<li>若前一节点的长度小于254字节，那么previous_entry_length属性的长度为1字节，前一节点的长度就保存在这一个字节里面。</li>
+<li>若前一节点的长度大于等于254字节，那么previoud_entry_length属性的长度为5字节，其中第一字节会被设置为0xFE，而后的四个字节则用于保存前一节点的长度。</li>
+</ul>
+<p>根据previous_entry_length属性可以计算得到前一个节点的起始地址。通过这一原理，即可实现从表尾向表头遍历。</p>
+<h5 id="6-2-2-encoding"><a href="#6-2-2-encoding" class="headerlink" title="6.2.2 encoding"></a>6.2.2 encoding</h5><p>节点的<code>encoding</code>属性记录了节点的content属性所保存数据的类型及长度：</p>
+<p><strong>字节数组编码</strong>：一字节、两字节或者五字节，encoding最高位为<strong>00、01、10表示字节数组编码</strong>，除去最高两位后表示数组的长度。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/encoding%E5%B1%9E%E6%80%A7%E6%95%B0%E7%BB%84%E7%BC%96%E7%A0%81.png" alt="encoding属性数组编码"></p>
+<p><strong>整数编码</strong>：一字节，<strong>encoding最高位为11</strong>，除去最高两位后的其他位记录整数值的类型和长度。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/encoding%E5%B1%9E%E6%80%A7%E6%95%B4%E6%95%B0%E7%BC%96%E7%A0%81.png" alt="encoding属性整数编码"></p>
+<h5 id="6-2-3-content"><a href="#6-2-3-content" class="headerlink" title="6.2.3 content"></a>6.2.3 content</h5><p>节点的content属性负责保存节点的值，节点值可以是一个字节数组或者整数，值的类型和长度由encoding属性决定。</p>
+<p>示例1：以下示例展示了一个保存字节数组的节点示例。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E4%BF%9D%E5%AD%98%E5%AD%97%E8%8A%82%E6%95%B0%E7%BB%84%E7%9A%84%E8%8A%82%E7%82%B9%E7%A4%BA%E4%BE%8B.png" alt="保存字节数组的节点示例"></p>
+<p>其中：</p>
+<ul>
+<li>encoding的最高两位为00，表示一个字节数组。</li>
+<li>encoding的后六位001011记录了字节数组的长度为11.</li>
+<li>content属性保存着节点的值“hello world”</li>
+</ul>
+<p>示例2：以下示例展示了一个保存整数值的节点示例。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E4%BF%9D%E5%AD%98%E6%95%B4%E6%95%B0%E5%80%BC%E7%9A%84%E8%8A%82%E7%82%B9%E7%A4%BA%E4%BE%8B.png" alt="保存整数值的节点示例"></p>
+<p>其中：</p>
+<ul>
+<li>encoding表示节点保存的是int16_t类型的整数值。</li>
+<li>content属性保存着节点的值10086.</li>
+</ul>
+<h4 id="6-3-连锁更新"><a href="#6-3-连锁更新" class="headerlink" title="6.3 连锁更新"></a>6.3 连锁更新</h4><p><strong>什么情况下会发生连锁更新？</strong></p>
+<p>比如当前所有结点长度均小于254字节情况下，新添加一个长度大于254字节的节点到压缩列表的表头，此时需对压缩列表执行空间重分配操作，扩展后面的previous_entry_length属性空间。</p>
+<p>定义：Redis将这种特殊情况下产生的连续多次空间扩展操作称之为“连锁更新”。</p>
+<p>连锁更新在最坏情况下需要对压缩列表执行N次空间重分配操作，而每次空间重分配的最坏复杂度为O(N)，所以连锁更新的最坏复杂度为O(N^2)。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ol>
+<li>redis设计与实现（第二版） 黄健宏</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/Note/" rel="tag"># Note</a>
+              <a href="/tags/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0/" rel="tag"># Redis设计与实现</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/25/Protobuf%E7%AE%80%E4%BB%8B%E5%8F%8A%E5%AE%89%E8%A3%85/" rel="prev" title="Protobuf简介及安装">
+                  <i class="fa fa-chevron-left"></i> Protobuf简介及安装
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/08/31/Redis%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-Redis%E5%AF%B9%E8%B1%A1/" rel="next" title="Redis设计与实现-Redis对象">
+                  Redis设计与实现-Redis对象 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '956e545c78215ce0d7d96eb85b6e1c27',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 简介EXPLAIN命令是查看查询优化器如何决定执行查询的主要方法。虽然这个功能有一些局限性，但是它的输出是可以获取的最好信息。在使用EXPLAIN时，MySQL会在查询上设置一个标记，当执行查询时，这个标记会使其返回关于执行计划中每一步的信息，而不是执行它。它会返回一行或多行信息，显示出执行计划中的每一部分和执行次序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL-Explain详解">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/05/MySQL-Explain%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 简介EXPLAIN命令是查看查询优化器如何决定执行查询的主要方法。虽然这个功能有一些局限性，但是它的输出是可以获取的最好信息。在使用EXPLAIN时，MySQL会在查询上设置一个标记，当执行查询时，这个标记会使其返回关于执行计划中每一步的信息，而不是执行它。它会返回一行或多行信息，显示出执行计划中的每一部分和执行次序。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-05T03:17:41.000Z">
+<meta property="article:modified_time" content="2020-09-07T02:17:33.971Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/05/MySQL-Explain%E8%AF%A6%E8%A7%A3/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MySQL-Explain详解 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E9%87%8D%E5%86%99%E9%9D%9ESELECT%E6%9F%A5%E8%AF%A2"><span class="nav-text">1.1 重写非SELECT查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%94%A8%E6%B3%95"><span class="nav-text">2 用法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%AD%97%E6%AE%B5%E5%80%BC%E8%AF%A6%E8%A7%A3"><span class="nav-text">3 字段值详解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-ID%E5%88%97"><span class="nav-text">3.1 ID列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-SELECT-TYPE%E5%88%97"><span class="nav-text">3.2 SELECT_TYPE列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-TABLE"><span class="nav-text">3.3 TABLE</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-TYPE"><span class="nav-text">3.4 TYPE</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-POSSIBLE-KEY%E5%88%97"><span class="nav-text">3.5 POSSIBLE_KEY列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-6-KEY%E5%88%97"><span class="nav-text">3.6 KEY列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-7-KEY-LEN"><span class="nav-text">3.7 KEY_LEN</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-8-REF"><span class="nav-text">3.8 REF</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-9-ROWS"><span class="nav-text">3.9 ROWS</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-10-EXTRA"><span class="nav-text">3.10 EXTRA</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99%EF%BC%9A"><span class="nav-text">参考资料：</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/05/MySQL-Explain%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL-Explain详解
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-09-05 11:17:41" itemprop="dateCreated datePublished" datetime="2020-09-05T11:17:41+08:00">2020-09-05</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-07 10:17:33" itemprop="dateModified" datetime="2020-09-07T10:17:33+08:00">2020-09-07</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h3><p><code>EXPLAIN</code>命令是<code>查看查询优化器如何决定执行查询的主要方法</code>。虽然这个功能有一些局限性，但是它的输出是可以获取的最好信息。在使用EXPLAIN时，MySQL会在查询上设置一个标记，当执行查询时，这个标记会使其返回关于执行计划中每一步的信息，而不是执行它。它会返回一行或多行信息，显示出执行计划中的每一部分和执行次序。</p>
+<a id="more"></a>
+
+<p>注意：EXPLAIN只是个近似结果，有时候它是一个很好的近似，但有时候也会相差甚远。</p>
+<p>以下是使用EXPLIAN的一些相关限制：</p>
+<ul>
+<li>不会告诉你触发器、存储过程或UDF会如何影响查询；</li>
+<li>不支持存储过程，尽管可以手动抽取查询并单独的对其进行EXPLAIN操作；</li>
+<li>不会告诉你MySQL在查询执行中所作的特定优化；</li>
+<li>不会显示关于查询的执行计划的所有信息；</li>
+<li>不区分具有相同名字的事物。例如：对于内存排序和临时文件都使用“filesort”，并且对于磁盘上和内存中的临时表都显示“Using temporary”；</li>
+<li>可能会出现误导。例如，<code>对于一个有着很小的limit查询显示全索引扫描</code>。</li>
+</ul>
+<h3 id="1-1-重写非SELECT查询"><a href="#1-1-重写非SELECT查询" class="headerlink" title="1.1 重写非SELECT查询"></a>1.1 重写非SELECT查询</h3><p>EXPLAIN只能解释SELECT查询，并不会对存储程序调用、INSERT、UPDATE、DELETE或其他语句做解释。</p>
+<p>解决方法：重写非SELECT查询以利用EXPLAIN，</p>
+<h3 id="2-用法"><a href="#2-用法" class="headerlink" title="2 用法"></a>2 用法</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN tbl_name # 得出一个表的字段结构。</span><br><span class="line">EXPLAIN [EXTENDED] SELECT select_options # 给出当前SQL语句相关的一些信息。 </span><br></pre></td></tr></table></figure>
+
+<p>以<code>virtual_coins表</code>为例，后续测试均在此表基础上进行验证。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE &#96;virtual_coins&#96; (</span><br><span class="line">  &#96;id&#96; int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT &#39;自增主键&#39;,</span><br><span class="line">  &#96;uid&#96; int(10) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;用户ID&#39;,</span><br><span class="line">  &#96;type&#96; varchar(20) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;虚拟货币类型&#39;,</span><br><span class="line">  &#96;channel&#96; varchar(20) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;渠道&#39;,</span><br><span class="line">  &#96;total_coins&#96; int(10) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;当前虚拟货币类型总数&#39;,</span><br><span class="line">  &#96;usable_coins&#96; int(10) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;当前虚拟货币类型可用数量&#39;,</span><br><span class="line">  &#96;frozen_coins&#96; int(10) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;当前虚拟货币类型冻结数量&#39;,</span><br><span class="line">  &#96;status&#96; tinyint(4) NOT NULL DEFAULT &#39;1&#39; COMMENT &#39;状态：1-有效，0-无效（封禁）&#39;,</span><br><span class="line">  &#96;create_time&#96; int(10) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;创建时间&#39;,</span><br><span class="line">  &#96;update_time&#96; int(10) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;更新时间&#39;,</span><br><span class="line">  PRIMARY KEY (&#96;id&#96;),</span><br><span class="line">  KEY &#96;idx_uid_type&#96; (&#96;uid&#96;,&#96;type&#96;)</span><br><span class="line">) ENGINE&#x3D;InnoDB DEFAULT CHARSET&#x3D;utf8 COMMENT&#x3D;&#39;虚拟货币快照表&#39;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain virtual_coins;</span><br><span class="line">+--------------+------------------+------+-----+---------+----------------+</span><br><span class="line">| Field        | Type             | Null | Key | Default | Extra          |</span><br><span class="line">+--------------+------------------+------+-----+---------+----------------+</span><br><span class="line">| id           | int(11) unsigned | NO   | PRI | NULL    | auto_increment |</span><br><span class="line">| uid          | int(10)          | NO   | MUL | 0       |                |</span><br><span class="line">| type         | varchar(20)      | NO   |     |         |                |</span><br><span class="line">| channel      | varchar(20)      | NO   |     |         |                |</span><br><span class="line">| total_coins  | int(10)          | NO   |     | 0       |                |</span><br><span class="line">| usable_coins | int(10)          | NO   |     | 0       |                |</span><br><span class="line">| frozen_coins | int(10)          | NO   |     | 0       |                |</span><br><span class="line">| status       | tinyint(4)       | NO   |     | 1       |                |</span><br><span class="line">| create_time  | int(10)          | NO   |     | 0       |                |</span><br><span class="line">| update_time  | int(10)          | NO   |     | 0       |                |</span><br><span class="line">+--------------+------------------+------+-----+---------+----------------+</span><br><span class="line">10 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins where uid&#x3D;2000034000;</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+--------------+---------+-------+------+----------+-------+</span><br><span class="line">| id | select_type | table         | partitions | type | possible_keys | key          | key_len | ref   | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+--------------+---------+-------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | ref  | idx_uid_type  | idx_uid_type | 4       | const |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+--------------+---------+-------+------+----------+-------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-字段值详解"><a href="#3-字段值详解" class="headerlink" title="3 字段值详解"></a>3 字段值详解</h3><h4 id="3-1-ID列"><a href="#3-1-ID列" class="headerlink" title="3.1 ID列"></a>3.1 ID列</h4><p>id列用于标识select所属的行。若在语句中没有子查询或联合查询，那么只会有唯一的select，于是每一行在这个列中将显示一个1。否则，内层的select语句一般会顺序编号，对应于其在原始语句中位置。</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select uid from (select uid from tuanmei_user) as vc;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>select_type</th>
+<th>table</th>
+<th>type</th>
+<th>possible_keys</th>
+<th>key</th>
+<th>key_len</th>
+<th>ref</th>
+<th>rows</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>PRIMARY</td>
+<td></td>
+<td>ALL</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>41171</td>
+<td align="center">NULL</td>
+</tr>
+<tr>
+<td>2</td>
+<td>DERIVED</td>
+<td>virtual_coins</td>
+<td>index</td>
+<td>NULL</td>
+<td>idx_uid_type</td>
+<td>66</td>
+<td>NULL</td>
+<td>41171</td>
+<td align="center">Using index</td>
+</tr>
+</tbody></table>
+<h4 id="3-2-SELECT-TYPE列"><a href="#3-2-SELECT-TYPE列" class="headerlink" title="3.2 SELECT_TYPE列"></a>3.2 SELECT_TYPE列</h4><p>查询的类型，主要是<code>区别简单查询和联合查询、子查询之类的复杂查询</code>。  </p>
+<p>常见的取值：</p>
+<ul>
+<li><p><code>SIMPLE</code><br>它表示简单的 select，不包括 union 和子查询；</p>
+</li>
+<li><p><code>PRIMARY</code><br>查询有任何复杂的子查询，则最外层部分标记为 primary；</p>
+</li>
+<li><p><code>SUBQUERY</code></p>
+<p>包含在select列表中的子查询中的select（即，不在from子句中）标记为<code>subquery</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select (select uid from virtual_coins where uid &#x3D; 2000163293);</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+--------------+---------+-------+------+----------+----------------+</span><br><span class="line">| id | select_type | table         | partitions | type | possible_keys | key          | key_len | ref   | rows | filtered | Extra          |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+--------------+---------+-------+------+----------+----------------+</span><br><span class="line">|  1 | PRIMARY     | NULL          | NULL       | NULL | NULL          | NULL         | NULL    | NULL  | NULL |     NULL | No tables used |</span><br><span class="line">|  2 | SUBQUERY    | virtual_coins | NULL       | ref  | idx_uid_type  | idx_uid_type | 4       | const |    1 |   100.00 | Using index    |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+--------------+---------+-------+------+----------+----------------+</span><br><span class="line">2 rows in set, 1 warning (0.14 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>DERIVED</code></p>
+<p>  表示包含在from子句的子查询中的select，MySQL会递归执行并将结果放到一个临时表中。（测试时，只有在数据量大的情况下，才会出现DERIVED，数据量小的时候是SIMPLE??????）</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select uid from (select uid from tuanmei_user) as vc;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>select_type</th>
+<th>table</th>
+<th>type</th>
+<th>possible_keys</th>
+<th>key</th>
+<th>key_len</th>
+<th>ref</th>
+<th>rows</th>
+<th align="center">Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>PRIMARY</td>
+<td></td>
+<td>ALL</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>41171</td>
+<td align="center">NULL</td>
+</tr>
+<tr>
+<td>2</td>
+<td>DERIVED</td>
+<td>virtual_coins</td>
+<td>index</td>
+<td>NULL</td>
+<td>idx_uid_type</td>
+<td>66</td>
+<td>NULL</td>
+<td>41171</td>
+<td align="center">Using index</td>
+</tr>
+</tbody></table>
+</li>
+<li><p><code>UNION</code><br>union 语句的第二个或者说是后面那一个select被标记为union。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins where id &lt;100 union select * from virtual_coins where id &gt;&#x3D; 100;</span><br><span class="line">+----+--------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-----------------+</span><br><span class="line">| id | select_type  | table         | partitions | type  | possible_keys | key     | key_len | ref  | rows | filtered | Extra           |</span><br><span class="line">+----+--------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-----------------+</span><br><span class="line">|  1 | PRIMARY      | virtual_coins | NULL       | range | PRIMARY       | PRIMARY | 4       | NULL |   55 |   100.00 | Using where     |</span><br><span class="line">|  2 | UNION        | virtual_coins | NULL       | range | PRIMARY       | PRIMARY | 4       | NULL |   52 |   100.00 | Using where     |</span><br><span class="line">| NULL | UNION RESULT | &lt;union1,2&gt;    | NULL       | ALL   | NULL          | NULL    | NULL    | NULL | NULL |     NULL | Using temporary |</span><br><span class="line">+----+--------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-----------------+</span><br><span class="line">3 rows in set, 1 warning (0.44 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>DEPENDENT</code></p>
+<p>  表示select依赖于外层查询中的数据。</p>
+</li>
+<li><p><code>UNION RESULT</code></p>
+<p>  用来从UNION的匿名临时表检索结果的select被标记为UNION RESULT。</p>
+</li>
+</ul>
+<h4 id="3-3-TABLE"><a href="#3-3-TABLE" class="headerlink" title="3.3 TABLE"></a>3.3 TABLE</h4><p>所使用的表。</p>
+<h4 id="3-4-TYPE"><a href="#3-4-TYPE" class="headerlink" title="3.4 TYPE"></a>3.4 TYPE</h4><p>关联类型（访问类型），MySQL决定如何查找表中的行，<u>是较为重要的一个指标</u>。</p>
+<ul>
+<li><code>NULL</code></li>
+</ul>
+<p>意味着MySQL能在优化阶段分解查询语句，在执行阶段甚至用不着再访问表或者索引。</p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select 1;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | NULL  | NULL       | NULL | NULL          | NULL | NULL    | NULL | NULL |     NULL | No tables used |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">1 row in set, 1 warning (0.11 sec)</span><br></pre></td></tr></table></figure></code></pre>
+<ul>
+<li><p><code>system</code><br>表仅有一行，是 const 类型的特例。不常见。</p>
+</li>
+<li><p><code>const</code><br>常量查询，在整个查询过程中这个表<code>最多只会有一条匹配的行</code>，<code>用到了 primary key 或者unique 索引</code>。  </p>
+</li>
+</ul>
+<p>  eg：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins where id&#x3D;50;</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">| id | select_type | table         | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | const | PRIMARY       | PRIMARY | 4       | const |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+<ul>
+<li><p><code>eq_ref</code><br>对于每个来自于前面的表的行组合，从该表中读取一行。 （<em>个人理解是在联合查询时，使用的条件是 UNIQUE 或 PRIMARY KEY。</em>）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select total_coins from virtual_coins, virtual_coins_logs where virtual_coins.id &#x3D; virtual_coins_logs.id;</span><br><span class="line">+----+-------------+--------------------+------------+--------+---------------+---------+---------+--------------------------------+------+----------+--------------------------+</span><br><span class="line">| id | select_type | table              | partitions | type   | possible_keys | key     | key_len | ref                            | rows | filtered | Extra                    |</span><br><span class="line">+----+-------------+--------------------+------------+--------+---------------+---------+---------+--------------------------------+------+----------+--------------------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins      | NULL       | ALL    | PRIMARY       | NULL    | NULL    | NULL                           |   41 |   100.00 | NULL                     |</span><br><span class="line">|  1 | SIMPLE      | virtual_coins_logs | NULL       | eq_ref | PRIMARY       | PRIMARY | 8       | fans_economic.virtual_coins.id |    1 |   100.00 | Using where; Using index |</span><br><span class="line">+----+-------------+--------------------+------------+--------+---------------+---------+---------+--------------------------------+------+----------+--------------------------+</span><br><span class="line">2 rows in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure></li>
+<li><p><code>ref</code> </p>
+<p>这是一种索引访问，也叫索引查找，它返回所有匹配某个单个值的行。对于每个来自于前面的表的行组合，所有有匹配索引值的行将从这张表中读取。</p>
+<p>如果联接只使用键的最左边的前缀，或如果键不是 UNIQUE 或 PRIMARY KEY（换句话说，如果联接不能基于关键字选择单个行的话），则使用 ref。如果使用的键仅仅匹配少量行，该联接类型是不错的。</p>
+</li>
+<li><p><code>fulltext</code>  </p>
+</li>
+<li><p><code>ref_or_null</code><br>该联接类型如同 ref，但是添加了 MySQL 可以专门搜索包含 NULL 值的行。 在解决子查询中经常使用该联接类型的优化。</p>
+</li>
+<li><p><code>index_merge</code>  </p>
+</li>
+<li><p><code>unique_subquery</code>  </p>
+</li>
+<li><p><code>index_subquery</code>  </p>
+</li>
+<li><p><code>range</code><br>给定范围内的检索，使用一个索引来检查行。通常发生在在索引列上使用范围查询，如 &gt;，&lt;，in 等时，非索引列是 ALL。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins where id in (10, 100);</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table         | partitions | type  | possible_keys | key     | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | range | PRIMARY       | PRIMARY | 4       | NULL |    2 |   100.00 | Using where |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select * from virtual_coins where uid in (10, 100);</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+--------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table         | partitions | type  | possible_keys | key          | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+--------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | range | idx_uid_type  | idx_uid_type | 4       | NULL |    2 |   100.00 | Using index condition |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+--------------+---------+------+------+----------+-----------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select * from virtual_coins_0 where total_coins in (0,10);</span><br><span class="line">+----+-------------+-----------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table           | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+-----------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins_0 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    1 |   100.00 | Using where |</span><br><span class="line">+----+-------------+-----------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>index</code><br>按索引次序扫描，先读索引，再读实际的行，结果也是全表扫描，主要优点是避免了排序。（索引是排好序的，并且 all 是从硬盘中读的，index 可能不在硬盘上）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins order by id;</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------+</span><br><span class="line">| id | select_type | table         | partitions | type  | possible_keys | key     | key_len | ref  | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | index | NULL          | PRIMARY | 4       | NULL |   41 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>ALL</code><br>进行完整的表扫描。性能很差，通常可以增加更多的索引而不要使用 ALL，使得行能基于前面的表中的常数值或列值被检索出。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins where create_time&#x3D;111;</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table         | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | ALL  | NULL          | NULL | NULL    | NULL |   41 |    10.00 | Using where |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p><strong>结果值优先顺序</strong>为：<br>    <code>NULL &gt; system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL</code></p>
+<p>一般来说，得保证查询至少达到 range 级别，最好能达到 ref。</p>
+<h4 id="3-5-POSSIBLE-KEY列"><a href="#3-5-POSSIBLE-KEY列" class="headerlink" title="3.5 POSSIBLE_KEY列"></a>3.5 POSSIBLE_KEY列</h4><p>提示使用哪个索引会在该表中找到行，不太重要。</p>
+<h4 id="3-6-KEY列"><a href="#3-6-KEY列" class="headerlink" title="3.6 KEY列"></a>3.6 KEY列</h4><p>显示了MySQL决定采用哪个索引来优化对该表的访问。若该索引不在possible_keys中，那么MySQL选用它是处于另外的原因，例如，它可能选择了一个覆盖索引，哪怕没有where条件。</p>
+<p>如果是 NULL，表示没有索引被选择。</p>
+<h4 id="3-7-KEY-LEN"><a href="#3-7-KEY-LEN" class="headerlink" title="3.7 KEY_LEN"></a>3.7 KEY_LEN</h4><p>使用的索引字节数。</p>
+<h4 id="3-8-REF"><a href="#3-8-REF" class="headerlink" title="3.8 REF"></a>3.8 REF</h4><p>显示了之前的表再key列记录的索引中查找值所用的列或常量。</p>
+<h4 id="3-9-ROWS"><a href="#3-9-ROWS" class="headerlink" title="3.9 ROWS"></a>3.9 ROWS</h4><p>显示执行查询的行数（而不是返回的行数），数值越大越不好，说明没有用好索引。但对 InnoDB 不太准。</p>
+<h4 id="3-10-EXTRA"><a href="#3-10-EXTRA" class="headerlink" title="3.10 EXTRA"></a>3.10 <code>EXTRA</code></h4><p>该列包含的是其他的额外信息。其中常见的重要的值如下：</p>
+<ul>
+<li><p><code>Using index</code><br>此查询使用了<code>覆盖索引（Covering Index）</code>，即通过索引就能返回结果，无需访问表。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select id from virtual_coins;</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+--------------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table         | partitions | type  | possible_keys | key          | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+--------------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | index | NULL          | idx_uid_type | 66      | NULL |   41 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+--------------+---------+------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Using where</code><br>表示 MySQL 服务器从存储引擎收到行后再进行<code>“后过滤”（Post-filter）</code>。所谓“后过滤”，就是先读取整行数据，再检查此行是否符合 where 句的条件，符合就留下，不符合便丢弃。因为检查是在读取行后才进行的，所以称为“后过滤”。查询中含有 WHERE 子句时较常见。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins where create_time&#x3D;111;</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table         | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | ALL  | NULL          | NULL | NULL    | NULL |   41 |    10.00 | Using where |</span><br><span class="line">+----+-------------+---------------+------------+------+---------------+------+---------+------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Using filesort</code> </p>
+<p>表示MySQL会对结果使用一个外部索引排序，而不是按索引次序从表里读取行。MySQL有两种文件排序的算法，两种方法都可以在内存或者磁盘上完成。Using filesort并不会对其进行区分。</p>
+</li>
+</ul>
+<p>  例如下面，id 是主键，所以它是索引。当 order by id 时，Extra 是 Using Index，而对别的列进行排序，就是 Using filesort，表示在查询之后，又进行了一次排序。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">#  Using index（对索引列排序）:</span><br><span class="line">mysql&gt; explain select id from virtual_coins order by id;</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table         | partitions | type  | possible_keys | key     | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins | NULL       | index | NULL          | PRIMARY | 4       | NULL |   41 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------------+------------+-------+---------------+---------+---------+------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line"># Using filesort（对非索引列排序）:</span><br><span class="line">mysql&gt; explain select * from virtual_coins_0 order by total_coins;</span><br><span class="line">+----+-------------+-----------------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">| id | select_type | table           | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |</span><br><span class="line">+----+-------------+-----------------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins_0 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    1 |   100.00 | Using filesort |</span><br><span class="line">+----+-------------+-----------------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>Using temporary</code><br><code>需要创建临时表存储结果以完成查询</code>。这种情况通常发生在查询时包含了 <code>Group By</code> 和 <code>Order By</code> 子句时或者<code>联合查询</code>时。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from virtual_coins_logs group by uid order by id;</span><br><span class="line">+----+-------------+--------------------+------------+-------+---------------------+---------------------+---------+------+------+----------+---------------------------------+</span><br><span class="line">| id | select_type | table              | partitions | type  | possible_keys       | key                 | key_len | ref  | rows | filtered | Extra                           |</span><br><span class="line">+----+-------------+--------------------+------------+-------+---------------------+---------------------+---------+------+------+----------+---------------------------------+</span><br><span class="line">|  1 | SIMPLE      | virtual_coins_logs | NULL       | index | idx_uid_type_action | idx_uid_type_action | 218     | NULL | 2701 |   100.00 | Using temporary; Using filesort |</span><br><span class="line">+----+-------------+--------------------+------------+-------+---------------------+---------------------+---------+------+------+----------+---------------------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>range checked for each record (index map:N)</code></p>
+<p>表示没有好用的索引，新的索引将在联接的每一行上重新估算。N是显示在possible_keys列中索引的位图，并且是冗余的。</p>
+</li>
+</ul>
+<hr>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><p>explain 的四个重要字段：<code>type、key、rows、extra</code>；</p>
+</li>
+<li><p>如果 type 的值为 index 或者 ALL，那么说明该 SQL 性能一般，需要优化；</p>
+</li>
+<li><p>如果 key 的值为 NULL，说明该 SQL 没有使用索引，可以考虑在关键字段上增加索引；</p>
+</li>
+<li><p>row 的值代表了进行本次查询时，搜索记录的条数，当这个值特别大的时候，说明该 SQL 语句性能差；</p>
+</li>
+<li><p>如果 Extra 字段的值为 Using filesort 或 Using temporary，也是需要优化的，可以通过调整 order by 或者 group by 的字段来实现；</p>
+</li>
+<li><p>联合查询时，一定要多用 explain 来查看查询性能</p>
+</li>
+</ul>
+<hr>
+<h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><p>高性能MySQL 第三版</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/04/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-Schema%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BC%98%E5%8C%96/" rel="prev" title="高性能MySQL-Schema与数据类型优化">
+                  <i class="fa fa-chevron-left"></i> 高性能MySQL-Schema与数据类型优化
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/06/MySQL-%E7%B4%A2%E5%BC%95%E5%88%86%E7%B1%BB/" rel="next" title="MySQL-索引分类">
+                  MySQL-索引分类 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'fb0d0e91ee1ae420d8ce068f086fbe02',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

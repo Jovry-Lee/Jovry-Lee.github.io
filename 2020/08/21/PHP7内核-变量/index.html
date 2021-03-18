@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="变量的内部实现​        变量是一个语言实现的基础，变量有两个组成部分：变量名、变量值，PHP中可以将其对应为：zval、zend_value，这两个概念一定要区分开，PHP中变量的内存是通过引用计数进行管理的，而且PHP7中引用计数是在zend_value而不是zval上，变量之间的传递、赋值通常也是针对zend_value。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP7内核-变量">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="变量的内部实现​        变量是一个语言实现的基础，变量有两个组成部分：变量名、变量值，PHP中可以将其对应为：zval、zend_value，这两个概念一定要区分开，PHP中变量的内存是通过引用计数进行管理的，而且PHP7中引用计数是在zend_value而不是zval上，变量之间的传递、赋值通常也是针对zend_value。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/39A4055CBC584591A643CF8855653427?method=download&shareKey=100018cf52486ade9a25e3f4d8227678">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/F2CB6F384907410BB02F7F7411F4E341?method=download&shareKey=fc47b2317eb268543f1440ed7296beb0">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/A8DBDBE3688A48739E06BF38ACDA300F?method=download&shareKey=6e4969019969485debc917c11a87da4d">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/358B60D6F6AA407E9B034BACE5E8ACB6?method=download&shareKey=e515e9d30e617ea6c6fa8b9475a9efeb">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/C469391F27FF454698CCD908B98FB2B2?method=download&shareKey=9501d4a7b3029c279f3d545c7f9c18e2">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/A5F4C7219117457A88A7D7CC3AFB53A9?method=download&shareKey=3d6950341fd9f21fea74f78f022500fd">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/1E8C8DDDE51D479296CA8F63EA5353B7?method=download&shareKey=43183c8018d3140f9b924508528c2af2">
+<meta property="og:image" content="https://note.youdao.com/yws/api/personal/file/697F728B851442D4AF142554DDF78333?method=download&shareKey=59d725805b5b7c8bc59c391e87607101">
+<meta property="article:published_time" content="2020-08-21T08:28:40.000Z">
+<meta property="article:modified_time" content="2020-08-30T12:42:36.923Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="PHP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://note.youdao.com/yws/api/personal/file/39A4055CBC584591A643CF8855653427?method=download&shareKey=100018cf52486ade9a25e3f4d8227678">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>PHP7内核-变量 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%98%E9%87%8F%E7%9A%84%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0"><span class="nav-text">变量的内部实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%98%E9%87%8F%E7%9A%84%E5%9F%BA%E7%A1%80%E7%BB%93%E6%9E%84"><span class="nav-text">变量的基础结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B1%BB%E5%9E%8B"><span class="nav-text">类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%A0%87%E9%87%8F%E7%B1%BB%E5%9E%8B"><span class="nav-text">标量类型</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%88zend-string%EF%BC%89"><span class="nav-text">字符串（zend_string）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%95%B0%E7%BB%84%EF%BC%88array%EF%BC%89"><span class="nav-text">数组（array）</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E5%AE%9E%E7%8E%B0"><span class="nav-text">基本实现</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%95%A3%E5%88%97%E5%87%BD%E6%95%B0"><span class="nav-text">散列函数</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-text">数组的初始化</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%8F%92%E5%85%A5"><span class="nav-text">插入</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%93%88%E5%B8%8C%E5%86%B2%E7%AA%81"><span class="nav-text">哈希冲突</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%9F%A5%E6%89%BE"><span class="nav-text">查找</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%89%A9%E5%AE%B9"><span class="nav-text">扩容</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%BC%95%E7%94%A8"><span class="nav-text">引用</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1-%E8%B5%84%E6%BA%90"><span class="nav-text">对象&#x2F;资源</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="nav-text">类型转换</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%BC%BA%E5%88%B6%E8%BD%AC%E6%8D%A2"><span class="nav-text">强制转换</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E6%8D%A2%E4%B8%BAnull"><span class="nav-text">转换为null</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E6%8D%A2%E4%B8%BA%E5%B8%83%E5%B0%94%E5%9E%8B"><span class="nav-text">转换为布尔型</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E6%8D%A2%E4%B8%BA%E6%95%B4%E5%9E%8B"><span class="nav-text">转换为整型</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E4%B8%BA%E6%B5%AE%E7%82%B9%E5%9E%8B"><span class="nav-text">转为浮点型</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E6%8D%A2%E4%B8%BA%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-text">转换为字符串</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E6%8D%A2%E4%B8%BA%E6%95%B0%E7%BB%84"><span class="nav-text">转换为数组</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E6%8D%A2%E4%B8%BA%E5%AF%B9%E8%B1%A1"><span class="nav-text">转换为对象</span></a></li></ol></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/08/21/PHP7%E5%86%85%E6%A0%B8-%E5%8F%98%E9%87%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP7内核-变量
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-21 16:28:40" itemprop="dateCreated datePublished" datetime="2020-08-21T16:28:40+08:00">2020-08-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-08-30 20:42:36" itemprop="dateModified" datetime="2020-08-30T20:42:36+08:00">2020-08-30</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h4 id="变量的内部实现"><a href="#变量的内部实现" class="headerlink" title="变量的内部实现"></a>变量的内部实现</h4><p>​        变量是一个语言实现的基础，变量有两个组成部分：变量名、变量值，PHP中可以将其对应为：<code>zval</code>、<code>zend_value</code>，这两个概念一定要区分开，PHP中变量的内存是通过<code>引用计数</code>进行管理的，而且<strong>PHP7中引用计数是在<code>zend_value</code>而不是zval上，变量之间的传递、赋值通常也是针对zend_value</strong>。</p>
+<a id="more"></a>
+
+<p>PHP中可以通过<code>$关键词</code>定义一个变量：<code>$a;</code>，在定义的同时可以进行初始化：<code>$a = &quot;hi~&quot;;</code><u>注意这实际是两步：定义、初始化</u>，只定义一个变量也是可以的，可以不给它赋值，比如：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$a;</span><br><span class="line">$b = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>这段代码在执行时会分配两个zval。</p>
+<h4 id="变量的基础结构"><a href="#变量的基础结构" class="headerlink" title="变量的基础结构"></a>变量的基础结构</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//zend_types.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">zval_struct</span>     <span class="title">zval</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">zval_struct</span> &#123;</span></span><br><span class="line">    zend_value        value; <span class="comment">//变量实际的value</span></span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">            ZEND_ENDIAN_LOHI_4(  <span class="comment">//这个是为了兼容大小字节序，小字节序就是下面的顺序，大字节序则下面4个顺序翻转</span></span><br><span class="line">                zend_uchar    type,         <span class="comment">//变量类型</span></span><br><span class="line">                zend_uchar    type_flags,  <span class="comment">//类型掩码，不同的类型会有不同的几种属性，内存管理会用到</span></span><br><span class="line">                zend_uchar    const_flags,</span><br><span class="line">                zend_uchar    reserved)     <span class="comment">//call info，zend执行流程会用到</span></span><br><span class="line">        &#125; v;</span><br><span class="line">        <span class="keyword">uint32_t</span> type_info; <span class="comment">//上面4个值的组合值，可以直接根据type_info取到4个对应位置的值</span></span><br><span class="line">    &#125; u1;</span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="keyword">uint32_t</span>     var_flags;</span><br><span class="line">        <span class="keyword">uint32_t</span>     next;                 <span class="comment">//哈希表中解决哈希冲突时用到</span></span><br><span class="line">        <span class="keyword">uint32_t</span>     cache_slot;           <span class="comment">/* literal cache slot 运行时缓存会用到*/</span> </span><br><span class="line">        <span class="keyword">uint32_t</span>     lineno;               <span class="comment">/* line number (for ast nodes) */</span></span><br><span class="line">        <span class="keyword">uint32_t</span>     num_args;             <span class="comment">/* arguments number for EX(This) */</span></span><br><span class="line">        <span class="keyword">uint32_t</span>     fe_pos;               <span class="comment">/* foreach position foreach遍历时会用到*/</span></span><br><span class="line">        <span class="keyword">uint32_t</span>     fe_iter_idx;          <span class="comment">/* foreach iterator index */</span></span><br><span class="line">    &#125; u2; <span class="comment">//一些辅助值</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><code>        zval</code>结构比较简单，内嵌一个union类型的<code>zend_value</code>保存具体变量类型的值或指针，zval中还有两个union：<code>u1</code>、<code>u2</code>:</p>
+<ul>
+<li><strong>u1</strong>: 它是联合了一个结构体<code>v</code>和一个32位无符号整型<code>type_info</code>；ZEND_ENDIAN_LOHI_4是一个宏，用于解决字节序问题的，他会根据系统字节序决定struct v中4个成员的顺序。v定义了4个成员变量，<strong>变量的类型就通过u1.v.type区分</strong>；另外一个值<code>type_flags</code>为类型掩码，在变量的内存管理、gc机制中会用到；至于后面两个const_flags、reserved暂且不管。</li>
+<li><strong>u2</strong>: 这个值纯粹是个辅助值，zval结构中value、u1分别占了8byte、4byte，一共12byte，假如zval只有:value、u1两个值，整个zval的大小也会对齐到16byte，既然不管有没有u2大小都是16byte，把多余的4byte拿出来用于一些特殊用途还是很划算的，比如next在哈希表解决哈希冲突时会用到，还有fe_pos在foreach会用到……  </li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">union</span> _zend_value &#123;</span><br><span class="line">    zend_long         lval;    <span class="comment">//int整形</span></span><br><span class="line">    <span class="keyword">double</span>            dval;    <span class="comment">//浮点型</span></span><br><span class="line">    zend_refcounted  *counted;</span><br><span class="line">    zend_string      *str;     <span class="comment">//string字符串</span></span><br><span class="line">    zend_array       *arr;     <span class="comment">//array数组</span></span><br><span class="line">    zend_object      *obj;     <span class="comment">//object对象</span></span><br><span class="line">    zend_resource    *res;     <span class="comment">//resource资源类型</span></span><br><span class="line">    zend_reference   *ref;     <span class="comment">//引用类型，通过&amp;$var_name定义的</span></span><br><span class="line">    zend_ast_ref     *ast;     <span class="comment">//下面几个都是内核使用的value</span></span><br><span class="line">    zval             *zv;</span><br><span class="line">    <span class="keyword">void</span>             *ptr;</span><br><span class="line">    zend_class_entry *ce;</span><br><span class="line">    zend_function    *func;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">        <span class="keyword">uint32_t</span> w1;</span><br><span class="line">        <span class="keyword">uint32_t</span> w2;</span><br><span class="line">    &#125; ww;</span><br><span class="line">&#125; zend_value;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>​        <code>zend_value</code>是一个联合体，各个类型根据自己的类型选择使用不同的成员，<strong>从zend_value可以看出，除long、double类型直接存储值外，其它类型都为指针，指向各自的结构</strong>。zend_value中没有布尔型，这是因为PHP7中将布尔型具体拆分为了true、false两种类型，通过zval.u1.v.type进行区分（注：老版本中，布尔型是通过整型进行区分的）</p>
+<h4 id="类型"><a href="#类型" class="headerlink" title="类型"></a>类型</h4><p><code>zval.u1.type</code>类型：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* regular data types */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_UNDEF                    0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_NULL                     1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_FALSE                    2</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_TRUE                     3</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_LONG                     4</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_DOUBLE                   5</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_STRING                   6</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_ARRAY                    7</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_OBJECT                   8</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_RESOURCE                 9</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_REFERENCE                10</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* constant expressions */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_CONSTANT                 11</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_CONSTANT_AST             12</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* fake types */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _IS_BOOL                    13</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_CALLABLE                 14</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* internal types */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_INDIRECT                 15</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IS_PTR                      17</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="标量类型"><a href="#标量类型" class="headerlink" title="标量类型"></a>标量类型</h5><ul>
+<li>没有value，直接根据type区分的类型：<code>true</code>、<code>false</code>、<code>null</code></li>
+<li>值存于value中，无需额外的value指针：<code>zend_long</code>、 <code>double</code></li>
+</ul>
+<h5 id="字符串（zend-string）"><a href="#字符串（zend-string）" class="headerlink" title="字符串（zend_string）"></a>字符串（zend_string）</h5><p>​        PHP中没有使用<code>char</code>来表示字符串，而是为字符串单独定义了一个结构<code>zend_string</code>，其中除了存储字符串内容，还存储了其他信息。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">zend_string</span> &#123;</span></span><br><span class="line">    zend_refcounted_h gc; <span class="comment">// 变量引用计数信息，用于内存管理。比如当前value的引用数，所有用到引用计数的变量类型都会有这个结构</span></span><br><span class="line">    zend_ulong        h;  <span class="comment">/* hash value 哈希值，数组中计算索引时会用到*/</span></span><br><span class="line">    <span class="keyword">size_t</span>            len; <span class="comment">// 字符串长度，通过这个值保证二进制安全</span></span><br><span class="line">    <span class="keyword">char</span>              val[<span class="number">1</span>]; <span class="comment">// 字符串内容，变长struct，分配时按len长度申请内存</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>​        字符串内容<code>val</code>是一个可变数组，在字符串分配时的操作为<code>malloc(sizeof(zend_string) + 字符串长度)</code>。<br><em>注：val中多出一个字节（val[1]而不是val[0]）用于存储字符串的最后一个字符”\0”.</em></p>
+<p>例如：$a=”abc”，对应zend_string内存结构如下：<br><img src="https://note.youdao.com/yws/api/personal/file/39A4055CBC584591A643CF8855653427?method=download&shareKey=100018cf52486ade9a25e3f4d8227678" alt="zend_string内存结构"></p>
+<p>字符串具体分类：</p>
+<ul>
+<li><code>IS_STR_PERSISTENT</code>: 通过malloc分配。</li>
+<li><code>IS_STR_INTERNED</code>: php代码中写的一些字面量，如函数名、变量名。</li>
+<li><code>IS_STR_PERMERNENT</code>:永久值，生命周期大于request。</li>
+<li><code>IS_STR_CONSTANT</code>:常量。</li>
+<li><code>IS_STR_CONSTANT_UNQUALIFIED</code>:这个信息通过flag保存：zval.value-&gt;gc.u.flags</li>
+</ul>
+<h5 id="数组（array）"><a href="#数组（array）" class="headerlink" title="数组（array）"></a>数组（array）</h5><p>​        <code>Array</code>是PHP中非常强大的一个数据结构，它的<strong>底层实现为散列表（HashTable 哈希表）</strong>。<br>​        散列表是根据<code>key</code>直接进行访问的数据结构，它的<code>key-value</code>之间有一个映射函数，可以根据key通过映射函数直接索引到对应的value值，直接根据<code>“内存起始地址+偏移值”</code>进行寻址，加快查找速度。理想情况下，查找的期望时间复杂度为O(1).</p>
+<p>HashTable的数据结构如下:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">zend_array</span> <span class="title">HashTable</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">zend_array</span> &#123;</span></span><br><span class="line">    zend_refcounted_h gc; <span class="comment">//引用计数信息，与字符串相同</span></span><br><span class="line">    <span class="comment">// 提供一些辅助的功能，比如，flag用来设置散列表的一些属性，是否持久化、是否已经初始化。</span></span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">            ZEND_ENDIAN_LOHI_4(</span><br><span class="line">                zend_uchar    flags,</span><br><span class="line">                zend_uchar    nApplyCount,</span><br><span class="line">                zend_uchar    nIteratorsCount,</span><br><span class="line">                zend_uchar    reserve)</span><br><span class="line">        &#125; v;</span><br><span class="line">        <span class="keyword">uint32_t</span> flags;</span><br><span class="line">    &#125; u;</span><br><span class="line">    <span class="comment">// 用于散列函数映射存储元素在arData数组中的下标。其值实际是nTableSize的负数，即nTableMask=-nTableSize（nTableMask=~nTableSize+1）</span></span><br><span class="line">    <span class="keyword">uint32_t</span>          nTableMask; <span class="comment">//计算bucket索引时的掩码</span></span><br><span class="line">    <span class="comment">// 存储元素数组，每个元素的结构统一为Bucket，其内存是连续的，arData指向第一个Bucket（即指向数组的起始位置）</span></span><br><span class="line">    Bucket           *arData; <span class="comment">//bucket数组</span></span><br><span class="line">    <span class="comment">// 当前已使用的Bucket数，但这些Bucket并不都是有效的，因此再删除一个数组元素时，并不会马上将其从数组中移除，而是将这个元素的类型表位IS_UNDEF，只有在数组容量超过限制，需要扩容时才会删除。</span></span><br><span class="line">    <span class="keyword">uint32_t</span>          nNumUsed; </span><br><span class="line">    <span class="comment">// 数组实际存储的元素数（有效元素数）。</span></span><br><span class="line">    <span class="keyword">uint32_t</span>          nNumOfElements; <span class="comment">//已有元素数，nNumOfElements &lt;= nNumUsed，因为删除的并不是直接从arData中移除</span></span><br><span class="line">    <span class="comment">// 数组的总容量，其大小为2的幂次方，最小为8（即2^3）。</span></span><br><span class="line">    <span class="keyword">uint32_t</span>          nTableSize; <span class="comment">//数组的大小，为2^n</span></span><br><span class="line">    <span class="keyword">uint32_t</span>          nInternalPointer; <span class="comment">//数值索引</span></span><br><span class="line">    <span class="comment">// 下一个可用的数值索引，如arr[]=1;arr[&#x27;a&#x27;]=2;arr[]=3;则nNextFreeElement=2；该成员是给自动确定数值索引使用的。</span></span><br><span class="line">    zend_long         nNextFreeElement;</span><br><span class="line">    <span class="comment">// 当删除或覆盖数组中的某个元素时，若提供了这个函数句柄，则会回调此函数。</span></span><br><span class="line">    <span class="keyword">dtor_func_t</span>       pDestructor;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+<p>Bucket的结构如下,主要用来保存元素的key及value。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">Bucket</span> &#123;</span></span><br><span class="line">    <span class="comment">// 存储的具体的value，这里嵌入了一个zval而不是一个指针。</span></span><br><span class="line">	zval              val;</span><br><span class="line">	<span class="comment">// hash code，用来映射元素的存储位置。若元素是数值索引，那么他的值就是数值索引的值；若是字符串，那么这个只就是根据字符串key通过Time33算法计算得到的散列值。</span></span><br><span class="line">	zend_ulong        h;                <span class="comment">/* hash value (or numeric index)   */</span></span><br><span class="line">	<span class="comment">// 存储元素的key。</span></span><br><span class="line">	zend_string      *key;              <span class="comment">/* string key or NULL for numerics */</span></span><br><span class="line">&#125; Bucket;</span><br></pre></td></tr></table></figure>
+<h6 id="基本实现"><a href="#基本实现" class="headerlink" title="基本实现"></a>基本实现</h6><p>散列表主要由两部分组成：</p>
+<ul>
+<li>存储元素数组</li>
+<li>散列函数<br>一个简单的散列函数可以采用取模的方式，比如散列表的大小为8，那么在散列表初始化数组时就会分配8个元素大小的空间，根据key的hash code与8取模的到的值作为该元素在数组中的下标。其示意图如下：</li>
+</ul>
+<p><img src="https://note.youdao.com/yws/api/personal/file/F2CB6F384907410BB02F7F7411F4E341?method=download&shareKey=fc47b2317eb268543f1440ed7296beb0" alt="散列表的基本实现"></p>
+<p>**以散列函数的输出值作为该元素在存储元素数组中的下标的方式有一个问题: **元素在数组中的位置是随机的，它是无序的。</p>
+<ul>
+<li><strong>问：那么PHP是如何保证元素的顺序与其插入顺序一致？</strong> <pre><code>    为了实现散列表的有序性，PHP在散列函数与元素数组之间加了一层映射表，该映射表也是一个数组，大小与存储元素的数组相同，它存储的元素类型为整型，用于保存实际存储的有序数组中的下标：**元素按照先后顺序依次插入实际存储的数组，然后将其数组下标按照散列函数散列出来的位置存储在新加的映射表中**，如下图所示。</code></pre>
+</li>
+</ul>
+<p><img src="https://note.youdao.com/yws/api/personal/file/A8DBDBE3688A48739E06BF38ACDA300F?method=download&shareKey=6e4969019969485debc917c11a87da4d" alt="散列表映射关系"></p>
+<p>原理如上，但实际上PHP是将这个映射表与arData放在一起，在数组初始化时会分配存储Bucket的内存，同时还会分配相同数量的uint32_t大小的空间，将arData偏移到存储元素数组的位置，这个中间映射表可以通过arData向前访问到。如下图所示：<br><img src="https://note.youdao.com/yws/api/personal/file/358B60D6F6AA407E9B034BACE5E8ACB6?method=download&shareKey=e515e9d30e617ea6c6fa8b9475a9efeb" alt="HashTable中间映射表"></p>
+<h6 id="散列函数"><a href="#散列函数" class="headerlink" title="散列函数"></a>散列函数</h6><p>​        通常散列会数会以取模的方式给出，比如：<code>key-&gt;h%nTableSize</code>.但是PHP采用了另一种方式，因为散列表的大小为2的幂次方，所以通过<strong>或运算</strong>可以得到<code>[-1,nTableMask]</code>之间的散列值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nIndex &#x3D; h | ht-&gt;nTableMask</span><br></pre></td></tr></table></figure>
+
+
+<p>eg：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">h&#x3D;18003212</span><br><span class="line">nTableSize&#x3D;8</span><br><span class="line"></span><br><span class="line">nTableMask&#x3D;-8</span><br><span class="line">nIndex&#x3D;-4</span><br></pre></td></tr></table></figure>
+
+
+
+<h6 id="数组的初始化"><a href="#数组的初始化" class="headerlink" title="数组的初始化"></a>数组的初始化</h6><p>​        数组初始化的过程主要是对<code>HashTable</code>中的成员进行设置，初始化时并不会立即分配<code>arData</code>的内存，<code>arData</code>的内存在<strong>插入第一个元素时才会分配</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">ZEND_API <span class="keyword">void</span> ZEND_FASTCALL _zend_hash_init(HashTable *ht, <span class="keyword">uint32_t</span> nSize, <span class="keyword">dtor_func_t</span> pDestructor, zend_bool persistent ZEND_FILE_LINE_DC)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 初始化gc信息</span></span><br><span class="line">	GC_REFCOUNT(ht) = <span class="number">1</span>;</span><br><span class="line">	GC_TYPE_INFO(ht) = IS_ARRAY;</span><br><span class="line">	<span class="comment">// 设置flags</span></span><br><span class="line">	ht-&gt;u.flags = (persistent ? HASH_FLAG_PERSISTENT : <span class="number">0</span>) | HASH_FLAG_APPLY_PROTECTION | HASH_FLAG_STATIC_KEYS;</span><br><span class="line">	<span class="comment">// nTableMask的值是临时的</span></span><br><span class="line">	ht-&gt;nTableMask = HT_MIN_MASK;</span><br><span class="line">	<span class="comment">// 临时设置ht-&gt;arData</span></span><br><span class="line">	HT_SET_DATA_ADDR(ht, &amp;uninitialized_bucket);</span><br><span class="line">	ht-&gt;nNumUsed = <span class="number">0</span>;</span><br><span class="line">	ht-&gt;nNumOfElements = <span class="number">0</span>;</span><br><span class="line">	ht-&gt;nInternalPointer = HT_INVALID_IDX;</span><br><span class="line">	ht-&gt;nNextFreeElement = <span class="number">0</span>;</span><br><span class="line">	ht-&gt;pDestructor = pDestructor;</span><br><span class="line">	<span class="comment">// 把数组的大小重置为2的幂次方</span></span><br><span class="line">	ht-&gt;nTableSize = zend_hash_check_size(nSize);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h6 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h6><p>​        插入时，会检查数组是否已经分配存储空间。PHP会在第一次插入时根据<code>nTableSize</code>的大小分配，分配完成后把<code>HashTable-&gt;u.flags</code>打上<code>HASH_FLAG_INITIALIZAED</code>掩码。</p>
+<ul>
+<li><p>分配内存<br>分配的内存包括映射表及元素数组：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nTableSize * (sizeof(Bucket) + sizeof(uint32_t))</span><br></pre></td></tr></table></figure>
+<p>分配完成后，将<code>HashTable-&gt;arData</code>指向第一个<code>Bucket</code>的位置。</p>
+</li>
+<li><p>插入数据<br>将元素按照顺序插入<code>arData</code>，然后将其在<code>arData</code>数组中的位置存储到根据<code>key</code>的<code>hash code</code>（即<code>key-&gt;h</code>）与<code>nTableMask</code>计算得到的中间映射表中的对应位置。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">zend_hash.c</span><br><span class="line"><span class="comment">// _zend_hash_add_or_update_i:</span></span><br><span class="line">add_to_hash:</span><br><span class="line">	HANDLE_BLOCK_INTERRUPTIONS();</span><br><span class="line">	<span class="comment">// idx为Bucket在arData中存储位置</span></span><br><span class="line">	idx = ht-&gt;nNumUsed++;</span><br><span class="line">	ht-&gt;nNumOfElements++;</span><br><span class="line">	<span class="keyword">if</span> (ht-&gt;nInternalPointer == HT_INVALID_IDX) &#123;</span><br><span class="line">		ht-&gt;nInternalPointer = idx;</span><br><span class="line">	&#125;</span><br><span class="line">	zend_hash_iterators_update(ht, HT_INVALID_IDX, idx);</span><br><span class="line">	<span class="keyword">if</span> ((zend_long)h &gt;= (zend_long)ht-&gt;nNextFreeElement) &#123;</span><br><span class="line">		ht-&gt;nNextFreeElement = h &lt; ZEND_LONG_MAX ? h + <span class="number">1</span> : ZEND_LONG_MAX;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 找到存储Bucket，设置key、value</span></span><br><span class="line">	p = ht-&gt;arData + idx;</span><br><span class="line">	p-&gt;h = h;</span><br><span class="line">	p-&gt;key = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="comment">// 计算中间映射表的散列值，idx将保存在映射数组的nIndex位置</span></span><br><span class="line">	nIndex = h | ht-&gt;nTableMask;</span><br><span class="line">	<span class="comment">// 将映射表中原来的值保存到新Bucket中，哈希冲突时会用到</span></span><br><span class="line">	ZVAL_COPY_VALUE(&amp;p-&gt;val, pData);</span><br><span class="line">	<span class="comment">// 先把旧的值保存到新插入的元素中</span></span><br><span class="line">	Z_NEXT(p-&gt;val) = HT_HASH(ht, nIndex);</span><br><span class="line">	<span class="comment">// 再把新元素数组存储位置更新到映射表中</span></span><br><span class="line">	HT_HASH(ht, nIndex) = HT_IDX_TO_HASH(idx);</span><br><span class="line">	HANDLE_UNBLOCK_INTERRUPTIONS();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> &amp;p-&gt;val;</span><br></pre></td></tr></table></figure>
+<h6 id="哈希冲突"><a href="#哈希冲突" class="headerlink" title="哈希冲突"></a>哈希冲突</h6><p>​        散列表中不同元素的<code>key</code>可能计算得到相同的哈希值，这些具有相同哈希值的元素在插入散列表时就会发生冲突，因为映射表只能存储一个元素。  </p>
+</li>
+</ul>
+<p><strong>常见的解决方式（PHP采用这种方式）：将冲突的Bucket串成链表，查找时需要遍历这个链表，逐个比较<code>key</code>，从而找到目标元素。</strong></p>
+<ul>
+<li>具体操作：<pre><code>    `HashTable`中的`Bucket`会记录与它冲突的元素在`arData`数组中的存储位置。在设置映射值时，如果发现映射表中要设置的位置已经被之前插入的元素占用了（值不等于初始化的-1），那么会把已经存在的值保存到新插入的`Bucket`中，然后将映射表中的值更新为新`Bucket`的存储位置（即每次都会把冲突的元素插到开头）。  </code></pre>
+<strong>冲突元素的保存位置为：</strong><code>Bucket.val.u2.next</code></li>
+</ul>
+<p><strong>示例</strong>：一个数组有三个元素，按照a、b、c的顺序插入，加入a、c两个key冲突了，则HashTable的结构如下：<br>$arr = [];<br>$arr[‘a’] = 11;<br>$arr[‘b’] = 22;<br>$arr[‘c’] = 33;<br><img src="https://note.youdao.com/yws/api/personal/file/C469391F27FF454698CCD908B98FB2B2?method=download&shareKey=9501d4a7b3029c279f3d545c7f9c18e2" alt="哈希冲突链表"></p>
+<h6 id="查找"><a href="#查找" class="headerlink" title="查找"></a>查找</h6><p>查找过程如下：</p>
+<ul>
+<li>①、根据<code>key</code>计算出<code>hash code</code>（即<code>zend_string-&gt;h</code>）与<code>nTableMask</code>计算得到散列值<code>nIndex</code>。</li>
+<li>②、根据散列值从中间映射表中得到存储元素在有序存储数组中的位置<code>idx</code>。</li>
+<li>③、根据<code>idx</code>从有序存储数组（<code>HashTable-&gt;arData</code>）中取出<code>Bucket</code></li>
+<li>④、从取出的<code>Bucket</code>进行遍历，判断Bucket的key是否是要查找的key，若是则停止遍历，否则继续根据<code>zval.u2.next</code>遍历比较。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// zend_hash_find_bucket:</span></span><br><span class="line"><span class="comment">// 根据zend_string *key进行查找</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> zend_always_inline Bucket *<span class="title">zend_hash_find_bucket</span><span class="params">(<span class="keyword">const</span> HashTable *ht, zend_string *key)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	zend_ulong h;</span><br><span class="line">	<span class="keyword">uint32_t</span> nIndex;</span><br><span class="line">	<span class="keyword">uint32_t</span> idx;</span><br><span class="line">	Bucket *p, *arData;</span><br><span class="line"></span><br><span class="line">	h = zend_string_hash_val(key);</span><br><span class="line">	arData = ht-&gt;arData;</span><br><span class="line">	<span class="comment">// 计算散列值</span></span><br><span class="line">	nIndex = h | ht-&gt;nTableMask;</span><br><span class="line">	<span class="comment">// 获取Bucket存储位置</span></span><br><span class="line">	idx = HT_HASH_EX(arData, nIndex);</span><br><span class="line">    <span class="comment">// 遍历</span></span><br><span class="line">	<span class="keyword">while</span> (EXPECTED(idx != HT_INVALID_IDX)) &#123;</span><br><span class="line">		p = HT_HASH_TO_BUCKET_EX(arData, idx);</span><br><span class="line">		<span class="keyword">if</span> (EXPECTED(p-&gt;key == key)) &#123; <span class="comment">/* check for the same interned string */</span></span><br><span class="line">			<span class="keyword">return</span> p;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (EXPECTED(p-&gt;h == h) &amp;&amp; <span class="comment">// 先比较hash code</span></span><br><span class="line">		     EXPECTED(p-&gt;key) &amp;&amp; </span><br><span class="line">		     <span class="comment">// 在比较key长度，最后按字符比较是否相同</span></span><br><span class="line">		     EXPECTED(ZSTR_LEN(p-&gt;key) == ZSTR_LEN(key)) &amp;&amp;</span><br><span class="line">		     EXPECTED(<span class="built_in">memcmp</span>(ZSTR_VAL(p-&gt;key), ZSTR_VAL(key), ZSTR_LEN(key)) == <span class="number">0</span>)) &#123;<span class="comment">// 比较查找的key与Bucket的key是否匹配</span></span><br><span class="line">			<span class="keyword">return</span> p;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 不匹配则继续遍历</span></span><br><span class="line">		idx = Z_NEXT(p-&gt;val);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h6 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a>扩容</h6><p>​        数组的容量是有限的，最多可以存储<code>nTableSize</code>个元素，那么当数组空间已满还要继续插入时如何处理？  </p>
+<p><strong>问: PHP是怎样实现的自动扩容？</strong></p>
+<p>​        <strong>扩容的过程为</strong>：检查数组中已经删除的元素所占的比例（已经删除但未从存储数组中移除的元素）.若比例达到域值，则触发<strong>重建索引</strong>的操作，这个过程会把删除的Bucket移除，然后把后面的Bucket往前移补上空缺的Bucket；若还没有达到域值，则分配一个原数组大小2倍的新数组，然后把原数组的元素复制到新数组上，重建索引。 </p>
+<p><u>域值判断公式</u>如下，即域值为<code>nNumOfElement + (nNumElement / 32)</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ht-&gt;nNumUsed &gt; ht-&gt;nNumOfElement + (ht-&gt;nNumOfElement &gt;&gt; 5)</span><br></pre></td></tr></table></figure>
+
+<p>具体的处理过程：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> ZEND_FASTCALL <span class="title">zend_hash_do_resize</span><span class="params">(HashTable *ht)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"></span><br><span class="line">	IS_CONSISTENT(ht);</span><br><span class="line">	HT_ASSERT(GC_REFCOUNT(ht) == <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (ht-&gt;nNumUsed &gt; ht-&gt;nNumOfElements + (ht-&gt;nNumOfElements &gt;&gt; <span class="number">5</span>)) &#123; <span class="comment">// 无序扩容，将删除的Bucket移除，然后把后面的bucket往前补上空缺</span></span><br><span class="line">		HANDLE_BLOCK_INTERRUPTIONS();</span><br><span class="line">		<span class="comment">// 只有到达一定域值才进行rehash操作</span></span><br><span class="line">		zend_hash_rehash(ht); <span class="comment">// 重建索引数组</span></span><br><span class="line">		HANDLE_UNBLOCK_INTERRUPTIONS();</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (ht-&gt;nTableSize &lt; HT_MAX_SIZE) &#123; <span class="comment">// 扩容，分配原数组大小2倍的新数组。</span></span><br><span class="line">		<span class="keyword">void</span> *new_data, *old_data = HT_GET_DATA_ADDR(ht);</span><br><span class="line">		<span class="comment">// 扩大为2倍，加法比乘法快</span></span><br><span class="line">		<span class="keyword">uint32_t</span> nSize = ht-&gt;nTableSize + ht-&gt;nTableSize;</span><br><span class="line">		Bucket *old_buckets = ht-&gt;arData;</span><br><span class="line"></span><br><span class="line">		HANDLE_BLOCK_INTERRUPTIONS();</span><br><span class="line">		<span class="comment">// 新分配arData空间，大小为(sizeof(Bucket) + sizeof(uint32_t)) * nSize;</span></span><br><span class="line">		new_data = pemalloc(HT_SIZE_EX(nSize, -nSize), ht-&gt;u.flags &amp; HASH_FLAG_PERSISTENT);</span><br><span class="line">		ht-&gt;nTableSize = nSize;</span><br><span class="line">		ht-&gt;nTableMask = -ht-&gt;nTableSize;</span><br><span class="line">	    <span class="comment">// 将arData指针偏移到Bucket数组起始位置</span></span><br><span class="line">		HT_SET_DATA_ADDR(ht, new_data);</span><br><span class="line">		<span class="comment">// 将旧的Bucket数组复制到新空间（此步只复制存储的元素，即HashTable-&gt;arData，不会复制中间映射表，因为扩容后旧的映射表已无法使用，key-value的映射关系需要重新计算，即重建索引）</span></span><br><span class="line">		<span class="built_in">memcpy</span>(ht-&gt;arData, old_buckets, <span class="keyword">sizeof</span>(Bucket) * ht-&gt;nNumUsed);</span><br><span class="line">		<span class="comment">// 释放旧空间</span></span><br><span class="line">		pefree(old_data, ht-&gt;u.flags &amp; HASH_FLAG_PERSISTENT);</span><br><span class="line">		<span class="comment">// 重建索引数组：映射表</span></span><br><span class="line">		zend_hash_rehash(ht);</span><br><span class="line">		HANDLE_UNBLOCK_INTERRUPTIONS();</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		zend_error_noreturn(E_ERROR, <span class="string">&quot;Possible integer overflow in memory allocation (%zu * %zu + %zu)&quot;</span>, ht-&gt;nTableSize * <span class="number">2</span>, <span class="keyword">sizeof</span>(Bucket) + <span class="keyword">sizeof</span>(<span class="keyword">uint32_t</span>), <span class="keyword">sizeof</span>(Bucket));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重建索引的过程实际上就是将所有元素重新插入一遍，其处理过程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 遍历数组，重新设置中间映射表（索引表）</span><br><span class="line">    do &#123;</span><br><span class="line">			nIndex &#x3D; p-&gt;h | ht-&gt;nTableMask;</span><br><span class="line">			Z_NEXT(p-&gt;val) &#x3D; HT_HASH(ht, nIndex);</span><br><span class="line">			HT_HASH(ht, nIndex) &#x3D; HT_IDX_TO_HASH(i);</span><br><span class="line">			p++;</span><br><span class="line">		&#125; while (++i &lt; ht-&gt;nNumUsed);</span><br></pre></td></tr></table></figure>
+<p>重建索引会将已删除的bucket移除，移除后会把这个Bucket之后的元素全部向前移动一个位置，所以<strong>重建索引后存储数组中元素全部紧密排列在一起</strong>。</p>
+<h5 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h5><p>​        引用类型是PHP中比较特殊的一种类型，它实际是指向另外一个PHP变量（<em>在PHP中通过<code>&amp;操作符</code>产生一个引用变量</em>），对它的修改会直接改动实际指向的zval，<u>可以简单的理解为C中的指针</u>。  </p>
+<p>操作步骤：</p>
+<ul>
+<li>首先为<code>&amp;</code>操作的变量分配一个<code>zend_reference结构</code>，其内嵌一个<code>zval</code>，这个<code>zval</code>的<code>value</code>指向原来<code>zval</code>的<code>value</code>(<strong>注: 如果是布尔、整形、浮点则直接复制原来的值</strong>)。</li>
+<li>然后将原<code>zval</code>的类型修改为<code>IS_REFERENCE</code>，原<code>zval</code>的<code>value</code>指向新创建的<code>zend_reference</code>结构。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct _zend_reference &#123;</span><br><span class="line">    zend_refcounted_h gc;</span><br><span class="line">    zval              val; &#x2F;&#x2F; 指向原来的value</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+示例1：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$a &#x3D; date(&#39;Y-m-d&#39;);</span><br><span class="line">$b &#x3D; &amp;$a;</span><br></pre></td></tr></table></figure>
+<img src="https://note.youdao.com/yws/api/personal/file/A5F4C7219117457A88A7D7CC3AFB53A9?method=download&shareKey=3d6950341fd9f21fea74f78f022500fd" alt="a与b内存引用关系"></li>
+</ul>
+<p><strong>注：若此时将<code>$b</code>复制给其他变量，那么传递给新变量的value将实时及引用的值，而不是引用本身</strong>。PHP中的引用只有一级，不会出现一个引用指向另外一个引用的情况，即没有C语言中多级指针的概念。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$a &#x3D; date(&#39;Y-m-d&#39;);</span><br><span class="line">$b &#x3D; &amp;$a;</span><br><span class="line">$c &#x3D; $b; &#x2F;&#x2F; 若想让$c也指向$a&#x2F;$b引用的值，则：$c &#x3D; &amp;$b或$c &#x3D; &amp;$a;</span><br></pre></td></tr></table></figure>
+<p><img src="https://note.youdao.com/yws/api/personal/file/1E8C8DDDE51D479296CA8F63EA5353B7?method=download&shareKey=43183c8018d3140f9b924508528c2af2" alt="a,b与c内存引用关系"></p>
+<p>示例2：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$a &#x3D; &quot;time:&quot; . time();      &#x2F;&#x2F;$a    -&gt; zend_string_1(refcount&#x3D;1)</span><br><span class="line">$b &#x3D; &amp;$a;                   &#x2F;&#x2F;$a,$b -&gt; zend_reference_1(refcount&#x3D;2) -&gt; zend_string_1(refcount&#x3D;1)</span><br></pre></td></tr></table></figure>
+<p><img src="https://note.youdao.com/yws/api/personal/file/697F728B851442D4AF142554DDF78333?method=download&shareKey=59d725805b5b7c8bc59c391e87607101" alt="zend_ref"></p>
+<p>注意：<strong>引用只能通过<code>&amp;</code>产生，无法通过赋值传递</strong>  </p>
+<p>例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">error:</span><br><span class="line">$a &#x3D; &quot;time:&quot; . time();      &#x2F;&#x2F;$a    -&gt; zend_string_1(refcount&#x3D;1)</span><br><span class="line">$b &#x3D; &amp;$a;                   &#x2F;&#x2F;$a,$b -&gt; zend_reference_1(refcount&#x3D;2) -&gt; zend_string_1(refcount&#x3D;1)</span><br><span class="line">$c &#x3D; $b;                    &#x2F;&#x2F;$a,$b -&gt; zend_reference_1(refcount&#x3D;2) -&gt; zend_string_1(refcount&#x3D;2)</span><br><span class="line">                            &#x2F;&#x2F;$c    -&gt; </span><br><span class="line">right:</span><br><span class="line">$a &#x3D; &quot;time:&quot; . time();      &#x2F;&#x2F;$a       -&gt; zend_string_1(refcount&#x3D;1)</span><br><span class="line">$b &#x3D; &amp;$a;                   &#x2F;&#x2F;$a,$b    -&gt; zend_reference_1(refcount&#x3D;2) -&gt; zend_string_1(refcount&#x3D;1)</span><br><span class="line">$c &#x3D; &amp;$b;&#x2F;*或$c &#x3D; &amp;$a*&#x2F;     &#x2F;&#x2F;$a,$b,$c -&gt; zend_reference_1(refcount&#x3D;3) -&gt; zend_string_1(refcount&#x3D;1)                             </span><br></pre></td></tr></table></figure>
+<p>这个也表示PHP中的 <strong>引用只可能有一层 ，不会出现一个引用指向另外一个引用的情况</strong> ，也就是没有C语言中指针的指针的概念。</p>
+<h5 id="对象-资源"><a href="#对象-资源" class="headerlink" title="对象/资源"></a>对象/资源</h5><p>对象比较常见，资源指的是tcp连接、文件句柄等等类型。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">struct _zend_object &#123;</span><br><span class="line">    zend_refcounted_h gc;</span><br><span class="line">    uint32_t          handle;</span><br><span class="line">    zend_class_entry *ce; &#x2F;&#x2F;对象对应的class类</span><br><span class="line">    const zend_object_handlers *handlers;</span><br><span class="line">    HashTable        *properties; &#x2F;&#x2F;对象属性哈希表</span><br><span class="line">    zval              properties_table[1];</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">struct _zend_resource &#123;</span><br><span class="line">    zend_refcounted_h gc;</span><br><span class="line">    int               handle;</span><br><span class="line">    int               type;</span><br><span class="line">    void             *ptr;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h5 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h5><p>​        PHP是弱类型语言，使用时不需要明确定义变量的类型，Zend虚拟机在执行PHP代码时，会根据具体的应用场景进行转换，也就是变量会按照类型转换规则将不合格变量转换给合格的变量，然后进行操作。</p>
+<p>例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$a &#x3D; &quot;100&quot; + 200</span><br></pre></td></tr></table></figure>
+<p>执行时Zend发现相加的一个值为字符串，就会试图将<code>字符串100</code>转为数值类型（整型或浮点型），然后与200相加。<br><strong>注：转换的时候并不会改变原来的值，而是会生成一个新的变量进行处理。</strong></p>
+<h6 id="强制转换"><a href="#强制转换" class="headerlink" title="强制转换"></a>强制转换</h6><p>PHP提供了一种强制转换方式：</p>
+<ul>
+<li>(int)/(integer): 转换为整型integer</li>
+<li>(bool)/(boolean):转换为布尔类型boolean</li>
+<li>(flaot)/(double)/(real):转换为浮点型flaot</li>
+<li>(string):转换为字符串string</li>
+<li>(array):转换为数组array</li>
+<li>(object):转换为对象object</li>
+<li>(unset):转换为null</li>
+</ul>
+<p><em>注：有些类型之间是无法转换的，如：资源类型，无法将任何类型转换为资源类型。</em></p>
+<h6 id="转换为null"><a href="#转换为null" class="headerlink" title="转换为null"></a>转换为null</h6><p>​        任意类型都可以转为null，转换时直接将新的<code>zval类型</code>设置为<code>IS_NULL</code>。</p>
+<h6 id="转换为布尔型"><a href="#转换为布尔型" class="headerlink" title="转换为布尔型"></a>转换为布尔型</h6><p>​        当转换为布尔型时，根据原值的<code>true</code>、<code>false</code>决定转换后的结果，一些值被认为是<code>false</code>，除此之外的其他值通常被认为是<code>true</code>。</p>
+<p>被认为是false的值:</p>
+<ul>
+<li>布尔值false本身</li>
+<li>整型0</li>
+<li>浮点型值0.0</li>
+<li>==空字符串（‘’），以及字符串‘0’==</li>
+<li>空数组</li>
+<li>null</li>
+</ul>
+<h6 id="转换为整型"><a href="#转换为整型" class="headerlink" title="转换为整型"></a>转换为整型</h6><p>从<code>其他值</code>转换为<code>整型</code>的规则如下：</p>
+<ul>
+<li>null：转换为0</li>
+<li>布尔型：false转为0，true转为1</li>
+<li>浮点型：向下取整，比如，(int)2.8 = 2</li>
+<li>字符串：与C语言strtoll()的规则一致<ul>
+<li>字符串以合法数值(包含正负数)开始，就使用该数值</li>
+<li><strong>否则，其值为0</strong></li>
+</ul>
+</li>
+<li>数组：很多操作不支持将一个数组自动转为整型处理，比如array()+2将报error错误，但可以强制把数组转为整型：<ul>
+<li>非空数组：1</li>
+<li>空数组：0<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">php &gt; $a = <span class="keyword">array</span>()+<span class="number">2</span>;</span><br><span class="line">PHP Fatal <span class="built_in">error</span>:  Unsupported operand types in php shell code on line <span class="number">1</span></span><br><span class="line">PHP Stack trace:</span><br><span class="line">PHP   <span class="number">1.</span> &#123;main&#125;() php shell code:<span class="number">0</span></span><br><span class="line">PHP   <span class="number">2.</span> &#123;main&#125;() php shell code:<span class="number">0</span></span><br><span class="line">php &gt; </span><br><span class="line">php &gt; $a = <span class="keyword">array</span>();</span><br><span class="line">php &gt; $b = (<span class="keyword">int</span>)$a;</span><br><span class="line">php &gt; <span class="keyword">echo</span> $b;</span><br><span class="line"><span class="number">0</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li>对象：与数组类似，很多操作也不支持将兑现个自动转为整型，但有些操作只会抛一个warning警告，还是会把对象转换为1.</li>
+<li>资源：转为分配给这个资源的唯一编号</li>
+</ul>
+<h6 id="转为浮点型"><a href="#转为浮点型" class="headerlink" title="转为浮点型"></a>转为浮点型</h6><p>​        除了字符串类型外，其他类型转换规则与整型基本一致，只是在整型转换结果上加了小数位，字符串转为浮点数有<code>zend_strtod</code>完成。</p>
+<h6 id="转换为字符串"><a href="#转换为字符串" class="headerlink" title="转换为字符串"></a>转换为字符串</h6><ul>
+<li>强制转换：<ul>
+<li>(string)</li>
+<li>strval()函数</li>
+</ul>
+</li>
+<li>自动转换：<ul>
+<li>需要字符串的表达式中，比如：函数echo或print时</li>
+<li>非string类型变量与一个string变量进行比较时<ul>
+<li>null/fasle:转为空字符串</li>
+<li>true：转为“1”</li>
+<li>整型：原样转为字符串，<strong>转换时将各位一次除10取余</strong></li>
+<li>浮点型：原样转为字符串</li>
+<li>资源：转为“Resource id#xxx”</li>
+<li>数组：转为“Array”，同时报Notice</li>
+<li>对象：不能转换，将报错,如下：<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">php &gt; <span class="class"><span class="keyword">class</span> <span class="title">A</span> </span></span><br><span class="line"><span class="class"><span class="title">php</span> &gt; </span>&#123;<span class="keyword">public</span> $b;&#125;</span><br><span class="line">php &gt; </span><br><span class="line">php &gt; $a = <span class="keyword">new</span> A();</span><br><span class="line">php &gt; </span><br><span class="line">php &gt; <span class="keyword">echo</span> <span class="string">&#x27;a= &#x27;</span> . $a;</span><br><span class="line">PHP Catchable fatal <span class="built_in">error</span>:  <span class="keyword">Object</span> of <span class="class"><span class="keyword">class</span> <span class="title">A</span> <span class="title">could</span> <span class="title">not</span> <span class="title">be</span> <span class="title">converted</span> <span class="title">to</span> <span class="title">string</span> <span class="title">in</span> <span class="title">php</span> <span class="title">shell</span> <span class="title">code</span> <span class="title">on</span> <span class="title">line</span> 1</span></span><br><span class="line">PHP Stack trace:</span><br><span class="line">PHP   <span class="number">1.</span> &#123;main&#125;() php shell code:<span class="number">0</span></span><br></pre></td></tr></table></figure>
+<h6 id="转换为数组"><a href="#转换为数组" class="headerlink" title="转换为数组"></a>转换为数组</h6></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>若变量类型为<code>null</code>、<code>integer</code>、<code>float</code>、<code>string</code>、<code>boolean</code>和<code>resource</code>中的一个：将得到一个仅有一个元素的数组，其<code>下标为0</code>，即(array)$scalarValue与<code>array($scalarValue)</code>完全一样。</li>
+<li>若变量类型为object：其结果为一个数组，数组的元素为该对象的全部属性（包含public、private、protected），但他们也是有区别的，如下：<ul>
+<li>public的属性：key</li>
+<li>private的属性：key加类型作为前缀</li>
+<li>protected的属性：’*’加key作为前缀<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">class test</span><br><span class="line">&#123;</span><br><span class="line">    public $a &#x3D; 123;</span><br><span class="line">    private $b &#x3D; &#39;bbb&#39;;</span><br><span class="line">    protected $c &#x3D; &#39;ccc&#39;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$test &#x3D; new test();</span><br><span class="line">print_r((array)$test);</span><br></pre></td></tr></table></figure>
+以上例子将输出：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$php stat.php </span><br><span class="line">Array</span><br><span class="line">(</span><br><span class="line">    [a] &#x3D;&gt; 123</span><br><span class="line">    [testb] &#x3D;&gt; bbb</span><br><span class="line">    [*c] &#x3D;&gt; ccc</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+<h6 id="转换为对象"><a href="#转换为对象" class="headerlink" title="转换为对象"></a>转换为对象</h6><p>其他任何类型的值被转换为对象，将会创建一个内置类stdClass的实例：</p>
+<ul>
+<li>若该值为null：新的实例为空</li>
+<li>array：转换成的object将以键名成为属性名，并具有相对应的值<ul>
+<li>数值索引的元素也将转为属性，但无法通过“-&gt;”访问，只能遍历获取</li>
+<li>非数值索引：会以‘scalar’作为属性名</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/08/21/Ubuntu16-04-Nodejs%E5%AE%89%E8%A3%85/" rel="prev" title="Ubuntu16.04-Nodejs安装">
+                  <i class="fa fa-chevron-left"></i> Ubuntu16.04-Nodejs安装
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/08/21/PHP7%E5%86%85%E6%A0%B8-Cli/" rel="next" title="PHP7内核-Cli">
+                  PHP7内核-Cli <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '849dc5b8f1b3413152ebd94b335cc523',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

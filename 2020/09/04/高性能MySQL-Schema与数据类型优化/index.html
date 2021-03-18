@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 选择优化的数据类型 ①、更小的通常更好：更小的数据类型通常更快，因为它们占用更少的磁盘、内存和CPU缓存，且处理时需要的CPU周期也更少。选择不会超过范围的最小类型。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="高性能MySQL-Schema与数据类型优化">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/04/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-Schema%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 选择优化的数据类型 ①、更小的通常更好：更小的数据类型通常更快，因为它们占用更少的磁盘、内存和CPU缓存，且处理时需要的CPU周期也更少。选择不会超过范围的最小类型。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-04T06:44:08.000Z">
+<meta property="article:modified_time" content="2020-09-21T02:25:01.268Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="Note">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/04/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-Schema%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BC%98%E5%8C%96/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>高性能MySQL-Schema与数据类型优化 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E9%80%89%E6%8B%A9%E4%BC%98%E5%8C%96%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-text">1 选择优化的数据类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-%E6%95%B4%E6%95%B0%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.1 整数类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-%E5%AE%9E%E6%95%B0%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.2 实数类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.3 字符串类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-1-varchar"><span class="nav-text">1.3.1 varchar</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-2-char"><span class="nav-text">1.3.2 char</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-3-BLOB%E5%92%8CTEXT%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.3.3 BLOB和TEXT类型</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-4-%E4%BD%BF%E7%94%A8%E6%9E%9A%E4%B8%BE%EF%BC%88ENUM%EF%BC%89%E4%BB%A3%E6%9B%BF%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.3.4 使用枚举（ENUM）代替字符串类型</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-%E6%97%A5%E6%9C%9F%E5%92%8C%E6%97%B6%E9%97%B4%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.4 日期和时间类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-1-DATETIME"><span class="nav-text">1.4.1 DATETIME</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-2-TIMESTAMP%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="nav-text">1.4.2 TIMESTAMP（推荐）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-5-%E4%BD%8D%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="nav-text">1.5 位数据类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-5-1-BIT"><span class="nav-text">1.5.1 BIT</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-5-2-SET"><span class="nav-text">1.5.2 SET</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-6-%E9%80%89%E6%8B%A9%E6%A0%87%E8%AF%86%E7%AC%A6%EF%BC%88identifier%EF%BC%89"><span class="nav-text">1.6 选择标识符（identifier）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%8C%83%E5%BC%8F%E5%92%8C%E5%8F%8D%E8%8C%83%E5%BC%8F"><span class="nav-text">2 范式和反范式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E8%8C%83%E5%BC%8F"><span class="nav-text">2.1 范式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-1-%E8%8C%83%E5%BC%8F%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-text">2.1.1 范式的优缺点</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E5%8F%8D%E8%8C%83%E5%BC%8F"><span class="nav-text">2.2 反范式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-%E5%8F%8D%E8%8C%83%E5%BC%8F%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-text">2.2.1 反范式的优缺点</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%8A%A0%E5%BF%ABalter-table%E6%93%8D%E4%BD%9C%E7%9A%84%E9%80%9F%E5%BA%A6"><span class="nav-text">3 加快alter table操作的速度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/04/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-Schema%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          高性能MySQL-Schema与数据类型优化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-09-04 14:44:08" itemprop="dateCreated datePublished" datetime="2020-09-04T14:44:08+08:00">2020-09-04</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-21 10:25:01" itemprop="dateModified" datetime="2020-09-21T10:25:01+08:00">2020-09-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/Note/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/" itemprop="url" rel="index"><span itemprop="name">高性能MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-选择优化的数据类型"><a href="#1-选择优化的数据类型" class="headerlink" title="1 选择优化的数据类型"></a>1 选择优化的数据类型</h3><ul>
+<li><p>①、<code>更小的通常更好</code>：更小的数据类型通常更快，因为它们占用更少的磁盘、内存和CPU缓存，且处理时需要的CPU周期也更少。选择不会超过范围的最小类型。</p>
+<a id="more"></a>
+</li>
+<li><p>②、<code>简单就好</code>：简单数据类型的操作通常需要更少的CPU周期，例如：</p>
+</li>
+<li><ul>
+<li>a、整型比字符操作代价更低，因为字符集和校对规则（排序规则）使字符比较比整型比较更复杂。</li>
+<li>b、应使用mysql内建的类型来存储时间和日期（date,time,datetime），而不是字符串来存储日期和时间。</li>
+<li>c、应使用整型存储IP地址。</li>
+</ul>
+</li>
+<li><p>③、<code>避免使用null</code>：最好使用列作为not null，除非真的需要存储null值，原因如下：</p>
+</li>
+<li><ul>
+<li>a、若查询中包含可为null的列，对MySQL来说很难优化，因为可为null的列使得索引、索引统计和值都更复杂。</li>
+<li>b、可为null的列可能会使用更多的存储空间，在MySQL里需要特殊处理。</li>
+<li>c、当可为null的列被索引时，每个索引记录需要一个额外的字节</li>
+</ul>
+</li>
+</ul>
+<p>（例外：InnoDB使用单独位（bit）存储null值，对于叙述数据有很好的空间效率，但不适用与MyISAM。）</p>
+<p><strong>为列选择数据类型的步骤？</strong></p>
+<ul>
+<li>①、确定适合的大类型，例如：数字、字符串、时间等。</li>
+<li>②、选择具体的类型。（注：很多MySQL的数据类型可以存储相同类型的数据，只是存储的长度和范围不同、允许的精度不同，需要的物理空间（内存和磁盘）不同）。</li>
+</ul>
+<p>例如：datetime和timestamp列都可以存储相同类型的数据，时间和日期，精确到秒。但timestamp只使用datetime一半的存储空间，并且会根据时区变化，具有特殊自动更新能力。另一方面，timestamp允许的时间范围要小很多，有时候它的特殊能力会成为障碍。</p>
+<p>关于别名：Mysql支持很多别名，例如INTEGER,BOOL,以及NUMERIC。若建表使用的数据类型的别名，使用<code>show create table</code>检查时，会发现mysql报告的是基本类型，而不是别名。</p>
+<h4 id="1-1-整数类型"><a href="#1-1-整数类型" class="headerlink" title="1.1 整数类型"></a>1.1 整数类型</h4><p>MySQL支持两种类型的数字：<code>整数</code>和<code>实数</code>。</p>
+<p>其中,MySql整数类型有<code>TINYINT</code>，<code>SMALLINT</code>，<code>MEDEIUMINT</code>，<code>INT</code>，<code>BIGINT</code>。分别使用<code>8，16，24，32，64</code>位存储空间，其存储值得范围从-2^(N-1)到2^(N-1)-1，其中N是存储空间的位数。</p>
+<p>关于<code>UNSIGNED</code>属性，<u>表示不允许为负值，加上此属性，可以使正数的上限提高一倍。</u></p>
+<p>（<em>注：有符号和无符号类型使用相同的存储空间，并且具有相同的性能。</em>）</p>
+<p><u>Mysql可以为整数类型指定宽度。但它不会限制值的合法范围，只是规定Mysql的一些交互工具用来显示字符的个数</u>。例如，对于存储和运算INT(1)和INT(20)是相同的。</p>
+<h4 id="1-2-实数类型"><a href="#1-2-实数类型" class="headerlink" title="1.2 实数类型"></a>1.2 实数类型</h4><p><code>实数是带有小数部分的数字</code>。它不仅可以存储小数，还可以使用DECIMAL存储比BIGINT还大的整数类型。</p>
+<p>Mysql既支持<code>精确类型（指的decimal</code>），也支持<code>不精确类型（float及double类型）</code>。    </p>
+<ul>
+<li><p><code>FLOAT</code>和<code>DOUBLE</code>类型支持使用标准的浮点运算进行近似计算，其计算与所使用的平台浮点数计算有关。</p>
+</li>
+<li><p><code>DECIMAL</code>类型用于存储精确的小数（但仅限于MySQL5.0及更高版本，其实现是由MYSQL服务器自身实现的。），MYSQL4.1之前的版本中，DECEIMAL只是一个“存储类型”。</p>
+</li>
+</ul>
+<p>浮点和decimal类型都可以指定精度。对于decimal列，可以指定小数点前后所允许的最大位数。</p>
+<p>（Mysql5.0和更高的版本将数字打包保存到一个二进制字符串中，每4个字节存9个数字，实现参考 <a target="_blank" rel="noopener" href="https://zhidao.baidu.com/question/565903719525546284.html">https://zhidao.baidu.com/question/565903719525546284.html</a> </p>
+<p>​     32位的2进制能表示最大的十进制数字是4294967295，一共有10位；除了最高的十亿位，其他九个位都能够表示0-9；也就是说MySQL的decimal类型在保存大数时并不是将单个十进制数字映射成二进制数保存。</p>
+<p>）</p>
+<p><code>浮点类型在存储同样范围的值时，通常比DECIMAL使用更少的空间</code>。float使用4个字节存储，double使用8个字节。<code>MySQL使用double作为内部浮点计算的类型。</code></p>
+<p>（因为decimal需要额外的开销，所以应该尽量只在对小数进行精确计算时才使用decimal，例如财务数据。在数据量比较大的时候，可以考虑使用bigint代替decimal，然后将需要存储的货币单位根据小数的尾数乘以相应的倍数。）</p>
+<h4 id="1-3-字符串类型"><a href="#1-3-字符串类型" class="headerlink" title="1.3 字符串类型"></a>1.3 字符串类型</h4><p>MySQL支持多种字符串类型，<code>varchar和char类型是最主要字符串类型</code>。其存储方式与存储引擎的具体实现有关。与varchar和char类似的类型还有<code>binary和varbinary，他们存储的是二进制字符串</code>。</p>
+<h5 id="1-3-1-varchar"><a href="#1-3-1-varchar" class="headerlink" title="1.3.1 varchar"></a>1.3.1 varchar</h5><p><code>varchar</code>类型用于<code>存储可变长字符串</code>，是最常见的字符串数据类型。（它比定长类型更节省空间，因为它仅使用必要的空间。例外的情况，若MySQL表使用<code>ROW_FORMAT=FIXED</code>创建，则每一行都会使用定长存储。）</p>
+<p><code>varchar需要使用1或2个额外的字节记录字符串的长度</code>：若列的最大长度小于或等于255字节，则只使用1个字节表示，否则使用2个字节。</p>
+<p><strong>使用varchar(5)和varchar(200)存储‘hello‘的空间开销是一样的，那么使用短的列有什么优势吗？</strong></p>
+<p>MySQL通常会分配固定大小的内存块来保存内部值，因此更长的列会消耗更多的内存。尤其是使用内存临时表进行排序或操作时会特别糟糕，在利用磁盘临时表进行排序也同样糟糕。因此最好的策略是只分配真正需要的空间。</p>
+<p><strong>varchar类型的优缺点？</strong></p>
+<p><code>优点</code>：节省存储空间，对性能有所帮助。</p>
+<p><code>缺点</code>：由于行时变长的，在update时可能使行变得比原来更长，这就需要做额外的工作。例如，若行占用的空间增长，在页内没有更多的空间可以存储，MyISAM会拆成不同的片段存储，InnoDB则需要分裂页来使行可以放进页内。</p>
+<p><strong>那些场景下使用varchar类型是合适的？</strong></p>
+<ul>
+<li>①、字符串列的最大长度比平均长度大很多。</li>
+<li>②、列的更新很少，所以碎片不是问题。</li>
+</ul>
+<h5 id="1-3-2-char"><a href="#1-3-2-char" class="headerlink" title="1.3.2 char"></a>1.3.2 char</h5><p><code>char</code>类型是<code>定长的</code>，MySQL总是根据定义字符串长度分配足够的空间。</p>
+<p><strong>那些场景下使用char类型是合适的？</strong></p>
+<ul>
+<li>①、char适合存储很短的字符串；（例如：用char（1）来存储只有Y和N的值，采用单字节字符集只需要一个字节，但是varchar却需要两个字节，因为还需要另一个用于记录长度的额外的字节）</li>
+<li>②、存储所有值都接近同一个长度的字符串；（例如，存储密码的MD5值，因为这是一个定长的值。）</li>
+<li>③、存储经常变更的数据。</li>
+</ul>
+<h5 id="1-3-3-BLOB和TEXT类型"><a href="#1-3-3-BLOB和TEXT类型" class="headerlink" title="1.3.3 BLOB和TEXT类型"></a>1.3.3 BLOB和TEXT类型</h5><p><code>BLOB</code>和<code>TEXT</code>都是为存储很大的数据而设计的字符串数据类型，<code>分别采用二进制和字符方式存储</code>。</p>
+<ul>
+<li><code>BLOB类型采用二进制方式存储</code>，没有排序规则或者字符集，其家族包含：TINYBLOB、SMALLBLOB、BLOB、MEDIUMBLOB、LONGBLOB。</li>
+<li><code>TEXT类型采用字符串方式存储</code>，有字符集合排序规则，其家族包含：TINYTEXT、SMALLTEXT、TEXT、MEDIEMTEXT、LONGTEXT。</li>
+</ul>
+<p><strong>相对于MySQL的其他类型，BLOB和TEXT有什么不同点？</strong></p>
+<ul>
+<li>①、BLOB和TEXT只对每个列的最前<code>max_sort_length</code>字节而不是整个字符串做排序，若只排序前面一小部分字符，可以减小<code>max_sort_length</code>的配置，或者使用ORDER BY SUSTRING(column,length)。</li>
+<li>②、不能将BLOB和TEXT列全部长度的字符串进行索引，也不能使用这些索引消除排序。</li>
+</ul>
+<h5 id="1-3-4-使用枚举（ENUM）代替字符串类型"><a href="#1-3-4-使用枚举（ENUM）代替字符串类型" class="headerlink" title="1.3.4 使用枚举（ENUM）代替字符串类型"></a>1.3.4 使用枚举（ENUM）代替字符串类型</h5><p>有时候可以使用枚举列代替常用的字符串类型。枚举列可以把一些不重复的字符串存储成一个预定义的集合。MySQL在存储枚举时非常紧凑，会根据列值的数量压缩到一个或者两个字节中。</p>
+<p>MySQL在内部会将每个值在列表中的位置保存为整数，并且在表的<code>.frm文件</code>中保存“数字-字符串”映射关系的“查找表”。</p>
+<p>示例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"># 建表</span><br><span class="line">create table enum_test (</span><br><span class="line">    e enum(&#39;fish&#39;, &#39;apple&#39;, &#39;dog&#39;) not null</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"># 写数据</span><br><span class="line">insert into enum_test(e) values (&#39;fish&#39;),(&#39;dog&#39;),(&#39;apple&#39;);</span><br><span class="line"></span><br><span class="line"># 枚举值实际存储的是整数,而不是字符串.</span><br><span class="line">mysql&gt; select e+0 from enum_test;</span><br><span class="line">+-----+</span><br><span class="line">| e+0 |</span><br><span class="line">+-----+</span><br><span class="line">|   1 |</span><br><span class="line">|   3 |</span><br><span class="line">|   2 |</span><br><span class="line">+-----+</span><br><span class="line">3 rows in set (0.03 sec)</span><br><span class="line"></span><br><span class="line"># 枚举字段排序时按照内部存储的整数,而不是定义的字符串进行排序的.</span><br><span class="line">mysql&gt; select e from enum_test order by e;</span><br><span class="line">+-------+</span><br><span class="line">| e     |</span><br><span class="line">+-------+</span><br><span class="line">| fish  |</span><br><span class="line">| apple |</span><br><span class="line">| dog   |</span><br><span class="line">+-------+</span><br><span class="line">3 rows in set (0.07 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>注:</p>
+<ul>
+<li><p>a. 应该避免使用数字作为enum枚举常量.</p>
+</li>
+<li><p>b. <code>枚举字段排序时按照内部存储的整数,而不是定义的字符串进行排序的</code>.</p>
+</li>
+</ul>
+<p><strong>枚举类型的缺点?</strong></p>
+<ul>
+<li><p><code>字符串列表是固定的,添加或删除字符串必须使用alter table</code>.因此,对于一系列未来可能会改变的字符串,枚举并不是一个好主意.</p>
+</li>
+<li><p>每个枚举值保存为整数,并且必须进行查找才能转换为字符串,所以枚举列有一些开销.</p>
+</li>
+</ul>
+<p><strong>枚举类型的优点？</strong></p>
+<ul>
+<li>转换后让表的大小及主键大小缩小了。</li>
+</ul>
+<h4 id="1-4-日期和时间类型"><a href="#1-4-日期和时间类型" class="headerlink" title="1.4 日期和时间类型"></a>1.4 日期和时间类型</h4><p>MySQL可以使用许多类型来保存日期和时间值，例如，YEAR和DATE。<code>MySQL能存储的是最小时间粒度为秒</code>。</p>
+<p>MySQL提供两种相似的日期类型：<code>DATETIME</code>和<code>TIMESTAMP</code>。</p>
+<h5 id="1-4-1-DATETIME"><a href="#1-4-1-DATETIME" class="headerlink" title="1.4.1 DATETIME"></a>1.4.1 DATETIME</h5><p><code>DATETIME</code>将日期和时间封装到格式为<code>YYYYMMDDHHMMSS</code>的整数中，与时区无关。使用<code>8个字节</code>的存储空间。默认情况下，MySQL以一种可排序的、无歧义的格式显示DATETIME值，例如：“2018-01-16 22:37:08”。</p>
+<h5 id="1-4-2-TIMESTAMP（推荐）"><a href="#1-4-2-TIMESTAMP（推荐）" class="headerlink" title="1.4.2 TIMESTAMP（推荐）"></a>1.4.2 TIMESTAMP（推荐）</h5><p><code>TIMESTAMP</code>类型保存了1970年1月1日以来的秒数，它与Unix时间戳相同。使用<code>4个字节</code>的存储空间。只能表示从1970到2038年。</p>
+<p>MySQL提供了以下两个函数，对时间戳和日期进行转化。</p>
+<ul>
+<li><code>FROM_UNIXTIME()</code>：把Unix时间戳转换为日期。</li>
+<li><code>UNIX_TIMESTAMP()</code>：把日期转换为Unix时间戳。</li>
+</ul>
+<p>TIMESTAMP显示的值依赖于时区，MySQL服务器、客户端连接都有时区设置。</p>
+<p><strong>MySQL存储的时间都是以秒为粒度，若需要存储以秒为更小粒度的日期和时间值应该怎么处理？</strong></p>
+<ul>
+<li><p>①、可以使用<code>BIGINT类型</code>存储微秒级别的时间戳。</p>
+</li>
+<li><p>②、可以使用<code>DOUBLE</code>存储秒之后的小数部分。</p>
+</li>
+<li><p>③、可以使用MariaDB替代MySQL。</p>
+</li>
+</ul>
+<h4 id="1-5-位数据类型"><a href="#1-5-位数据类型" class="headerlink" title="1.5 位数据类型"></a>1.5 位数据类型</h4><p>MySQL有少数几种存储类型使用紧凑的位存储数据，<code>所有这些位类型，不管底层存储格式和处理方式如何，从技术上来说都是字符串类型</code>。</p>
+<h5 id="1-5-1-BIT"><a href="#1-5-1-BIT" class="headerlink" title="1.5.1 BIT"></a>1.5.1 BIT</h5><p>可以使用Bit列在一列中存储一个或多个true/false值，BIT列最大长度为64个位。例如，BIT(1)定义一个包含单个位的字段，BIT(2)存储2个位。</p>
+<p><u>注：MySQL将BIT当做字符串类型，而不是数字类型。</u>当检索BIT(1)的值，结果是一个包含二进制0或1的字符串，而不是ASCII码的“0”或者“1”。在和数字上下文的场景中检索时，结果将是位字符串转换成的数字。</p>
+<p>例如：若存储一个值b‘00111001’到BIT(8)的列并检索它，得到的内容是字符码57的字符串（即ASCII码的字符“9”），在数字上下文场景中，得到的是数字57.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># 创建测试表。</span><br><span class="line">create table bittest(a bit(8));</span><br><span class="line"># 写入数据。</span><br><span class="line">insert bittest values (b&#39;00111001&#39;);</span><br><span class="line"># 查询字符串场景和数字场景的结果。</span><br><span class="line">mysql&gt; select a, a + 0 from bittest;</span><br><span class="line">+------+-------+</span><br><span class="line">| a    | a + 0 |</span><br><span class="line">+------+-------+</span><br><span class="line">| 9    |    57 |</span><br><span class="line">+------+-------+</span><br><span class="line">1 row in set (0.03 sec)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><em>注：应该避免使用BIT类型，若需要一个bit的存储空间存储一个true/false的值，可以创建一个可以为空的char(0)的列，该列可以保存空值（null）或者长度为0的字符串（空字符串）。</em></p>
+<h5 id="1-5-2-SET"><a href="#1-5-2-SET" class="headerlink" title="1.5.2 SET"></a>1.5.2 SET</h5><p>若需要保存很多true/false的值，可以考虑合并这些列的到一个SET数据类型，它在MySql内部是以一系列打包的位的集合来表示的。MySQL提供了<code>FIND_IN_SET()</code>和<code>FIELD()</code>函数，方便地查询。</p>
+<p><strong>缺点</strong>：<u>改变列的定义代价较高，需要alter table，这对大表来说是非常昂贵的操作。并且，也无法在SET列上通过索引查询</u>。</p>
+<p><strong>SET的改变操作代价较高，有什么替代的解决方案吗？</strong></p>
+<p>一种替代SET的方式是<code>使用一个整数包装一系列的位</code>。</p>
+<p>例如：可以把8个位包装到一个<code>TINYINT</code>中，并且按位操作来使用。可以在应用中为每个位定义名称常量来简化这个操作。</p>
+<p>示例：实现保存权限的访问控制列表（ACL）,每个没或者SET元素代表一个值，列入<code>CAN_READ</code>、<code>CAN_WRITE</code>或<code>CAN_DELETE</code>。</p>
+<ul>
+<li>①、使用SET列来存储。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 建表</span><br><span class="line">create table acl (</span><br><span class="line">  perms set(&#39;CAN_READ&#39;,&#39;CAN_WRITE&#39;,&#39;CAN_DELETE&#39;) not null  </span><br><span class="line">);</span><br><span class="line"># 写数据</span><br><span class="line">insert into acl(perms) values (&#39;CAN_READ,CAN_DELETE&#39;);</span><br><span class="line"># 查询</span><br><span class="line">mysql&gt; select perms from acl where find_in_set(&#39;CAN_READ&#39;,perms);</span><br><span class="line">+---------------------+</span><br><span class="line">| perms               |</span><br><span class="line">+---------------------+</span><br><span class="line">| CAN_READ,CAN_DELETE |</span><br><span class="line">+---------------------+</span><br><span class="line">1 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>②、使用整数列来存储。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># 定义字段值。</span><br><span class="line">set @CAN_READ :&#x3D; 1&lt;&lt;0,</span><br><span class="line">    @CAN_WRITE :&#x3D; 1&lt;&lt;1,</span><br><span class="line">    @CAN_DELETE :&#x3D; 1&lt;&lt;2;</span><br><span class="line"># 建表</span><br><span class="line">create table acl_int (</span><br><span class="line">    perms tinyint unsigned not null default 0</span><br><span class="line">);</span><br><span class="line"># 写数据</span><br><span class="line">insert into acl_int(perms) values (@CAN_READ + @CAN_DELETE);</span><br><span class="line"># 查询</span><br><span class="line">mysql&gt; select perms from acl_int where perms &amp; @CAN_READ;</span><br><span class="line">+-------+</span><br><span class="line">| perms |</span><br><span class="line">+-------+</span><br><span class="line">|     5 |</span><br><span class="line">+-------+</span><br><span class="line">1 row in set (0.07 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="1-6-选择标识符（identifier）"><a href="#1-6-选择标识符（identifier）" class="headerlink" title="1.6 选择标识符（identifier）"></a>1.6 选择标识符（identifier）</h4><p>选择标识符的小技巧：</p>
+<ul>
+<li><p>①、<code>整数类型</code>：整数通常是标识列最好的选择，因为他们很快并且可以使用<code>auto_increment</code>.</p>
+</li>
+<li><p>②、<code>尽量不要选择enum和set类型</code>：enum和set列适合存储固定信息，例如有序的状态、产品类型、人的性别。</p>
+</li>
+<li><p>③、<code>尽量避免使用字符串类型作为标识符</code>：因为字符串类型很消耗空间，并且通常比数字类型慢。（<em>对于MyISAM</em></p>
+</li>
+</ul>
+<p><em>默认对字符串使用压缩索引，会使查询变得更慢。</em>）</p>
+<h3 id="2-范式和反范式"><a href="#2-范式和反范式" class="headerlink" title="2 范式和反范式"></a>2 范式和反范式</h3><h4 id="2-1-范式"><a href="#2-1-范式" class="headerlink" title="2.1 范式"></a>2.1 范式</h4><p><code>MySQL的三大范式</code>：</p>
+<ul>
+<li>第一范式：确保数据表中<code>每列（字段）的原子性</code>，没有冗余属性；</li>
+<li>第二范式：在第一范式的基础上，目标是<code>确保表中的每列和主键相关</code>。</li>
+<li>第三范式：在第二范式的基础上，确保表中和<code>列和主键直接相关，而不是间接相关</code>。</li>
+</ul>
+<p>示例：下表为“雇员、部门、部门领导”的示例。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">EMPLOYEE DEPARTMENT HEAD </span><br><span class="line">Jones Accounting Jones </span><br><span class="line">Smith Engineering Smith </span><br><span class="line">Brown Accounting Jones </span><br><span class="line">Green Engineering Smith </span><br></pre></td></tr></table></figure>
+
+<p>缺点：<code>若此时Say Brown接管Accounting部门的领导，需要修改多行来反应这个变化。</code></p>
+<p><code>范式化</code>方式为拆分雇员和部门项，以两张表存储。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># 雇员表</span><br><span class="line">EMPLOYEE_NAME DEPARTMENT</span><br><span class="line">Jones Accounting </span><br><span class="line">Smith Engineering </span><br><span class="line">Brown Accounting </span><br><span class="line">Green Engineering </span><br><span class="line"></span><br><span class="line"># 部门表</span><br><span class="line">DEPARTMENT HEAD </span><br><span class="line">Accounting Jones </span><br><span class="line">Engineering Smith </span><br><span class="line">Accounting Jones </span><br><span class="line">Engineering Smith </span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="2-1-1-范式的优缺点"><a href="#2-1-1-范式的优缺点" class="headerlink" title="2.1.1 范式的优缺点"></a>2.1.1 范式的优缺点</h5><p>优点：</p>
+<ul>
+<li>范式化的更新操作通常比反范式化要快；</li>
+<li>当数据较好的范式化时，就只有很少或者没有重复数据，所以只需要修改更少的数据。</li>
+<li>范式化的表通常更小，可以更好地放在内存里，所以执行操作会更快。</li>
+<li>很少有多余的数据，意味着检索列表数据时更少需要DISTINCT或者GROUP BY语句。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>通常需要关联。稍微复杂一些的查询语句在符合范式的shcema上都可能需要至少一次关联，或者更多。（该问题可以通过在业务上实现关联）</li>
+</ul>
+<h4 id="2-2-反范式"><a href="#2-2-反范式" class="headerlink" title="2.2 反范式"></a>2.2 反范式</h4><p>反范式化指的是<code>通过增加冗余或重复的数据来提高数据库的读性能</code>。</p>
+<h5 id="2-2-1-反范式的优缺点"><a href="#2-2-1-反范式的优缺点" class="headerlink" title="2.2.1 反范式的优缺点"></a>2.2.1 反范式的优缺点</h5><p>优点：</p>
+<ul>
+<li>反范式化的schema因为所有数据都在一张表中，可以更好的避免关联。</li>
+<li>若不需要关联，则对于大部分查询最差的情况（全表扫描），可以避免随机I/O，会比关联的情况快很多。</li>
+<li>一张表可以更有效的使用索引策略。</li>
+</ul>
+<p>缺点：</p>
+<p>​    修改一个数据，可能需要修改多行来反映。</p>
+<h3 id="3-加快alter-table操作的速度"><a href="#3-加快alter-table操作的速度" class="headerlink" title="3 加快alter table操作的速度"></a>3 加快alter table操作的速度</h3><p>MySQL执行大部分修改表结构的操作的方法是<code>用新的结构创建一个空表，从旧表中查出所有数据插入新表，然后删除旧表</code>。在数据量大的情况下，很耗时。</p>
+<p>大部分alter table操作将<code>导致MySQL服务中断</code>。</p>
+<p>对于常见的场景，技巧有：</p>
+<ul>
+<li><p>① 先在一台不提供服务的机器上执行alter table操作，然后和提供服务的主库进行切换。</p>
+</li>
+<li><p>② “影子拷贝”，影子拷贝用要求的表结构创建一张和源表无关的新表，然后通过重命名和删表操作交换两张。或这是用工具完成拷贝工作。</p>
+</li>
+</ul>
+<p>其余内容见参考资料1，懒得写了。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ol>
+<li><p>高性能MySQL_第三版</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/moxiaotao/p/10120672.html">MySQL三大范式和反范式</a></p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/Note/" rel="tag"># Note</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/04/Redis-%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/" rel="prev" title="Redis-踩坑记录">
+                  <i class="fa fa-chevron-left"></i> Redis-踩坑记录
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/05/MySQL-Explain%E8%AF%A6%E8%A7%A3/" rel="next" title="MySQL-Explain详解">
+                  MySQL-Explain详解 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '221a374317d0ff4a4f28492a5bc674a2',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

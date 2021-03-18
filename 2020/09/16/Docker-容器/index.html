@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 概述容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker-容器">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/16/Docker-%E5%AE%B9%E5%99%A8/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 概述容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-16T09:26:46.000Z">
+<meta property="article:modified_time" content="2020-09-18T10:16:31.620Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/16/Docker-%E5%AE%B9%E5%99%A8/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Docker-容器 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%90%AF%E5%8A%A8%E5%AE%B9%E5%99%A8"><span class="nav-text">2 启动容器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E5%9F%BA%E4%BA%8E%E9%95%9C%E5%83%8F%E6%96%B0%E5%BB%BA%E5%AE%B9%E5%99%A8%E5%B9%B6%E5%90%AF%E5%8A%A8"><span class="nav-text">2.1 基于镜像新建容器并启动</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-1-Docker%E5%9C%A8%E5%90%8E%E5%8F%B0%E8%BF%90%E8%A1%8C%E7%9A%84%E6%A0%87%E5%87%86%E6%93%8D%E4%BD%9C"><span class="nav-text">2.1.1 Docker在后台运行的标准操作</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E5%90%AF%E5%8A%A8%E5%B7%B2%E7%BB%88%E6%AD%A2%E7%9A%84%E5%AE%B9%E5%99%A8"><span class="nav-text">2.2 启动已终止的容器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E7%BB%88%E6%AD%A2%E5%AE%B9%E5%99%A8"><span class="nav-text">3 终止容器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E9%87%8D%E5%90%AF%E4%B8%80%E4%B8%AA%E5%AE%B9%E5%99%A8"><span class="nav-text">4 重启一个容器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E8%BF%9B%E5%85%A5%E5%AE%B9%E5%99%A8"><span class="nav-text">5 进入容器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-attach-%E5%91%BD%E4%BB%A4"><span class="nav-text">5.1 attach 命令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-exec%E5%91%BD%E4%BB%A4"><span class="nav-text">5.2 exec命令</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E5%88%A0%E9%99%A4%E5%AE%B9%E5%99%A8"><span class="nav-text">6 删除容器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#6-1-%E5%88%A0%E9%99%A4%E6%89%80%E6%9C%89%E5%A4%84%E4%BA%8E%E7%BB%88%E6%AD%A2%E7%8A%B6%E6%80%81%E7%9A%84%E5%AE%B9%E5%99%A8"><span class="nav-text">6.1 删除所有处于终止状态的容器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86"><span class="nav-text">7 容器管理</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/16/Docker-%E5%AE%B9%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Docker-容器
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-09-16 17:26:46" itemprop="dateCreated datePublished" datetime="2020-09-16T17:26:46+08:00">2020-09-16</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-18 18:16:31" itemprop="dateModified" datetime="2020-09-18T18:16:31+08:00">2020-09-18</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h3><p>容器是独立运行的一个或一组应用，以及它们的运行态环境。对应的，虚拟机可以理解为模拟运行的一整套操作系统（提供了运行态环境和其他系统环境）和跑在上面的应用。</p>
+<a id="more"></a>
+
+
+
+<h3 id="2-启动容器"><a href="#2-启动容器" class="headerlink" title="2 启动容器"></a>2 启动容器</h3><p><code>容器的启动有以下两种情况</code>：</p>
+<ul>
+<li>①、基于镜像新建一个容器并启动</li>
+<li>②、将在终止状态的容器重新启动</li>
+</ul>
+<h4 id="2-1-基于镜像新建容器并启动"><a href="#2-1-基于镜像新建容器并启动" class="headerlink" title="2.1 基于镜像新建容器并启动"></a>2.1 基于镜像新建容器并启动</h4><p>使用docker run命令新建并启动一个容器的，其语法格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run [OPTIONS] IMAGE [COMMAND] [ARG...]</span><br></pre></td></tr></table></figure>
+
+<p>常用OPTIONS：</p>
+<ul>
+<li>-t（–tty）：Docker分配一个伪终端（pseudo-tty）并绑定到容器的标准输入上．</li>
+<li>-i（–interactive）：让容器的标准输入保持打开（交互模式）．eg：以交互式方式打开启动一个容器：<code>docker run -t -i ubuntu:18.04 /bin/bash</code></li>
+<li>-d（–detach）：后台运行容器，并返回容器ID．eg：<code>docker run -d ubuntu:18.04 /bin/sh -c &quot;while true; do echo hello world; sleep 1; done&quot;</code></li>
+</ul>
+<h5 id="2-1-1-Docker在后台运行的标准操作"><a href="#2-1-1-Docker在后台运行的标准操作" class="headerlink" title="2.1.1 Docker在后台运行的标准操作"></a>2.1.1 Docker在后台运行的标准操作</h5><p>当利用 <code>docker run</code> 来创建容器时，Docker 在后台运行的标准操作包括：</p>
+<ul>
+<li>检查本地是否存在指定的镜像，不存在就从公有仓库下载</li>
+<li>利用镜像创建并启动一个容器</li>
+<li>分配一个文件系统，并在只读的镜像层外面挂载一层可读写层</li>
+<li>从宿主主机配置的网桥接口中桥接一个虚拟接口到容器中去</li>
+<li>从地址池配置一个 ip 地址给容器</li>
+<li>执行用户指定的应用程序</li>
+<li>执行完毕后容器被终止</li>
+</ul>
+<h4 id="2-2-启动已终止的容器"><a href="#2-2-启动已终止的容器" class="headerlink" title="2.2 启动已终止的容器"></a>2.2 启动已终止的容器</h4><p>使用 <code>docker container start</code> 命令，直接将一个已经终止的容器启动运行．其语法格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker container start [OPTIONS] CONTAINER [CONTAINER...]</span><br></pre></td></tr></table></figure>
+
+<p>常用OPTIONS：</p>
+<ul>
+<li>-a（–attach）：指定标准输入输出内容类型，可选 <code>STDOUT</code>/<code>STDERR</code> ；</li>
+</ul>
+<h3 id="3-终止容器"><a href="#3-终止容器" class="headerlink" title="3 终止容器"></a>3 终止容器</h3><p>使用 <code>docker container stop</code> 来终止一个或多个运行中的容器，其语法格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker container stop [OPTIONS] CONTAINER [CONTAINER...]</span><br></pre></td></tr></table></figure>
+
+<p>OPTIONS：</p>
+<ul>
+<li>-t（–time）：终止容器前的等待时间，单位秒（默认10s）．</li>
+</ul>
+<h3 id="4-重启一个容器"><a href="#4-重启一个容器" class="headerlink" title="4 重启一个容器"></a>4 重启一个容器</h3><p>使用 <code>docker container restart</code> 来重启一个或多个运行中的容器，其语法格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker container restart [OPTIONS] CONTAINER [CONTAINER...]</span><br></pre></td></tr></table></figure>
+
+<p>OPTIONS：</p>
+<ul>
+<li>-t（–time）：终止容器前的等待时间，单位秒（默认10s）．</li>
+</ul>
+<p>注： <code>docker container restart</code> 命令会将一个运行态的容器终止，然后再重新启动它。</p>
+<h3 id="5-进入容器"><a href="#5-进入容器" class="headerlink" title="5 进入容器"></a>5 进入容器</h3><p>在使用 <code>-d</code> 参数启动容器后会进入后台。Docker提供了两种方式进入容器进行操作，分别是：</p>
+<ul>
+<li><code>docker attach</code>（不推荐）</li>
+<li><code>docker exec</code></li>
+</ul>
+<h4 id="5-1-attach-命令"><a href="#5-1-attach-命令" class="headerlink" title="5.1 attach 命令"></a>5.1 attach 命令</h4><p>attach命令的语法格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker attach [OPTIONS] CONTAINER</span><br></pre></td></tr></table></figure>
+
+<p>注：<u>如果从这个 stdin 中 exit，会导致容器的停止。</u>因此，不推荐使用attach命令．</p>
+<h4 id="5-2-exec命令"><a href="#5-2-exec命令" class="headerlink" title="5.2 exec命令"></a>5.2 exec命令</h4><p>exec命令的语法格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker exec [OPTIONS] CONTAINER COMMAND [ARG...]</span><br></pre></td></tr></table></figure>
+
+<p>常用OPTIONS：</p>
+<ul>
+<li>-i（–interactive）：保持标准输入状态．</li>
+<li>-t（–tty）：分配一个伪终端，与<code>-i</code>联合使用可实现交互式模式．eg：<code>docker exec -i 69d1 bash</code></li>
+</ul>
+<h3 id="6-删除容器"><a href="#6-删除容器" class="headerlink" title="6 删除容器"></a>6 删除容器</h3><p>使用 <code>docker container rm</code> 来删除一个或多个容器．其语法格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker container rm [OPTIONS] CONTAINER [CONTAINER...]</span><br></pre></td></tr></table></figure>
+
+<p>常用OPTIONS：</p>
+<ul>
+<li>-f（–force）：强制删除一个容器（删除一个运行中的容器）．</li>
+</ul>
+<h4 id="6-1-删除所有处于终止状态的容器"><a href="#6-1-删除所有处于终止状态的容器" class="headerlink" title="6.1 删除所有处于终止状态的容器"></a>6.1 删除所有处于终止状态的容器</h4><p>docker container prune用于删除所有处于终止状态的容器，其语法格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker container prune [OPTIONS]</span><br></pre></td></tr></table></figure>
+
+<p>常用OPTIONS:</p>
+<ul>
+<li>–filter：提供过滤值．</li>
+</ul>
+<h3 id="7-容器管理"><a href="#7-容器管理" class="headerlink" title="7 容器管理"></a>7 容器管理</h3><p>使用docker container对容器进行管理，其语法格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker container COMMAND</span><br></pre></td></tr></table></figure>
+
+<p>常用的COMMAND：</p>
+<ul>
+<li>start：启动一个或多个终止状态的容器．</li>
+<li>stop：终止一个或多个运行中的容器．</li>
+<li>restart：重启一个或多个运行中的容器．</li>
+<li>rm：删除一个或多个容器．</li>
+<li>prune：删除所有处于终止状态的容器．</li>
+<li>ls：查看容器信息．</li>
+<li>logs：获取容器的输出信息（获取后台运行的容器的输出信息）．格式：<code>docker container logs [OPTIONS] CONTAINER</code></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/16/Docker-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F/" rel="prev" title="Docker-是什么？">
+                  <i class="fa fa-chevron-left"></i> Docker-是什么？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/16/Docker-%E9%95%9C%E5%83%8F/" rel="next" title="Docker-镜像的操作">
+                  Docker-镜像的操作 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'b9614dd607a748416bc554dc3c2f10c6',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

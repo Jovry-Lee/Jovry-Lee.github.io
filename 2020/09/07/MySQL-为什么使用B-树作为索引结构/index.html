@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 概述首先，MySQL和B+树是没有直接关系的，真正与B+树有关系的是MySQL的默认存储引擎InnoDB，MySQL中存储引擎的主要作用是负责数据的存储和提取．除了InnoDB外，MySQL还支持另外一些存储引擎，例如，MyISAM．使用show engines命令可查看．">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL-为什么使用B+树作为索引结构">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/07/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B-%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 概述首先，MySQL和B+树是没有直接关系的，真正与B+树有关系的是MySQL的默认存储引擎InnoDB，MySQL中存储引擎的主要作用是负责数据的存储和提取．除了InnoDB外，MySQL还支持另外一些存储引擎，例如，MyISAM．使用show engines命令可查看．">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/%E7%A3%81%E7%9B%98IO%E6%B6%88%E8%80%97.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/b-tree.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/mysql-innodb-b-plus-tree.png">
+<meta property="article:published_time" content="2020-09-07T09:03:33.000Z">
+<meta property="article:modified_time" content="2020-09-24T10:18:48.554Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="Interview">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="B+Tree">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/%E7%A3%81%E7%9B%98IO%E6%B6%88%E8%80%97.png">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/07/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B-%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MySQL-为什么使用B+树作为索引结构 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%88%86%E6%9E%90"><span class="nav-text">2 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E8%AF%BB%E5%86%99%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90"><span class="nav-text">2.1 读写性能分析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-1-%E4%B8%8E%E5%93%88%E5%B8%8C%E7%BB%93%E6%9E%84%E8%BF%9B%E8%A1%8C%E6%AF%94%E8%BE%83"><span class="nav-text">2.1.1 与哈希结构进行比较</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-2-%E4%B8%8EB%E6%A0%91%E8%BF%9B%E8%A1%8C%E6%AF%94%E8%BE%83"><span class="nav-text">2.1.2 与Ｂ树进行比较</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD"><span class="nav-text">2.2 数据加载</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-B%E6%A0%91%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E5%88%86%E6%9E%90"><span class="nav-text">2.2.1 B树数据加载分析</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-2-B-%E6%A0%91%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E5%88%86%E6%9E%90"><span class="nav-text">2.2.2 B+树数据加载分析</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%80%BB%E7%BB%93"><span class="nav-text">3 总结</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/07/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B-%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL-为什么使用B+树作为索引结构
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-09-07 17:03:33" itemprop="dateCreated datePublished" datetime="2020-09-07T17:03:33+08:00">2020-09-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-24 18:18:48" itemprop="dateModified" datetime="2020-09-24T18:18:48+08:00">2020-09-24</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h3><p>首先，MySQL和B+树是没有直接关系的，真正与B+树有关系的是MySQL的默认存储引擎InnoDB，MySQL中存储引擎的主要作用是负责数据的存储和提取．除了InnoDB外，MySQL还支持另外一些存储引擎，例如，MyISAM．使用<code>show engines</code>命令可查看．</p>
+<a id="more"></a>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show engines;</span><br><span class="line">+--------------------+---------+----------------------------------------------------------------+--------------+------+------------+</span><br><span class="line">| Engine             | Support | Comment                                                        | Transactions | XA   | Savepoints |</span><br><span class="line">+--------------------+---------+----------------------------------------------------------------+--------------+------+------------+</span><br><span class="line">| MyISAM             | YES     | MyISAM storage engine                                          | NO           | NO   | NO         |</span><br><span class="line">| MRG_MYISAM         | YES     | Collection of identical MyISAM tables                          | NO           | NO   | NO         |</span><br><span class="line">| InnoDB             | DEFAULT | Supports transactions, row-level locking, and foreign keys     | YES          | YES  | YES        |</span><br><span class="line">| BLACKHOLE          | YES     | &#x2F;dev&#x2F;null storage engine (anything you write to it disappears) | NO           | NO   | NO         |</span><br><span class="line">| PERFORMANCE_SCHEMA | YES     | Performance Schema                                             | NO           | NO   | NO         |</span><br><span class="line">| CSV                | YES     | CSV storage engine                                             | NO           | NO   | NO         |</span><br><span class="line">| ARCHIVE            | YES     | Archive storage engine                                         | NO           | NO   | NO         |</span><br><span class="line">| MEMORY             | YES     | Hash based, stored in memory, useful for temporary tables      | NO           | NO   | NO         |</span><br><span class="line">| FEDERATED          | NO      | Federated MySQL storage engine                                 | NULL         | NULL | NULL       |</span><br><span class="line">+--------------------+---------+----------------------------------------------------------------+--------------+------+------------+</span><br><span class="line">9 rows in set (0.24 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>对于InnoDB来说，所有数据都是以键值对的方式存储在Ｂ+树结构中，其中表中的数据（主键索引）以&lt;id, row&gt;的方式存储；而辅助索引以&lt;index, id&gt;的方式进行存储．</p>
+<ul>
+<li>在主键索引中，ｉｄ是主键，通过ｉｄ能找到该行的全部列．</li>
+<li>在辅助索引中，索引中的几个列构成了键，通过索引中的列找到ｉｄ，如果有需要的话，可以再通过ｉｄ找到当前数据行的全部内容．</li>
+</ul>
+<h3 id="2-分析"><a href="#2-分析" class="headerlink" title="2 分析"></a>2 分析</h3><p>MySQL作为<code>OLTP(Online Tranaction Processing)</code>的数据库，不仅需要具备事务的处理能力，还要保证数据的持久化并且能够有一定的实时数据查询能力．</p>
+<p>一般来说索引文件本身也很大，不可能全部存储在内存中，因此索引往往以索引文件的形式存储在磁盘上．这样的话，索引查找过程就会产生磁盘I/O消耗，相对于内存的存取，I/Ｏ存取的消耗要高几个数量级，所以评判一个数据结构作为索引的优劣最重要的指标就是在查找过程中磁盘I/O操作次数的渐进复杂读．换句话说，索引的结构组织要尽量减少查找过程中磁盘I/O的存取次数．</p>
+<p>对于普通磁盘（非ＳＳＤ）加载数据需要经过队列，寻道，旋转以及传输这些过程，大约耗时为１０ｍｓ左右，如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/%E7%A3%81%E7%9B%98IO%E6%B6%88%E8%80%97.png" alt="磁盘IO消耗"></p>
+<p>对于InnoDB选择B+树索引结构原因可以从以下几个方面进行分析：</p>
+<ul>
+<li>考虑其支持的场景和功能需要在特定查询上拥有较强的性能；</li>
+<li>CPU将磁盘上的数据加载到内存需要花费大量的时间，采用Ｂ+树将是非常好的选择；</li>
+</ul>
+<h4 id="2-1-读写性能分析"><a href="#2-1-读写性能分析" class="headerlink" title="2.1 读写性能分析"></a>2.1 读写性能分析</h4><p>这里选取哈希结构及Ｂ树结构进行对比分析．</p>
+<h5 id="2-1-1-与哈希结构进行比较"><a href="#2-1-1-与哈希结构进行比较" class="headerlink" title="2.1.1 与哈希结构进行比较"></a>2.1.1 与哈希结构进行比较</h5><ul>
+<li><p>若使用Ｂ+树作为底层的数据结构，其增删改查一条数据的ＳＱＬ的时间复杂度都是O(lg n)，即树的高度．</p>
+</li>
+<li><p>若使用哈希作为底层的数据结构，其增删改查一条数据的ＳＱＬ的时间复杂度可能达到Ｏ(1)．</p>
+</li>
+<li><p>对于单行数据的读写，哈希索引均比Tree型索引块，但是<code>对于某些特殊的查询SQL，例如分组、排序、比较等情况，哈希索引的时间复杂度会退化为O(n)，而Tree索引因为其有序的特性，能依旧保持O(lg(n))的高效率。</code></p>
+</li>
+</ul>
+<h5 id="2-1-2-与B树进行比较"><a href="#2-1-2-与B树进行比较" class="headerlink" title="2.1.2 与Ｂ树进行比较"></a>2.1.2 与Ｂ树进行比较</h5><p>Ｂ树和Ｂ+树在数据结构上起始有一些相似的，都能按照某些顺序对索引中内容进行遍历，排序及范围查找，相比哈希结构来说，Ｂ树和Ｂ+树能带来更好的性能．</p>
+<h4 id="2-2-数据加载"><a href="#2-2-数据加载" class="headerlink" title="2.2 数据加载"></a>2.2 数据加载</h4><p><code>哈希结构无法满足一些特殊的查询SQL，而Ｂ树和Ｂ+树均能相对高效的执行，那么为什么不选择Ｂ树呢？</code></p>
+<p><code>Ｂ树与Ｂ+树最大的区别就是，Ｂ树的非页结点中可以存储数据，但是Ｂ+树所有数据都是存储于叶子结点中．</code></p>
+<h5 id="2-2-1-B树数据加载分析"><a href="#2-2-1-B树数据加载分析" class="headerlink" title="2.2.1 B树数据加载分析"></a>2.2.1 B树数据加载分析</h5><p>当一个表的底层数据结构是Ｂ树时，假设我们需要访问索引在［4, 9］区间的数据：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/b-tree.png" alt="b-tree"></p>
+<p>在不考虑优化的情况下，在上面简单Ｂ树中需要进行４次磁盘的随机I/O访问才能找到所有满足条件的行：</p>
+<ul>
+<li>加载根结点所在的页，发现根结点的第一个元素是６，大于４；</li>
+<li>通过根节点的指针加载左字节点所在的页，遍历页面中的数据，找到５；</li>
+<li>重新加载根节点所在的页，发现根节点不包含第二个元素；</li>
+<li>通过根节点的指针加载右子节点所在的页，遍历页面中的数据，找到７，８；</li>
+</ul>
+<p>（<em>以上过程不考虑对过程进行优化，Ｂ树能做的优化Ｂ＋树都能做</em>）</p>
+<p>由上述过程可见，对于Ｂ树，由于所有结点都可能包含目标数据，总是需要从根结点向下遍历子树查找满足条件的数据行，这个特点带来了大量的随机I/O，这就是Ｂ树最大的性能问题．</p>
+<h5 id="2-2-2-B-树数据加载分析"><a href="#2-2-2-B-树数据加载分析" class="headerlink" title="2.2.2 B+树数据加载分析"></a>2.2.2 B+树数据加载分析</h5><p>对于B+树，由于其数据行均存储在叶子结点中，而这些叶节点可以通过指针依次顺序连接，如下图所示．当需要遍历数据时，可以直接在多个子节点之间通过指针跳转，这样可以节省大量的磁盘I/O时间，也不需要在不同层级的节点之间对数据进行拼接和排序．通过一个 B+ 树最左侧的叶子节点，可以像链表一样遍历整个树中的全部数据，也可以引入双向链表保证倒序遍历时的性能。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/MySQL-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84/mysql-innodb-b-plus-tree.png" alt="mysql-innodb-b-plus-tree"></p>
+<p><code>Ｂ+树的所有数据仅存储于叶子节点中，会不会导致树的高度增加，从而影响耗时呢？</code></p>
+<p>其实这个影响是可以忽略不计的，对于高度为３的Ｂ+树就能存储千万级别的数据量．可通过以下计算量化，并得出结论：</p>
+<ul>
+<li>根据局部性原理，将一个节点的大小设为一页，一页为４Ｋ，假设一个Key有８个字节，那么一个结点至少可以存储500个Key．</li>
+<li>根据Ｍ叉搜索树特性，非根节点包含的关键字个数需要满足[[m/2], m]区间，即Ｍ大约为1000叉．</li>
+<li>那么，可以知道：<ul>
+<li>​    一层：１个节点，1 * 500个key，大小为４ｋ；</li>
+<li>​    二层：1000个节点，1000  * 500  = 50W个key，大小为1000 * 4k = 4M;</li>
+<li>​    三层：1000 * 1000个节点，1000 * 1000 * 500 = 5亿个key，大小为1000 * 4M = 4G</li>
+</ul>
+</li>
+</ul>
+<p>即３层的Ｂ+树结构，可以存储的数据量大约在５亿左右，其中索引占据的内存大小为４Ｇ左右．</p>
+<h3 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h3><p>任何不考虑应用场景的设计都不是好设计，在明确了解MySQL常见的应用场景之后，再对不同的数据结构进行选择就是理所当然的事了．当然Ｂ+树并不能对所有的OLTP场景下的查询都有着较好的性能，但是它能解决大部分的问题．</p>
+<ul>
+<li>与哈希结构做对比：哈希虽然能提供Ｏ(1)的单数据操作性能，但对于范围查询，分组，排序等功能却无法很好的支持，最终导致全表扫描；</li>
+<li>与Ｂ树结构作对比：Ｂ树能够在非叶子节点中存储数据，这将导致在查询连续数据时可能会带来更多的随机I/O，而Ｂ+树的所有叶节点可以通过指针相互连接，能够减少顺序遍历时产生的额外随机I/O；</li>
+<li>与红黑树结构作对比：红黑树结构的高明显要深很多，由于逻辑上很近的节点（父子结点）物理上可能很远，无法利用局部性原理，所以红黑树的I/O渐进复杂度也为O(h)，效率明显比Ｂ树差很多．</li>
+</ul>
+<p>B+Tree相比B-Tree有的优势包括：</p>
+<ul>
+<li>①、范围查找，定位min和max之后，中间叶子节点，就是结果集，不需要中序回溯；</li>
+<li>②、叶子节点存储实际记录行，记录行相对比较紧密的存储，适合大数据量磁盘存储；非叶子节点存储记录的PK，用于查询加速，适合内存存储。</li>
+<li>③、非叶子节点，不存储实际记录，而只存储记录的Key的话，那么在相同内存的情况下，B+Tree能够存储更多的索引。</li>
+</ul>
+<p>数据库的索引最常用的是B+树的原因：</p>
+<ul>
+<li>①、很合适磁盘存储，能够充分利用局部性原理，磁盘预读；</li>
+<li>②、很低的树高度，能够存储大量数据；</li>
+<li>③、索引本身占用的内存很小；</li>
+<li>④、能够很好的支持单点查询、范围查询、有序性查询。</li>
+</ul>
+<hr>
+<p>参考资料</p>
+<p>1 <a target="_blank" rel="noopener" href="https://draveness.me/whys-the-design-mysql-b-plus-tree/">为什么MySQL使用B+树</a></p>
+<p>2 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/YMbRJwyjutGMD1KpI_fS0A">数据库索引，到底是什么做的？</a></p>
+<p>3 <a target="_blank" rel="noopener" href="https://www.kancloud.cn/kancloud/theory-of-mysql-index/41856">为什么实用B-Tree（B+Tree）</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Interview/" rel="tag"># Interview</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/B-Tree/" rel="tag"># B+Tree</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/06/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E5%88%9B%E5%BB%BA%E9%AB%98%E6%80%A7%E8%83%BD%E7%B4%A2%E5%BC%95/" rel="prev" title="高性能MySQL-创建高性能索引">
+                  <i class="fa fa-chevron-left"></i> 高性能MySQL-创建高性能索引
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/09/%E9%AB%98%E6%80%A7%E8%83%BDMySQL-%E4%BA%8B%E5%8A%A1%E5%9F%BA%E7%A1%80/" rel="next" title="高性能MySQL-事务基础">
+                  高性能MySQL-事务基础 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'b48d36c55f163d303cbbe959326c3e32',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

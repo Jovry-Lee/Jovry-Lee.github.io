@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 概述通过锁机制可以实现事务的隔离性要求，使得事务可以并发的工作．锁提高了并发，却会带来潜在问题呢，例如脏读，幻读等．">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL-脏读,不可重复读,幻读">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/14/MySQL-%E8%84%8F%E8%AF%BB-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB-%E5%B9%BB%E8%AF%BB/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 概述通过锁机制可以实现事务的隔离性要求，使得事务可以并发的工作．锁提高了并发，却会带来潜在问题呢，例如脏读，幻读等．">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-14T09:05:55.000Z">
+<meta property="article:modified_time" content="2020-09-24T08:29:00.085Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="事务">
+<meta property="article:tag" content="锁">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/14/MySQL-%E8%84%8F%E8%AF%BB-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB-%E5%B9%BB%E8%AF%BB/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MySQL-脏读,不可重复读,幻读 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-text">1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%84%8F%E8%AF%BB"><span class="nav-text">2 脏读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB"><span class="nav-text">3 不可重复读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%B9%BB%E8%AF%BB"><span class="nav-text">4 幻读</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/14/MySQL-%E8%84%8F%E8%AF%BB-%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB-%E5%B9%BB%E8%AF%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL-脏读,不可重复读,幻读
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-09-14 17:05:55" itemprop="dateCreated datePublished" datetime="2020-09-14T17:05:55+08:00">2020-09-14</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2020-09-24 16:29:00" itemprop="dateModified" datetime="2020-09-24T16:29:00+08:00">2020-09-24</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h3><p>通过锁机制可以实现事务的隔离性要求，使得事务可以并发的工作．锁提高了并发，却会带来潜在问题呢，例如脏读，幻读等．</p>
+<a id="more"></a>
+
+<p>后续示例均在以下user表的基础上进行操作．</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># 1.　表信息．</span><br><span class="line">CREATE TABLE &#96;users&#96; (</span><br><span class="line">  &#96;id&#96; int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT &#39;自增主键&#39;,</span><br><span class="line">  &#96;user_name&#96; varchar(10) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;用户名&#39;,</span><br><span class="line">  &#96;age&#96; tinyint(2) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;年龄&#39;,</span><br><span class="line">  PRIMARY KEY (&#96;id&#96;)</span><br><span class="line">) ENGINE&#x3D;InnoDB AUTO_INCREMENT&#x3D;13 DEFAULT CHARSET&#x3D;utf8mb4 COMMENT&#x3D;&#39;用户信息&#39;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># 2. 准备测试数据．</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">|  4 | Seven     |  18 |</span><br><span class="line">|  6 | Gordon    |  20 |</span><br><span class="line">| 11 | Natasha   |  23 |</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">+----+-----------+-----+</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="2-脏读"><a href="#2-脏读" class="headerlink" title="2 脏读"></a>2 脏读</h3><p>脏读指的是在不同事务下，当前事务可以读到另外事务未提交的数据．</p>
+<p><code>脏读发生的条件</code>：事务的隔离级别为READ UNCOMMITTED．</p>
+<p><code>脏读的适用场景</code>：在一些特殊特殊情况下，可以将事务的隔离级别设置为READ UNCOMMITTED，例如replication环境中的slave节点，并在该slave上的查询并不需要特别精确的返回值．</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">A: set session transaction isolation level read uncommitted;</span><br><span class="line">A: begin</span><br><span class="line">A: select * from users where id&gt;11;</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">1 row in set (0.01 sec)</span><br><span class="line">	B: set session transaction isolation level read uncommitted;</span><br><span class="line">	B: begin</span><br><span class="line">	B: insert into users(user_name,age)values(&#39;Jovry-Lee&#39;,18); # 未提交．</span><br><span class="line">A: select * from users where id &gt; 11; # 此时事务Ａ读取到事务Ｂ尚未提交的数据，属于脏读．</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">| 13 | Jovry-Lee |  18 |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">2 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="3-不可重复读"><a href="#3-不可重复读" class="headerlink" title="3 不可重复读"></a>3 不可重复读</h3><p>SQL92中对不可重复读的定义如下：</p>
+<blockquote>
+<p>**不可重复读(nonrepeatable read)**：SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted.</p>
+</blockquote>
+<p>即，<strong>不可重复读</strong>是指在一个事务中多次读取同一数据行，在这个事务还没结束时，另一个事务也访问了该数据行，并做了DML操作，导致第一个事务多次读取到的数据不一样．</p>
+<p>（注：<u>不可重复读是针对单行数据</u>）</p>
+<p><code>不可重复读允许发生的隔离级别</code>：READ COMMITTED</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">A: set session transaction isolation level read committed;</span><br><span class="line">A: begin</span><br><span class="line">A: select * from users where id&gt;11;</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">1 row in set (0.01 sec)</span><br><span class="line">	B: set session transaction isolation level read committed;</span><br><span class="line">	B: begin</span><br><span class="line">	B: insert into users(user_name,age)values(&#39;Jovry-Lee&#39;,18);</span><br><span class="line">	B: commit;</span><br><span class="line">A: select * from users where id &gt; 11; # 此时事务Ａ两次读取到不同的结果，属于不可重复读．</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| id | user_name | age |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">| 12 | sam       |  28 |</span><br><span class="line">| 13 | Jovry-Lee |  18 |</span><br><span class="line">+----+-----------+-----+</span><br><span class="line">2 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+
+
+<p><code>脏读与不可重复读的区别</code>：脏读时读到未提交的数据，而不可重复读独到的是已经提交的数据，但时其违反了数据库事务一致性要求．</p>
+<p>一般来说不可重复读的问题是可以接受的，因为其读到的是已经提交的数据，本身并不会带来太大的问题．因此，很多数据库的默认隔离级别是<code>READ COMMITTED</code>，如：Ｏracle, SQL Server.</p>
+<p>MySQL官方文档中<code>将不可重复读的问题定义为Phantom Problem，即幻象问题</code>．InnoDB存储引擎的默认事务隔离级别READ REPEATABLE采用<u>Next-Key Lock算法</u>，避免了不可重复读．</p>
+<h3 id="4-幻读"><a href="#4-幻读" class="headerlink" title="4 幻读"></a>4 幻读</h3><p>SQL92中对幻读的定义如下：</p>
+<blockquote>
+<p>**幻读(phantom read)**：SQL-transaction T1 reads the set of rows N that satisfy some <search condition>. SQL-transaction T2 then executes SQL-statements that generate one or more rows that satisfy the <search condition> used by SQL-transaction T1. If SQL-transaction T1 then repeats the initial read with the same <search condition>, it obtains a different collection of rows.</p>
+</blockquote>
+<p>即，<strong>幻读</strong>指事务T1根据一定的查询条件读取一定的数据集，在这个事务还没有结束时，另一个事务T2执行SQL生成一条或多条满足事务T1查询条件的数据行．此时事务T1再次进行相同的查询时，其结果包含不同的数据集．</p>
+<p>（注：<u>幻读是针对一个结果集，不是单行数据</u>）</p>
+<p>对于MySQL的默认存储引擎InnoDB在RR隔离级别下通过MVCC机制避免了幻读问题．<u>严格的来说是解决了部分幻读的问题</u>[<em>参考资料2</em>]</p>
+<p>示例（<em>针对尚未解决的幻读问题</em>）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"># 1. 建表</span><br><span class="line">CREATE TABLE &#96;t&#96; (</span><br><span class="line">  &#96;a&#96; int(11) NOT NULL,</span><br><span class="line">  PRIMARY KEY (&#96;a&#96;)</span><br><span class="line">) ENGINE&#x3D;InnoDB DEFAULT CHARSET&#x3D;latin1</span><br><span class="line"></span><br><span class="line"># 2. 数据</span><br><span class="line">mysql&gt; select * from t;</span><br><span class="line">+----+</span><br><span class="line">| a  |</span><br><span class="line">+----+</span><br><span class="line">|  1 |</span><br><span class="line">|  2 |</span><br><span class="line">|  3 |</span><br><span class="line">+----+</span><br><span class="line"></span><br><span class="line"># 3. 按以下顺序分别执行Ａ，Ｂ两个事务．</span><br><span class="line">A: begin;</span><br><span class="line">A: select * from t where a&gt;3; # 没有大于３的结果集．</span><br><span class="line">Empty set (0.00 sec)</span><br><span class="line">	B: insert into t select 4;　# 另一个事务插入了一条满足a&gt;3条件的数据．</span><br><span class="line">	Query OK, 1 row affected (0.02 sec)</span><br><span class="line">	Records: 1  Duplicates: 0  Warnings: 0</span><br><span class="line">A: insert into t select 4; # 执行插入a&#x3D;4的数据行．</span><br><span class="line">ERROR 1062 (23000): Duplicate entry &#39;4&#39; for key &#39;PRIMARY&#39;　# 对于事务Ａ在查询到a&gt;3条件下没有结果集，写入一条数据，但是却出现了主键冲突的异常．</span><br></pre></td></tr></table></figure>
+
+
+<hr>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>1 MySQL技术内幕+InnoDB存储引擎第2版(7.2节)<br>2 <a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000012669504">搞懂不可重复读和幻读</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag"># 事务</a>
+              <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/11/MySQL-%E5%91%BD%E4%BB%A4%E5%8F%8A%E6%96%B9%E6%B3%95%E5%A4%87%E5%BF%98%E5%BD%95/" rel="prev" title="MySQL-命令/方法备忘录">
+                  <i class="fa fa-chevron-left"></i> MySQL-命令/方法备忘录
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/16/Docker-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F/" rel="next" title="Docker-是什么？">
+                  Docker-是什么？ <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'b3137ac2826612dd3fd909ab64995bc3',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

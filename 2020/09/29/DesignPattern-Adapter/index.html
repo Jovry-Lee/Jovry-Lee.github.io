@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 概述 适配器其实很好理解，生活中也其实充满了适配器，比如：壁式插座是三角孔，而标准的交流电插头是两头的，若需要将两头插头插入三角孔内，则可能需要一个交流电适配器．">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DesignPattern-Adapter(适配器模式)">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/09/29/DesignPattern-Adapter/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 概述 适配器其实很好理解，生活中也其实充满了适配器，比如：壁式插座是三角孔，而标准的交流电插头是两头的，若需要将两头插头插入三角孔内，则可能需要一个交流电适配器．">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/Adapter_UML.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/AdapterClassUml.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/AdapterObjectExample.png">
+<meta property="article:published_time" content="2020-09-29T03:17:34.000Z">
+<meta property="article:modified_time" content="2020-09-29T09:51:23.598Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="DesignPattern">
+<meta property="article:tag" content="Adapter">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/Adapter_UML.png">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/09/29/DesignPattern-Adapter/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>DesignPattern-Adapter(适配器模式) | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/29/DesignPattern-Adapter/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DesignPattern-Adapter(适配器模式)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2020-09-29 11:17:34 / Modified: 17:51:23" itemprop="dateCreated datePublished" datetime="2020-09-29T11:17:34+08:00">2020-09-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>1 概述</p>
+<p>适配器其实很好理解，生活中也其实充满了适配器，比如：壁式插座是三角孔，而标准的交流电插头是两头的，若需要将两头插头插入三角孔内，则可能需要一个交流电适配器．</p>
+<a id="more"></a>
+
+<p>该交流电的适配器的作用：位于插头和插座之间，将插头转换为三角插头，将交流电经过一定的转换以匹配插座．</p>
+<p>2 Adapter（适配器模式）</p>
+<p>定义：适配器模式将一个类的接口，转换成客户期望的另一个接口．适配器让原本接口不兼容的类可以合作无间．</p>
+<p>作用：</p>
+<ul>
+<li>①、通过创建适配器进行接口转换，让不兼容的接口变成兼容，让客户从实现的接口解耦。</li>
+<li>②、若后续有改变接口，适配器可以将改变部分封装起来，无需客户进行修改。</li>
+</ul>
+<p>适配器的分类：</p>
+<ul>
+<li>对象适配器——“组合”方式适配</li>
+<li>类适配器——“继承”方式适配</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>优缺点</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>对象适配器</td>
+<td>①、采用组合的方式，步进可以适配某个类，也可以适配该类的任何子类。<br />②、只需要写很少的代码，将工作委托给适配者，更加有弹性。</td>
+<td>①、需重新实现整个被适配者。</td>
+</tr>
+<tr>
+<td>类适配器</td>
+<td>①、采用继承的方式，无需重新实现整个被适配者，且可以覆盖被适配者的行为。<br/>②、只需要一个类适配器，不需要一个适配器和一个被适配者。</td>
+<td>①、只能采用某个特定被适配类。</td>
+</tr>
+</tbody></table>
+<p>2.1 对象适配器</p>
+<p>对象适配器是通过＂组合＂方式适配．其类图如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/Adapter_UML.png" alt="Adapter_UML"></p>
+<p>对象适配器优点：</p>
+<ul>
+<li>①、采用组合的方式，步进可以适配某个类，也可以适配该类的任何子类。</li>
+<li>②、只需要写很少的代码，将工作委托给适配者，更加有弹性。</li>
+</ul>
+<p>对象适配器缺点：</p>
+<ul>
+<li>①、需重新实现整个被适配者。</li>
+</ul>
+<p>2.2 类适配器</p>
+<p>类适配器采用＂继承＂的方式适配．（<em>类适配器需要多重继承才能实现，而对于Java, PHP是不支持多重继承的</em>）</p>
+<p>其类图如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/AdapterClassUml.png" alt="AdapterClassUml"></p>
+<p>类适配器的优点：</p>
+<ul>
+<li>①、采用继承的方式，无需重新实现整个被适配者，且可以覆盖被适配者的行为。</li>
+<li>②、只需要一个类适配器，不需要一个适配器和一个被适配者。</li>
+</ul>
+<p>类是配器的缺点：</p>
+<ul>
+<li>①、只能采用某个特定被适配类。</li>
+</ul>
+<p>3 适配器模式的应用</p>
+<p>假设有一个带有<code>fly()</code>和gobble()方法的Turkey类。还有一个带有fly()和quack()方法的Duck类。让我们假设你是Duck对象的简称，你想在他们的位置使用Turkey对象。Turkey有一些类似的功能，但实现了不同的接口，所以我们不能直接使用它们。所以我们将使用适配器模式。在这里，我们的客户将是Duck，而adaptee将是Turkey。</p>
+<p>（<em>由于PHP并不支持多重继承，因此此处只分析对象适配器的情况</em>）</p>
+<p>其类图如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/DesignPattern/AdapterObjectExample.png" alt="AdapterObjectExample"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 鸭子接口,具备呱呱叫和飞行的能力.</span></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Duck</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">quack</span>(<span class="params"></span>)</span>; <span class="comment">// 鸭子叫.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">fly</span>(<span class="params"></span>)</span>;  <span class="comment">// 飞行能力.</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 火鸡接口.</span></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Turkey</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">gobble</span>(<span class="params"></span>)</span>; <span class="comment">// 火鸡咯咯叫.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">fly</span>(<span class="params"></span>)</span>; <span class="comment">// 火鸡会飞,但飞不远.</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 绿头鸭是鸭子的实现.</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MallardDuck</span> <span class="keyword">implements</span> <span class="title">Duck</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">quack</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;Quack\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">fly</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;I&#x27;m flying\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 野火鸡是火鸡的实现.</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WildTurkey</span> <span class="keyword">implements</span> <span class="title">Turkey</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">gobble</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;Gobble gobble\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">fly</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;I&#x27;m flying a short distance\n&quot;</span>; <span class="comment">// 火鸡只能飞很短的距离．</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 鸭子适配器(让火鸡来充当鸭子),首先需要实现想要转换成的类型接口,也就是客户所期望看到的接口.</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TurkeyAdapter</span> <span class="keyword">implements</span> <span class="title">Duck</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="comment">/**<span class="doctag">@var</span> Turkey $turkey 传入的火鸡对象*/</span></span><br><span class="line">    <span class="keyword">private</span> $turkey;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 接着需要取得适配的对象引用.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">Turkey $turkey</span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">$this</span>-&gt;turkey = $turkey;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 实现接口中的所有方法,试下转换.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">quack</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">$this</span>-&gt;turkey-&gt;gobble();　<span class="comment">// 在鸭子的相应方法里面，调用传入的火鸡对象的接口．</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 虽然两个接口都具备了fly方法,火鸡的飞行距离短,不像鸭子可以长途飞行,要让鸭子的飞行和火鸡的飞行对应,必须连续调用火鸡的fly来完成.</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">fly</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> ($i = <span class="number">0</span>; $i &lt; <span class="number">5</span>; $i++) &#123;</span><br><span class="line">            <span class="keyword">$this</span>-&gt;turkey-&gt;fly();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 测试.</span></span><br><span class="line">$duck = <span class="keyword">new</span> MallardDuck();　<span class="comment">// 创建一只鸭子.</span></span><br><span class="line">$turkey = <span class="keyword">new</span> WildTurkey();　<span class="comment">//  创建一只火鸡.</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 将火鸡包装进一个火鸡适配器,使它看起来象一只鸭子.</span></span><br><span class="line">$turkeyAdapter = <span class="keyword">new</span> TurkeyAdapter($turkey);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;The Turkey says...\n&quot;</span>;</span><br><span class="line">$turkey-&gt;gobble();　<span class="comment">// Gobble gobble</span></span><br><span class="line">$turkey-&gt;fly(); <span class="comment">// I&#x27;m flying a short distance</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;\nThe Duck says...\n&quot;</span>;</span><br><span class="line">$duck-&gt;quack(); <span class="comment">// Quack</span></span><br><span class="line">$duck-&gt;fly(); <span class="comment">// I&#x27;m flying</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;\nThe TurkeyAdapter says...\n&quot;</span>;</span><br><span class="line">$turkeyAdapter-&gt;quack(); <span class="comment">// Gobble gobble</span></span><br><span class="line">$turkeyAdapter-&gt;fly(); <span class="comment">// I&#x27;m flying a short distance\nI&#x27;m flying a short distance\nI&#x27;m flying a short distance\nI&#x27;m flying a short distance\nI&#x27;m flying a short distance</span></span><br></pre></td></tr></table></figure>
+
+
+
+<hr>
+<p>参考资料<br>Head First Design Pattern<br>适配器模式（<a target="_blank" rel="noopener" href="https://www.geeksforgeeks.org/adapter-pattern/%EF%BC%89">https://www.geeksforgeeks.org/adapter-pattern/）</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DesignPattern/" rel="tag"># DesignPattern</a>
+              <a href="/tags/Adapter/" rel="tag"># Adapter</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/28/DesignPattern-Decorator/" rel="prev" title="DesignPattern-Decorator(装饰者模式)">
+                  <i class="fa fa-chevron-left"></i> DesignPattern-Decorator(装饰者模式)
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/10/05/PHP-Laravel%E5%AE%89%E8%A3%85/" rel="next" title="PHP-Laravel简介及安装">
+                  PHP-Laravel简介及安装 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : 'dffc64f3d0fa2491b934d852903353e7',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
