@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="1 简介既然已经有了进程，为什么还要引入线程呢？或者说使用线程有何优点？  线程拥有共享一个地址空间和所有可用数据的能力； 线程比进程更轻量级，所以它们比进程更容易、更快创建及撤销； 线程对于存在着大量的计算和大量的I&#x2F;O处理的活动，能重叠执行，加快应用程序执行速度，提升性能。（注：多线程对于CPU密集型活动，并不能获得性能上的提升）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="操作系统-线程">
+<meta property="og:url" content="https://jovry-lee.github.io/2021/03/20/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BA%BF%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="1 简介既然已经有了进程，为什么还要引入线程呢？或者说使用线程有何优点？  线程拥有共享一个地址空间和所有可用数据的能力； 线程比进程更轻量级，所以它们比进程更容易、更快创建及撤销； 线程对于存在着大量的计算和大量的I&#x2F;O处理的活动，能重叠执行，加快应用程序执行速度，提升性能。（注：多线程对于CPU密集型活动，并不能获得性能上的提升）">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-03-19T16:33:50.000Z">
+<meta property="article:modified_time" content="2021-03-21T15:48:32.960Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="现代操作系统">
+<meta property="article:tag" content="线程">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2021/03/20/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BA%BF%E7%A8%8B/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>操作系统-线程 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-text">1 简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="nav-text">2 多线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">3 线程的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-%E7%94%A8%E6%88%B7%E7%A9%BA%E9%97%B4%E4%B8%AD%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B"><span class="nav-text">3.1 用户空间中实现线程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-%E5%86%85%E6%A0%B8%E4%B8%AD%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B"><span class="nav-text">3.2 内核中实现线程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-%E6%B7%B7%E5%90%88%E5%AE%9E%E7%8E%B0"><span class="nav-text">3.3 混合实现</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2021/03/20/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BA%BF%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          操作系统-线程
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-03-20 00:33:50" itemprop="dateCreated datePublished" datetime="2021-03-20T00:33:50+08:00">2021-03-20</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-21 23:48:32" itemprop="dateModified" datetime="2021-03-21T23:48:32+08:00">2021-03-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">线程</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E7%BA%BF%E7%A8%8B/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>既然已经有了进程，为什么还要引入线程呢？或者说使用线程有何优点？</p>
+<ul>
+<li>线程拥有共享一个地址空间和所有可用数据的能力；</li>
+<li>线程比进程更轻量级，所以它们比进程更容易、更快创建及撤销；</li>
+<li>线程对于存在着大量的计算和大量的I/O处理的活动，能重叠执行，加快应用程序执行速度，提升性能。（注：<code>多线程对于CPU密集型活动，并不能获得性能上的提升</code>）</li>
+</ul>
+<a id="more"></a>
+
+<p>进程拥有一个执行的线程，线程拥有：</p>
+<ul>
+<li>程序计数器：用于记录接着要执行的指令；</li>
+<li>寄存器：用于保存线程当前的工作变量（局部变量以及过程调用之后使用的返回地址）；</li>
+<li>堆栈：用于记录执行历史，其中每一帧保存了一个一调用，但还未从中返回的过程；</li>
+<li>状态：与进程一直，有运行、阻塞、就绪、终止状态。状态间的转换和进程一致。</li>
+</ul>
+<p>注：<code>进程用于把资源集中到一起，而线程则是在CPU上被调度执行的实体。</code></p>
+<h4 id="2-多线程"><a href="#2-多线程" class="headerlink" title="2 多线程"></a>2 多线程</h4><p>在多线程的情况下，进程通常会从当前的单个线程开始。常见的线程调用如下：</p>
+<ul>
+<li>创建：这个线程有能力通过调用一个系统函数创建新线程（如：thread_create）。创建线程通常都会返回一个线程标识符，该标识符就是线程的名称。注：<code>线程间通常是平等的，不存在父子关系（特殊情况除外）。</code></li>
+<li>退出：当一个线程执行完成后，可以通过调用一个库函数（如：thread_exit）退出。退出的线程不再被调度。</li>
+<li>等待其他线程：有时会需要等待其他线程退出，此时可通过调用一个库函数（如：thread_join）等待。此时当前线程将被阻塞，直到另一个线程退出。</li>
+<li>让出CPU：线程无法像进程一样通过时钟中断方式强制让出CPU，而某些场景下一个线程运行时间足够长，需要让另外一个线程执行，再进程操作。所以系统提供一个库函数（如：thread_yield）。</li>
+</ul>
+<h4 id="3-线程的实现"><a href="#3-线程的实现" class="headerlink" title="3 线程的实现"></a>3 线程的实现</h4><p>线程的实现主要有两种方式：<code>在用户空间中实现</code>和在<code>内核中实现</code>。</p>
+<p>为了实现可移植的线程程序，IEEE在IEEE标准1003.1c中定义了线程的标准。它定义的线程包叫做pthread。大部分UNIX系统都支持该标准。</p>
+<h5 id="3-1-用户空间中实现线程"><a href="#3-1-用户空间中实现线程" class="headerlink" title="3.1 用户空间中实现线程"></a>3.1 用户空间中实现线程</h5><p>在用户空间中实现线程，就是把整个线程包放在用户空间中，内核对线程包一无所知，即从内核的角度，就是按照正常的单线程进程管理方式。用户空间实现线程时，<u>每个进程需要有其专用的线程表</u>，用于跟踪进程中的线程。</p>
+<p>优点：</p>
+<ul>
+<li>用户级线程可以在不支持线程的操作系统上实现；</li>
+<li>线程的切换不需要陷入内核，无需上下文切换，也无需对内存高速缓存进行刷新，使得线程的调度更加快捷；</li>
+<li>用户级线程允许每个进程有自己定制的调度算法，拥有较好的可扩展性；</li>
+</ul>
+<p>不足：</p>
+<ul>
+<li>实现阻塞系统调用问题；</li>
+<li>缺页中断问题；</li>
+<li>从内核角度看，是按单线程进程管理的，即若一个线程开始运行，那么在该进程中的其他线程就不能运行，除非第一个线程自动放弃CPU。</li>
+</ul>
+<h5 id="3-2-内核中实现线程"><a href="#3-2-内核中实现线程" class="headerlink" title="3.2 内核中实现线程"></a>3.2 内核中实现线程</h5><p>内核中实现线程，由<u>内核记录系统中所有线程的线程表</u>。当某个线程希望创建一个新线程或者撤销一个已有线程时，他进行一个系统调用，这个系统调用通过对线程表的更新完成线程创建或撤销工作。</p>
+<p>所有线程的调用都以系统调用形式实现，相比用户空间实现，代价更大。有些系统采用“环保”的处理方式，即回收线程。具体过程为：当一个线程被撤销时，就把它标记为不可运行，但其内核数据结构并没有受到影响，在后续需要创建新线程时，重启某个旧线程，从而节省一些开支。</p>
+<h5 id="3-3-混合实现"><a href="#3-3-混合实现" class="headerlink" title="3.3 混合实现"></a>3.3 混合实现</h5><p>使用内核级线程，然后将用户级线程与某些或者全部内核线程多路复用起来。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+              <a href="/tags/%E7%8E%B0%E4%BB%A3%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 现代操作系统</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B/" rel="tag"># 线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/18/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B/" rel="prev" title="操作系统-进程">
+                  <i class="fa fa-chevron-left"></i> 操作系统-进程
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '76644e806eb2fce4e3c98dadb2575809',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
