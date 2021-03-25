@@ -193,20 +193,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-count">25</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -237,6 +237,105 @@
       
 
       
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2021/03/20/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BA%BF%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/03/20/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BA%BF%E7%A8%8B/" class="post-title-link" itemprop="url">操作系统-线程</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-03-20 00:33:50" itemprop="dateCreated datePublished" datetime="2021-03-20T00:33:50+08:00">2021-03-20</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-21 23:48:32" itemprop="dateModified" datetime="2021-03-21T23:48:32+08:00">2021-03-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">线程</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E7%BA%BF%E7%A8%8B/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h4 id="1-简介"><a href="#1-简介" class="headerlink" title="1 简介"></a>1 简介</h4><p>既然已经有了进程，为什么还要引入线程呢？或者说使用线程有何优点？</p>
+<ul>
+<li>线程拥有共享一个地址空间和所有可用数据的能力；</li>
+<li>线程比进程更轻量级，所以它们比进程更容易、更快创建及撤销；</li>
+<li>线程对于存在着大量的计算和大量的I/O处理的活动，能重叠执行，加快应用程序执行速度，提升性能。（注：<code>多线程对于CPU密集型活动，并不能获得性能上的提升</code>）</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/20/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E7%BA%BF%E7%A8%8B/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -981,86 +1080,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2020/09/23/Architecture-%E6%97%A2%E7%84%B6%E6%9C%89HTTP%E8%AF%B7%E6%B1%82%EF%BC%8C%E4%B8%BA%E4%BD%95%E8%A6%81%E7%94%A8RPC%E8%B0%83%E7%94%A8/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/09/23/WEB-%E4%BC%9A%E8%AF%9D%E7%AE%A1%E7%90%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/princess.jpg">
-      <meta itemprop="name" content="Jovry Lee">
-      <meta itemprop="description" content="Keeping learning and improving!">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jovry's blog">
-    </span>
-
-    
-    
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/09/23/WEB-%E4%BC%9A%E8%AF%9D%E7%AE%A1%E7%90%86/" class="post-title-link" itemprop="url">WEB-会话管理</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2020-09-23 16:18:34 / Modified: 16:43:45" itemprop="dateCreated datePublished" datetime="2020-09-23T16:18:34+08:00">2020-09-23</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/WEB/" itemprop="url" rel="index"><span itemprop="name">WEB</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="１引入"><a href="#１引入" class="headerlink" title="１引入"></a>１引入</h3><p>首先，我们需要知道，HTTP是无状态协议，即HTTP协议对于发送过的请求/接收过的响应均不作持久化处理。<code>HTTP（ HyperText Transfer Protocol）</code>，顾名思义，超文本传输协议。最开始基本上就是文档的浏览而已，作为服务器，不需要记录谁在某一段时间里都浏览了什么文件；还有就是为了能更快的处理大量事务，确保协议的可伸缩性，特意将其设计的如此简单。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/09/23/WEB-%E4%BC%9A%E8%AF%9D%E7%AE%A1%E7%90%86/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
