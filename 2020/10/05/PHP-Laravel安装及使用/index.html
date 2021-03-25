@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="Laravel是一套简洁、优雅的PHP Web开发框架(PHP Web Framework)。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP-Laravel安装及使用">
+<meta property="og:url" content="https://jovry-lee.github.io/2020/10/05/PHP-Laravel%E5%AE%89%E8%A3%85%E5%8F%8A%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="Laravel是一套简洁、优雅的PHP Web开发框架(PHP Web Framework)。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-10-05T08:43:13.000Z">
+<meta property="article:modified_time" content="2021-03-25T06:20:33.074Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="PHP">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2020/10/05/PHP-Laravel%E5%AE%89%E8%A3%85%E5%8F%8A%E4%BD%BF%E7%94%A8/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>PHP-Laravel安装及使用 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%AE%89%E8%A3%85"><span class="nav-text">1 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%A6%81%E6%B1%82"><span class="nav-text">1.1 服务器要求</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-%E5%AE%89%E8%A3%85Laravel"><span class="nav-text">1.2 安装Laravel</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-%E5%88%9B%E5%BB%BALaravel%E9%A1%B9%E7%9B%AE"><span class="nav-text">1.3  创建Laravel项目</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-1-%E4%BD%BF%E7%94%A8laravel-new%E5%91%BD%E4%BB%A4"><span class="nav-text">1.3.1 使用laravel new命令</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-2-%E9%80%9A%E8%BF%87Composer%E5%88%9B%E5%BB%BA%E9%A1%B9%E7%9B%AE"><span class="nav-text">1.3.2 通过Composer创建项目</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-%E5%90%AF%E5%8A%A8php%E5%86%85%E7%BD%AE%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-text">1.4 启动php内置服务器</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E9%85%8D%E7%BD%AE"><span class="nav-text">2 配置</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-%E9%85%8D%E7%BD%AEstorage%E5%92%8Cbootstrap-cache%E7%9B%AE%E5%BD%95%E6%9D%83%E9%99%90"><span class="nav-text">2.1 配置storage和bootstrap&#x2F;cache目录权限</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-%E9%85%8D%E7%BD%AE%E5%BA%94%E7%94%A8%E7%A7%98%E9%92%A5"><span class="nav-text">2.2 配置应用秘钥</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-3-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="nav-text">2.3 环境配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-4-%E9%85%8D%E7%BD%AE%E7%BC%93%E5%AD%98"><span class="nav-text">2.4 配置缓存</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%EF%BC%88%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%EF%BC%89"><span class="nav-text">3 依赖注入（服务容器）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-%E5%B8%B8%E7%94%A8%E6%B3%A8%E5%85%A5%E6%96%B9%E5%BC%8F"><span class="nav-text">3.1 常用注入方式</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-1-1-%E7%AE%80%E5%8D%95%E6%B3%A8%E5%85%A5%EF%BC%88%E7%AE%80%E5%8D%95%E7%BB%91%E5%AE%9A%EF%BC%89"><span class="nav-text">3.1.1 简单注入（简单绑定）</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#3-1-2-%E6%B3%A8%E5%85%A5%E5%8D%95%E4%BE%8B"><span class="nav-text">3.1.2 注入单例</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#3-1-3-%E6%B3%A8%E5%85%A5%E5%AE%9E%E4%BE%8B"><span class="nav-text">3.1.3 注入实例</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#3-1-4-%E6%B3%A8%E5%85%A5%E6%8E%A5%E5%8F%A3%E5%88%B0%E5%AE%9E%E7%8E%B0"><span class="nav-text">3.1.4 注入接口到实现</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-%E8%A7%A3%E6%9E%90"><span class="nav-text">3.2 解析</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-2-1-%E8%A7%A3%E6%9E%90%E7%B1%BB%E7%9A%84%E5%AE%9E%E4%BE%8B"><span class="nav-text">3.2.1 解析类的实例</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#3-2-2-%E8%87%AA%E5%8A%A8%E6%B3%A8%E5%85%A5"><span class="nav-text">3.2.2 自动注入</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-%E5%AE%B9%E5%99%A8%E4%BA%8B%E4%BB%B6"><span class="nav-text">3.3 容器事件</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-Service-Provider%EF%BC%88%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%80%85%EF%BC%89"><span class="nav-text">4 Service Provider（服务提供者）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#4-1-Service-Provider%E7%9A%84%E7%BC%96%E5%86%99%E6%96%B9%E6%B3%95"><span class="nav-text">4.1 Service Provider的编写方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-2-Service-Provider%E7%9A%84%E6%B3%A8%E5%86%8C%E6%96%B9%E6%B3%95"><span class="nav-text">4.2 Service Provider的注册方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-3-%E5%BB%B6%E8%BF%9F%E5%8A%A0%E8%BD%BDService-Provider"><span class="nav-text">4.3 延迟加载Service Provider</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-Facades"><span class="nav-text">5 Facades</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">50</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2020/10/05/PHP-Laravel%E5%AE%89%E8%A3%85%E5%8F%8A%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP-Laravel安装及使用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-10-05 16:43:13" itemprop="dateCreated datePublished" datetime="2020-10-05T16:43:13+08:00">2020-10-05</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-25 14:20:33" itemprop="dateModified" datetime="2021-03-25T14:20:33+08:00">2021-03-25</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/PHP/Laravel/" itemprop="url" rel="index"><span itemprop="name">Laravel</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Laravel是一套简洁、优雅的PHP Web开发框架(PHP Web Framework)。</p>
+<a id="more"></a>
+
+<h4 id="1-安装"><a href="#1-安装" class="headerlink" title="1 安装"></a>1 安装</h4><h5 id="1-1-服务器要求"><a href="#1-1-服务器要求" class="headerlink" title="1.1 服务器要求"></a>1.1 服务器要求</h5><p>确保服务器满足版本要求且已安装以下扩展：<code>BCMath</code>，<code>Ctype</code>,<code>Fileinfo</code>,<code>JSON</code>,<code>Mbstring</code>,<code>OpenSSL</code>,<code>PDO</code>,<code>Tokenizer</code>,<code>XML</code></p>
+<h5 id="1-2-安装Laravel"><a href="#1-2-安装Laravel" class="headerlink" title="1.2 安装Laravel"></a>1.2 安装Laravel</h5><ul>
+<li>使用composer安装Laravel安装器</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">composer global require laravel&#x2F;installer</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>修改系统环境变量</li>
+</ul>
+<figure class="highlight txt"><figcaption><span>~/.bashrc</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export LARAVEL_HOME=/root/.composer/vendor/bin</span><br><span class="line">export PATH=$LARAVEL_HOME:$PATH</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>执行以下命令使其生效</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">source ~&#x2F;.bashrc</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-3-创建Laravel项目"><a href="#1-3-创建Laravel项目" class="headerlink" title="1.3  创建Laravel项目"></a>1.3  创建Laravel项目</h5><h6 id="1-3-1-使用laravel-new命令"><a href="#1-3-1-使用laravel-new命令" class="headerlink" title="1.3.1 使用laravel new命令"></a>1.3.1 使用<code>laravel new</code>命令</h6><p>示例：通过以下命令将创建一个名为blog的目录，并安装号Laravel所有依赖项。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">laravel new blog</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-3-2-通过Composer创建项目"><a href="#1-3-2-通过Composer创建项目" class="headerlink" title="1.3.2 通过Composer创建项目"></a>1.3.2 通过Composer创建项目</h6><p>通过<code>create-project</code>命令来安装Laravel：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">composer create-project --prefer-dist laravel&#x2F;laravel blog &lt;版本&gt;</span><br></pre></td></tr></table></figure>
+
+<p>示例：由于我本机php版本为7.1.3，查看支持的Laravel版本，对应的应该为5.6</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">composer create-project --prefer-dist laravel&#x2F;laravel blog 5.6.*</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-4-启动php内置服务器"><a href="#1-4-启动php内置服务器" class="headerlink" title="1.4 启动php内置服务器"></a>1.4 启动php内置服务器</h5><p>通过以下命令，将在<code>http://localhost:8000</code>上启动开发服务器。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php artisan serve</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-配置"><a href="#2-配置" class="headerlink" title="2 配置"></a>2 配置</h4><h5 id="2-1-配置storage和bootstrap-cache目录权限"><a href="#2-1-配置storage和bootstrap-cache目录权限" class="headerlink" title="2.1 配置storage和bootstrap/cache目录权限"></a>2.1 配置storage和bootstrap/cache目录权限</h5><p>安装完Laravel后，需要配置storage及bootstrap/cache目录权限，使其允许Web服务器写入，否则，Laravel程序将无法使用。</p>
+<h5 id="2-2-配置应用秘钥"><a href="#2-2-配置应用秘钥" class="headerlink" title="2.2 配置应用秘钥"></a>2.2 配置应用秘钥</h5><p> 命令：<code>php artisan key:generate</code></p>
+<p>注：若Laravel是通过Composer或Laravel安装器安装的，则无需再次进行设置。</p>
+<p>若未设置好应用秘钥，则用户会话和其他加密数据是不安全的。</p>
+<h5 id="2-3-环境配置"><a href="#2-3-环境配置" class="headerlink" title="2.3 环境配置"></a>2.3 环境配置</h5><p>Laravel提供了一个.env文件用来管理不同环境的配置，该配置不应被提交到版本控制系统中。</p>
+<p>本地开发时，可以创建一个测试env文件，例如：<code>.env.tesing</code>文件，当使用PHPUnit测试或者以<code>--env=testing</code>为选项执行Artisan命令，该文件将覆盖<code>.env</code>文件中的值。</p>
+<h5 id="2-4-配置缓存"><a href="#2-4-配置缓存" class="headerlink" title="2.4 配置缓存"></a>2.4 配置缓存</h5><p>Laravel提供了一个缓存配置命令，将所有的配置文件缓存到单个文件中，后续框架会快速加载该文件，命名如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php artisan config:cache</span><br></pre></td></tr></table></figure>
+
+<p>注：该命令应该作为生产环境部署中，但不应在本地开发环境执行，一旦配置被缓存，<code>.env</code>文件将不再被加载，所有对<code>env</code>函数的调用将返回null</p>
+<h4 id="3-依赖注入（服务容器）"><a href="#3-依赖注入（服务容器）" class="headerlink" title="3 依赖注入（服务容器）"></a>3 依赖注入（服务容器）</h4><p>Laravel提供了一个服务容器，用于管理类依赖以及实现依赖注入。</p>
+<h5 id="3-1-常用注入方式"><a href="#3-1-常用注入方式" class="headerlink" title="3.1 常用注入方式"></a>3.1 常用注入方式</h5><h6 id="3-1-1-简单注入（简单绑定）"><a href="#3-1-1-简单注入（简单绑定）" class="headerlink" title="3.1.1 简单注入（简单绑定）"></a>3.1.1 简单注入（简单绑定）</h6><p>Laravel提供了<code>bind</code>方法，用于注册绑定，其第一个参数为要绑定的<code>类/接口名</code>，第二个参数是一个返回类实例的<code>Closure</code>。</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$this-&gt;app-&gt;bind(&#39;HelpSpot\API&#39;, function ($app) &#123;</span><br><span class="line">    return new \HelpSpot\API($app-&gt;make(&#39;HttpClient&#39;));</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h6 id="3-1-2-注入单例"><a href="#3-1-2-注入单例" class="headerlink" title="3.1.2 注入单例"></a>3.1.2 注入单例</h6><p>Laravel提供了一个<code>singleton</code>方法，将类或接口绑定到只解析一次的容器中。一旦被绑定，相同的对象实例会在随后的调用中返回。</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$this-&gt;app-&gt;singleton(&#39;HelpSpot\API&#39;, function ($app) &#123;</span><br><span class="line">    return new \HelpSpot\API($app-&gt;make(&#39;HttpClient&#39;));</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h6 id="3-1-3-注入实例"><a href="#3-1-3-注入实例" class="headerlink" title="3.1.3 注入实例"></a>3.1.3 注入实例</h6><p>Laravel提供了一个<code>instance</code>方法将现有对象实例绑定到容器。给定的实例会始终在随后的调用中返回到容器。</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$api &#x3D; new \HelpSpot\API(new HttpClient);</span><br><span class="line">$this-&gt;app-&gt;instance(&#39;HelpSpot\API&#39;, $api);</span><br></pre></td></tr></table></figure>
+
+<h6 id="3-1-4-注入接口到实现"><a href="#3-1-4-注入接口到实现" class="headerlink" title="3.1.4 注入接口到实现"></a>3.1.4 注入接口到实现</h6><p>Laravel支持绑定接口到给定的实现。</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$this-&gt;app-&gt;bind(</span><br><span class="line">    &#39;App\Contracts\EventPusher&#39;,</span><br><span class="line">    &#39;App\Services\RedisEventPusher&#39;</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-解析"><a href="#3-2-解析" class="headerlink" title="3.2 解析"></a>3.2 解析</h5><h6 id="3-2-1-解析类的实例"><a href="#3-2-1-解析类的实例" class="headerlink" title="3.2.1 解析类的实例"></a>3.2.1 解析类的实例</h6><p>Laravel提供了一个make方法用于从容器中解析出类或接口的名称。</p>
+<ul>
+<li>从app变量中解析：<code>$this-&gt;app-&gt;make(&#39;HelpSpot\API&#39;)</code></li>
+<li>通过全局辅助函数解析：<code>resolve(HelpSpot\API)</code></li>
+<li>通过关联数组作为makeWith方法的参数注入：<code>$this-&gt;app-&gt;makeWith(&#39;HelpSpot\API&#39;, [&#39;id&#39; =&gt; 1])</code></li>
+</ul>
+<h6 id="3-2-2-自动注入"><a href="#3-2-2-自动注入" class="headerlink" title="3.2.2 自动注入"></a>3.2.2 自动注入</h6><p>通过构造函数进行注入</p>
+<h5 id="3-3-容器事件"><a href="#3-3-容器事件" class="headerlink" title="3.3 容器事件"></a>3.3 容器事件</h5><p>Laravel服务容器每次解析对象会触发一个事件 ，可以通过使用<code>resoving</code>方法监听这个事件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$this-&gt;app-&gt;resolving(function ($object, $app) &#123;</span><br><span class="line">    &#x2F;&#x2F; 当容器解析任何类型的对象时调用...</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">$this-&gt;app-&gt;resolving(\HelpSpot\API::class, function ($api, $app) &#123;</span><br><span class="line">    &#x2F;&#x2F; 当容器解析类型为 &quot;HelpSpot\API&quot; 的对象时调用...</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="4-Service-Provider（服务提供者）"><a href="#4-Service-Provider（服务提供者）" class="headerlink" title="4 Service Provider（服务提供者）"></a>4 Service Provider（服务提供者）</h4><h5 id="4-1-Service-Provider的编写方法"><a href="#4-1-Service-Provider的编写方法" class="headerlink" title="4.1 Service Provider的编写方法"></a>4.1 Service Provider的编写方法</h5><p>所有的服务提供者都会继承<code>Illuminate\Support\ServiceProvider</code>类。大多数提供者包含</p>
+<ul>
+<li>register（注册方法）：需将服务绑定到服务容器中（注：不要在register方法中注册监听器、路由或其他功能，否则会议外地使用到尚未加载的服务提供者提供的服务）。</li>
+<li>boot（引导方法）：该方法在所有服务提供者被注册后才调用。</li>
+</ul>
+<p>生成提供者命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php artisan make:provider &lt;服务提供者名称&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>服务提供者提供了两个简单绑定的特性，当服务提供器被框架加载时，将自动检查这些属性并注册相应的绑定：</p>
+<ul>
+<li>bindings</li>
+<li>singletons</li>
+</ul>
+<h5 id="4-2-Service-Provider的注册方法"><a href="#4-2-Service-Provider的注册方法" class="headerlink" title="4.2 Service Provider的注册方法"></a>4.2 Service Provider的注册方法</h5><p>将Service Provider配置到配置文件<code>config/app.php</code>中的<code>providers</code>数组中即可进行注册。</p>
+<h5 id="4-3-延迟加载Service-Provider"><a href="#4-3-延迟加载Service-Provider" class="headerlink" title="4.3 延迟加载Service Provider"></a>4.3 延迟加载Service Provider</h5><p>延迟加载Service Provider需要实现<code>\Illuminate\Contracts\Support\DeferrableProvider</code> 接口并置一个 <code>provides</code> 方法，然后在<code>provides</code>方法中返回该提供者注册的服务容器绑定。</p>
+<h4 id="5-Facades"><a href="#5-Facades" class="headerlink" title="5 Facades"></a>5 Facades</h4><p>Laravel Facades 实际是服务容器中底层类的 “静态代理” ，相对于传统静态方法，在使用时能够提供更加灵活、更加易于测试、更加优雅的语法。所有的 Laravel Facades 都定义在 <code>Illuminate\Support\Facades</code> 命名空间下。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PHP/" rel="tag"># PHP</a>
+              <a href="/tags/Laravel/" rel="tag"># Laravel</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/29/DesignPattern-Adapter/" rel="prev" title="DesignPattern-Adapter(适配器模式)">
+                  <i class="fa fa-chevron-left"></i> DesignPattern-Adapter(适配器模式)
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/18/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B/" rel="next" title="操作系统-进程">
+                  操作系统-进程 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '62653825e1e7df1effa67fd551b0738a',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
