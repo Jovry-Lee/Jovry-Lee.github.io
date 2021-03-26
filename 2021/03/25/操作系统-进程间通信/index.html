@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jovry-lee.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="进程间通常需要相互通信，那么进程间是如何进行信息传递的呢？怎么确保多个进程在关键活动中不会出现交叉？怎样保证进行活动是按照想要的顺序执行的呢？ 相关概念：  竞争条件：两个或多个进程读写某些共享数据，而最后的结果取决于进程运行的精确时序。 临界区：对共享内存（数据）进行访问的程序片段。 优先级翻转：针对不同优先级的进程访问同意临界区，由于调度规则限定只要高优先级处于就绪状态就可以运行，若某一时间低">
+<meta property="og:type" content="article">
+<meta property="og:title" content="操作系统-进程间通信">
+<meta property="og:url" content="https://jovry-lee.github.io/2021/03/25/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/index.html">
+<meta property="og:site_name" content="Jovry&#39;s blog">
+<meta property="og:description" content="进程间通常需要相互通信，那么进程间是如何进行信息传递的呢？怎么确保多个进程在关键活动中不会出现交叉？怎样保证进行活动是按照想要的顺序执行的呢？ 相关概念：  竞争条件：两个或多个进程读写某些共享数据，而最后的结果取决于进程运行的精确时序。 临界区：对共享内存（数据）进行访问的程序片段。 优先级翻转：针对不同优先级的进程访问同意临界区，由于调度规则限定只要高优先级处于就绪状态就可以运行，若某一时间低">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E7%8E%B0%E4%BB%A3%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%B8%A5%E6%A0%BC%E8%BD%AE%E6%8D%A2%E6%B3%95%E7%A4%BA%E4%BE%8B.png">
+<meta property="article:published_time" content="2021-03-25T08:14:52.000Z">
+<meta property="article:modified_time" content="2021-03-26T06:31:26.772Z">
+<meta property="article:author" content="Jovry Lee">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="现代操作系统">
+<meta property="article:tag" content="进程间通信">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E7%8E%B0%E4%BB%A3%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%B8%A5%E6%A0%BC%E8%BD%AE%E6%8D%A2%E6%B3%95%E7%A4%BA%E4%BE%8B.png">
+
+
+<link rel="canonical" href="https://jovry-lee.github.io/2021/03/25/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>操作系统-进程间通信 | Jovry's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jovry's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jovry Lee"
+      src="/images/princess.jpg">
+  <p class="site-author-name" itemprop="name">Jovry Lee</p>
+  <div class="site-description" itemprop="description">Keeping learning and improving!</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://jovry-lee.github.io/2021/03/25/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/princess.jpg">
+      <meta itemprop="name" content="Jovry Lee">
+      <meta itemprop="description" content="Keeping learning and improving!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jovry's blog">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          操作系统-进程间通信
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-03-25 16:14:52" itemprop="dateCreated datePublished" datetime="2021-03-25T16:14:52+08:00">2021-03-25</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2021-03-26 14:31:26" itemprop="dateModified" datetime="2021-03-26T14:31:26+08:00">2021-03-26</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/" itemprop="url" rel="index"><span itemprop="name">进程间通信</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>进程间通常需要相互通信，那么进程间是如何进行信息传递的呢？怎么确保多个进程在关键活动中不会出现交叉？怎样保证进行活动是按照想要的顺序执行的呢？</p>
+<p>相关概念：</p>
+<ul>
+<li>竞争条件：两个或多个进程读写某些共享数据，而最后的结果取决于进程运行的精确时序。</li>
+<li>临界区：对共享内存（数据）进行访问的程序片段。</li>
+<li>优先级翻转：针对不同优先级的进程访问同意临界区，由于调度规则限定只要高优先级处于就绪状态就可以运行，若某一时间低优先级进程先行进入临界区，且尚未离开，此时高优先级处于就绪状态，由于低优先级不会再次被调度，高优先级进程将一直处于等待状态。</li>
+</ul>
+<a id="more"></a>
+
+<p>1 互斥方案</p>
+<p>互斥方案用于保证当一个进程在临界区操作时，其他进程不会进入临界区。</p>
+<p>1.1 屏蔽中断</p>
+<p>屏蔽中断即每个进程一进入临界区立即屏蔽所有中断，然后在离开前再打开中断。</p>
+<p>缺点：</p>
+<ul>
+<li>将屏蔽中断的权利交予用户进程，不可控因素太多，若进程屏蔽后未及时打开，可能导致系统崩溃；</li>
+<li>对于多处理器，仅对当前运行CPU有效；</li>
+</ul>
+<p>1.2 锁变量</p>
+<p>锁变量法是一种软件解决方案，其思想为设置一个共享锁变量，为其设置初始值（假设为0），当一个进程进入临界区，它将首先检测锁变量的值是否为0，若是，则将锁变量的值设置为加锁值（假设为1）；若非0，则进行等待。</p>
+<p>缺点：该方法不能彻底解决互斥问题，若进程A读取锁变量值为0，且未解锁，此时CPU调度进程B，此时进程B读取锁变量也将为0。</p>
+<p>1.3 严格轮换法</p>
+<p>严格轮换法的思想是要求两个进程严格第轮流进入他们的临界区。如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/Jovry-Lee/cdn/img/%E7%8E%B0%E4%BB%A3%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%B8%A5%E6%A0%BC%E8%BD%AE%E6%8D%A2%E6%B3%95%E7%A4%BA%E4%BE%8B.png" alt="严格轮换法示例"></p>
+<p>1.4 Peterson解法</p>
+<p>Peterson算法示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">#define FALSE 0</span><br><span class="line">#define TRUE 1</span><br><span class="line">#define N 2 &#x2F;&#x2F; 进程数量</span><br><span class="line"></span><br><span class="line">int turn; &#x2F;&#x2F; 当前轮到哪个进程</span><br><span class="line">int interested[N]； &#x2F;&#x2F; 所有值初始化为0</span><br><span class="line"></span><br><span class="line">void enter_region(int process) &#x2F;&#x2F; 准备进入临界区的进程号</span><br><span class="line">&#123;</span><br><span class="line">	int other; &#x2F;&#x2F; 其他进程号</span><br><span class="line">	other &#x3D; 1 - process; &#x2F;&#x2F;另一方进程</span><br><span class="line">	interested[process] &#x3D; TRUE; &#x2F;&#x2F; 标识感兴趣</span><br><span class="line">	turn &#x3D; process; &#x2F;&#x2F; 设置标识；</span><br><span class="line">	while(turn &#x3D;&#x3D; process &amp;&amp; interested[other] &#x3D;&#x3D; TRUE); &#x2F;&#x2F; 等待；</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void leave_region(int process) &#x2F;&#x2F; 离开临界区的进程号</span><br><span class="line">&#123;</span><br><span class="line">	interested[process] &#x3D; FALSE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>1.5 TSL指令</p>
+<p>通过硬件加锁的方式，使用命令<code>TSL RX,LOCK</code>将一个内存字lock读到寄存器RX中，然后在该内存地址上存一个非零值。执行该指令的CPU将锁住内存总线，以禁止其他CPU在本指令结束之前访问内存。</p>
+<p><strong>锁住存储总线和屏蔽中断有什么区别？</strong></p>
+<ul>
+<li><p>屏蔽中断：对于多处理器无效，仅会屏蔽当前处理CPU。</p>
+</li>
+<li><p>锁住总线：通过一个特殊的硬件设备，保证其他处理器也无法使用。</p>
+</li>
+</ul>
+<p>2 信号量</p>
+<p>信号量使用一个整型变量来累计唤醒次数，其取值可以为0（标识没有被保存下来的唤醒操作）或正值（标识有一个或多个唤醒操作）。</p>
+<p>信号量有两种操作：</p>
+<ul>
+<li>down（sleep）-P操作：<ul>
+<li>信号量的值大于0：将值减1并继续；</li>
+<li>信号量的值等于0：将进程将睡眠，此时down操作并未结束。</li>
+</ul>
+</li>
+<li>up（wakeup）- V操作：对信号量的值增加1。有一个或多个进程在该信号量上睡眠，无法完成先前的down操作，则由系统选择一个，并允许该进程完成它的down操作。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+              <a href="/tags/%E7%8E%B0%E4%BB%A3%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 现代操作系统</a>
+              <a href="/tags/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/" rel="tag"># 进程间通信</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/23/PHP-Laravel%20Eloquent%20ORM%E4%BD%BF%E7%94%A8%E5%A4%87%E5%BF%98%E5%BD%95/" rel="prev" title="PHP-Laravel Eloquent ORM使用备忘录">
+                  <i class="fa fa-chevron-left"></i> PHP-Laravel Eloquent ORM使用备忘录
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jovry Lee</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '5a984c2656b35662c599',
+      clientSecret: '67fd127f911d50c0241d3292884f55d1b8405f51',
+      repo        : 'gitalk-comments',
+      owner       : 'Jovry-Lee',
+      admin       : ['Jovry-Lee'],
+      id          : '32e8cfac4bfa8be88220ddc6b173ae27',
+        language: 'en',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

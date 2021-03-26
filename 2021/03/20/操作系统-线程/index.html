@@ -30,7 +30,7 @@
 <meta property="og:description" content="1 简介既然已经有了进程，为什么还要引入线程呢？或者说使用线程有何优点？  线程拥有共享一个地址空间和所有可用数据的能力； 线程比进程更轻量级，所以它们比进程更容易、更快创建及撤销； 线程对于存在着大量的计算和大量的I&#x2F;O处理的活动，能重叠执行，加快应用程序执行速度，提升性能。（注：多线程对于CPU密集型活动，并不能获得性能上的提升）">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2021-03-19T16:33:50.000Z">
-<meta property="article:modified_time" content="2021-03-21T15:48:32.960Z">
+<meta property="article:modified_time" content="2021-03-25T07:53:04.557Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="操作系统">
 <meta property="article:tag" content="现代操作系统">
@@ -199,20 +199,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">50</span>
+          <span class="site-state-item-count">51</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-count">27</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-count">51</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -282,7 +282,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2021-03-21 23:48:32" itemprop="dateModified" datetime="2021-03-21T23:48:32+08:00">2021-03-21</time>
+        <time title="Modified: 2021-03-25 15:53:04" itemprop="dateModified" datetime="2021-03-25T15:53:04+08:00">2021-03-25</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -360,6 +360,8 @@
 <h5 id="3-2-内核中实现线程"><a href="#3-2-内核中实现线程" class="headerlink" title="3.2 内核中实现线程"></a>3.2 内核中实现线程</h5><p>内核中实现线程，由<u>内核记录系统中所有线程的线程表</u>。当某个线程希望创建一个新线程或者撤销一个已有线程时，他进行一个系统调用，这个系统调用通过对线程表的更新完成线程创建或撤销工作。</p>
 <p>所有线程的调用都以系统调用形式实现，相比用户空间实现，代价更大。有些系统采用“环保”的处理方式，即回收线程。具体过程为：当一个线程被撤销时，就把它标记为不可运行，但其内核数据结构并没有受到影响，在后续需要创建新线程时，重启某个旧线程，从而节省一些开支。</p>
 <h5 id="3-3-混合实现"><a href="#3-3-混合实现" class="headerlink" title="3.3 混合实现"></a>3.3 混合实现</h5><p>使用内核级线程，然后将用户级线程与某些或者全部内核线程多路复用起来。</p>
+<p>3.4 调度程序激活机制</p>
+<p>调度程序是为了模拟内核线程的功能，为线程包提供在用户空间中才能实现的更好的性能和灵活性。解决内核级线程速度慢的问题。</p>
 
     </div>
 
