@@ -30,7 +30,7 @@
 <meta property="og:description" content="1 选择优化的数据类型 ①、更小的通常更好：更小的数据类型通常更快，因为它们占用更少的磁盘、内存和CPU缓存，且处理时需要的CPU周期也更少。选择不会超过范围的最小类型。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-09-04T06:44:08.000Z">
-<meta property="article:modified_time" content="2020-09-21T02:25:01.268Z">
+<meta property="article:modified_time" content="2021-03-23T08:07:09.743Z">
 <meta property="article:author" content="Jovry Lee">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="Note">
@@ -198,7 +198,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-count">50</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -281,7 +281,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2020-09-21 10:25:01" itemprop="dateModified" datetime="2020-09-21T10:25:01+08:00">2020-09-21</time>
+        <time title="Modified: 2021-03-23 16:07:09" itemprop="dateModified" datetime="2021-03-23T16:07:09+08:00">2021-03-23</time>
       </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -351,7 +351,7 @@
 <p>其中,MySql整数类型有<code>TINYINT</code>，<code>SMALLINT</code>，<code>MEDEIUMINT</code>，<code>INT</code>，<code>BIGINT</code>。分别使用<code>8，16，24，32，64</code>位存储空间，其存储值得范围从-2^(N-1)到2^(N-1)-1，其中N是存储空间的位数。</p>
 <p>关于<code>UNSIGNED</code>属性，<u>表示不允许为负值，加上此属性，可以使正数的上限提高一倍。</u></p>
 <p>（<em>注：有符号和无符号类型使用相同的存储空间，并且具有相同的性能。</em>）</p>
-<p><u>Mysql可以为整数类型指定宽度。但它不会限制值的合法范围，只是规定Mysql的一些交互工具用来显示字符的个数</u>。例如，对于存储和运算INT(1)和INT(20)是相同的。</p>
+<p><u>Mysql可以为<strong>整数类型</strong>指定宽度。但它不会限制值的合法范围，只是规定Mysql的一些交互工具用来显示字符的个数</u>。例如，对于存储和运算INT(1)和INT(20)是相同的。<br>（注：不限制合法范围只是针对整数类型，对于字符串类型等并不适用）</p>
 <h4 id="1-2-实数类型"><a href="#1-2-实数类型" class="headerlink" title="1.2 实数类型"></a>1.2 实数类型</h4><p><code>实数是带有小数部分的数字</code>。它不仅可以存储小数，还可以使用DECIMAL存储比BIGINT还大的整数类型。</p>
 <p>Mysql既支持<code>精确类型（指的decimal</code>），也支持<code>不精确类型（float及double类型）</code>。    </p>
 <ul>
@@ -520,6 +520,7 @@
 </li>
 </ul>
 <p>其余内容见参考资料1，懒得写了。</p>
+<hr>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ol>
 <li><p>高性能MySQL_第三版</p>
 </li>
